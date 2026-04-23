@@ -66,7 +66,7 @@ export default function AdminLayout() {
 
           <div className="text-[10px] font-medium text-[#5a5a6e] uppercase tracking-[.06em] px-2 py-2 mt-2">AI & Dự đoán</div>
           <AdminNavItem to="/admin/ml"     icon={BrainCircuit}   label="Kết quả ML" />
-          <AdminNavItem to="/admin/alerts" icon={AlertTriangle}  label="Cảnh báo" />
+          <AdminNavItem to="/admin/alerts" icon={AlertTriangle}  label="Cảnh báo học lực" />
 
           <div className="text-[10px] font-medium text-[#5a5a6e] uppercase tracking-[.06em] px-2 py-2 mt-2">Hệ thống</div>
           <AdminNavItem to="/admin/notifications" icon={Bell}     label="Gửi thông báo" />
