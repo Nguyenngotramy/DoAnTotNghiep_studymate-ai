@@ -1,0 +1,105 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: studymate-api
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/studymate}
+      database: studymate
+      auto-index-creation: true
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 100MB
+      file-size-threshold: 2KB
+
+  websocket:
+    message-size-limit: 65536
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id:
+            client-secret:
+            scope:
+              - email
+              - profile
+            redirect-uri: "http://localhost:8080/api/login/oauth2/code/google"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:your-gmail@gmail.com}
+    password: ${MAIL_PASSWORD:your-16-char-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        connectiontimeout: 10000
+        timeout: 10000
+        writetimeout: 10000
+
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 5
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:StudyMateAI_SuperSecretKey_2024_MustBe256BitsLong_DoNotUseInProd}
+    access-token-expiration: 86400000
+    refresh-token-expiration: 604800000
+
+  ml-service:
+    url: ${ML_SERVICE_URL:http://localhost:8000}
+
+  upload:
+    dir: ${UPLOAD_DIR:./uploads}
+    max-size: 52428800
+
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:3001
+      - http://localhost:3010
+      - http://localhost:5173
+
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  name: StudyMate AI
+
+  admin:
+    email: ${ADMIN_EMAIL:admin@studymate.com}
+    password: ${ADMIN_PASSWORD:Admin@2024!}
+    fullName: Admin System
+
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:}
+    model: ${OPENAI_MODEL:gpt-4.1-mini}
+
+logging:
+  level:
+    com.studymate: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.security: INFO
+    org.springframework.web.multipart: DEBUG
+    org.apache.catalina.connector.Request: DEBUG

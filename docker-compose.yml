@@ -1,0 +1,86 @@
+version: '3.9'
+
+services:
+
+  # ── MongoDB ───────────────────────────────────────────
+  mongodb:
+    image: mongo:7.0
+    container_name: studymate-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: studymate
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - studymate-net
+
+  # ── Python ML Service ─────────────────────────────────
+  ml-service:
+    build:
+      context: ./ml_service
+      dockerfile: Dockerfile
+    container_name: studymate-ml
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - studymate-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Spring Boot Backend ───────────────────────────────
+  backend:
+    build:
+      context: ./backend/backend
+      dockerfile: Dockerfile
+    container_name: studymate-backend
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+      - ml-service
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/studymate
+      ML_SERVICE_URL: http://ml-service:8000
+      JWT_SECRET: StudyMateAI_SuperSecretKey_2024_MustBe256BitsLong_DoNotUseInProd
+      ADMIN_EMAIL: admin@studymate.com
+      ADMIN_PASSWORD: Admin@2024!
+      UPLOAD_DIR: /app/uploads
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - studymate-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/auth/me"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ── React Frontend (dev) ──────────────────────────────
+  # Dùng để dev local. Production: build dist và serve bằng nginx
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: studymate-frontend
+  #   ports:
+  #     - "5173:5173"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - studymate-net
+
+volumes:
+  mongo_data:
+  uploads_data:
+
+networks:
+  studymate-net:
+    driver: bridge
