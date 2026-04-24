@@ -524,7 +524,7 @@ export default function UserProfilePage() {
                   ) : (
                     <>
                       <button
-                        onClick={() => navigate(`/inbox/${userId}`)}
+                        onClick={() => navigate(`/inbox/${userId}`, { state: { dmTarget: { userId: String(userId), fullName: displayUser.fullName, avatar: displayUser.avatar } } })}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-[12px] font-semibold text-white transition-colors"
                       >
                         <MessageCircle size={13} /> Nhắn tin
