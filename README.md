@@ -6,6 +6,8 @@ npm run dev
 3.studymate-ai\ml_service
 uvicorn main:app --port 8000 --reload
 4.MongoDB
+5. resource/application
+
 
 
 
