@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AlertCircle,
@@ -45,6 +45,12 @@ const BACKEND = 'http://localhost:8080/api'
 type InboxTab = 'dm' | 'group'
 type DmSideTab = 'pinned' | 'files' | 'media'
 type GroupSideTab = 'pinned' | 'files' | 'media'
+
+type DmTargetState = {
+  userId: string
+  fullName?: string
+  avatar?: string | null
+}
 
 const toAbsUrl = (url?: string | null): string => {
   if (!url) return ''
@@ -313,6 +319,7 @@ function GroupReplyPreviewBox({
 
 export default function InboxPage() {
   const { userId: paramUserId } = useParams<{ userId: string }>()
+  const location = useLocation()
   const { user: me } = useAuthStore()
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -332,8 +339,10 @@ export default function InboxPage() {
   const lastMarkedDmRef = useRef('')
   const lastMarkedGroupRef = useRef('')
 
+  const dmTargetState = (location.state as { dmTarget?: DmTargetState } | null)?.dmTarget
+
   const [activeTab, setActiveTab] = useState<InboxTab>('dm')
-  const [activeId, setActiveId] = useState<string>(paramUserId ?? '')
+  const [activeId, setActiveId] = useState<string>(paramUserId ?? dmTargetState?.userId ?? '')
   const [selectedThread, setSelectedThread] = useState<Conversation | null>(null)
 
   const [input, setInput] = useState('')
@@ -387,26 +396,29 @@ export default function InboxPage() {
   )
 
   useEffect(() => {
-    if (!paramUserId) return
+    const nextTargetId = paramUserId ?? dmTargetState?.userId
+    if (!nextTargetId) return
     if (activeTab !== 'dm') return
 
-    if (rid(paramUserId) !== rid(activeId)) {
-      setActiveId(paramUserId)
+    if (rid(nextTargetId) !== rid(activeId)) {
+      setActiveId(nextTargetId)
     }
-  }, [paramUserId, activeId, activeTab])
+  }, [paramUserId, dmTargetState?.userId, activeId, activeTab])
 
   useEffect(() => {
     if (activeTab === 'dm') {
-      if (paramUserId) {
-        const dm = dmThreads.find(c => rid(c.userId) === rid(paramUserId)) ?? null
-        if (
-          dm &&
-          (
+      const targetDmId = paramUserId ?? dmTargetState?.userId
+      if (targetDmId) {
+        const dm = dmThreads.find(c => rid(c.userId) === rid(targetDmId)) ?? null
+        if (dm) {
+          if (
             selectedThread?.threadType !== 'DM' ||
             rid(selectedThread?.userId) !== rid(dm.userId)
-          )
-        ) {
-          setSelectedThread(dm)
+          ) {
+            setSelectedThread(dm)
+          }
+        } else if (selectedThread?.threadType === 'DM' && rid(selectedThread?.userId) !== rid(targetDmId)) {
+          setSelectedThread(null)
         }
         return
       }
@@ -458,15 +470,32 @@ export default function InboxPage() {
 
   const selectedDmThread = useMemo(() => {
     if (selectedThread?.threadType === 'DM') return selectedThread
-    return dmThreads.find(c => rid(c.userId) === activeId) ?? null
-  }, [selectedThread, dmThreads, activeId])
+
+    const existingDm = dmThreads.find(c => rid(c.userId) === activeId) ?? null
+    if (existingDm) return existingDm
+
+    if (!activeId) return null
+
+    return {
+      threadType: 'DM',
+      userId: activeId,
+      title: dmTargetState?.fullName ?? 'Người dùng',
+      avatar: dmTargetState?.avatar ?? null,
+      user: {
+        id: activeId,
+        fullName: dmTargetState?.fullName ?? 'Người dùng',
+        avatar: dmTargetState?.avatar ?? null,
+      },
+      unreadCount: 0,
+    } as Conversation
+  }, [selectedThread, dmThreads, activeId, dmTargetState])
 
   const selectedGroupThread = useMemo(() => {
     if (selectedThread?.threadType === 'GROUP') return selectedThread
     return null
   }, [selectedThread])
 
-  const isSelectedDm = activeTab === 'dm' && !!selectedDmThread
+  const isSelectedDm = activeTab === 'dm' && !!activeId
   const isSelectedGroup = activeTab === 'group' && !!selectedGroupThread
   const selectedGroupId = isSelectedGroup ? rid(selectedGroupThread?.groupId) : ''
 
@@ -629,9 +658,15 @@ export default function InboxPage() {
   const activeName =
     selectedDmThread?.title ??
     selectedDmThread?.user?.fullName ??
-    'Chưa chọn cuộc trò chuyện'
+    dmTargetState?.fullName ??
+    'Người dùng'
 
-  const activeAvatar = toAbsUrl(selectedDmThread?.avatar ?? selectedDmThread?.user?.avatar)
+  const activeAvatar = toAbsUrl(
+    selectedDmThread?.avatar ??
+    selectedDmThread?.user?.avatar ??
+    dmTargetState?.avatar ??
+    null,
+  )
   const activeColor = nameColor(activeName)
 
   function isMyMsg(msg: DirectMessage): boolean {
@@ -1289,7 +1324,7 @@ export default function InboxPage() {
         </div>
       </div>
 
-      {!selectedThread ? (
+      {(!selectedThread && !isSelectedDm) ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <MessageCircle size={48} style={{ color: 'var(--bg4)' }} className="mx-auto mb-4" />

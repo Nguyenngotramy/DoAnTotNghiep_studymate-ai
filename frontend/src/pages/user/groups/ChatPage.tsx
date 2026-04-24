@@ -1509,7 +1509,17 @@ export default function ChatPage() {
                         <div className="flex flex-wrap gap-2 mt-3">
                           {!isMe && (
                             <button
-                              onClick={() => navigate(`/inbox/${memberId}`)}
+                              onClick={() =>
+                                navigate(`/inbox/${memberId}`, {
+                                  state: {
+                                    dmTarget: {
+                                      userId: memberId,
+                                      fullName: member.fullName,
+                                      avatar: member.user?.avatar ?? null,
+                                    },
+                                  },
+                                })
+                              }
                               className="px-3 py-2 rounded-xl text-[12px] border"
                               style={{
                                 background: 'var(--bg2)',
@@ -1522,7 +1532,7 @@ export default function ChatPage() {
                           )}
 
                           <button
-                            onClick={() => navigate(`/profile/${memberId}`)}
+                            onClick={() => navigate(`/u/${memberId}`)}
                             className="px-3 py-2 rounded-xl text-[12px] border"
                             style={{
                               background: 'var(--bg2)',
