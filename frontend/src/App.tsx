@@ -55,6 +55,11 @@ import AdminGroups from '@/pages/admin/GroupsPage'
 import AdminML from '@/pages/admin/MLResultsPage'
 import AdminAlerts from '@/pages/admin/AlertsPage'
 import AdminSettings from '@/pages/admin/SettingsPage'
+import AdminUserDetailPage from '@/pages/admin/UserDetailPage'
+import AdminGroupDetailPage from '@/pages/admin/AdminGroupDetailPage'
+import AdminDocuments from '@/pages/admin/AdminDocuments'
+import AdminNotifications from '@/pages/admin/AdminNotifications'
+import AdminStats from '@/pages/admin/AdminStats'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = useAuthStore(s => s.accessToken)
@@ -139,6 +144,11 @@ export default function App() {
           <Route path="/admin/ml" element={<AdminML />} />
           <Route path="/admin/alerts" element={<AdminAlerts />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin/users/:userId" element={<AdminUserDetailPage />} />
+          <Route path="/admin/groups/:groupId" element={<AdminGroupDetailPage />} />
+          <Route path="/admin/docs" element={<AdminDocuments />} />
+          <Route path="/admin/nsotifications" element={<AdminNotifications />} />
+          <Route path="/admin/stats" element={<AdminStats />} />
         </Route>
 
         <Route path="*" element={<RedirectByRole />} />
