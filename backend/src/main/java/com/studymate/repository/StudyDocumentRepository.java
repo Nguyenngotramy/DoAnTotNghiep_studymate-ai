@@ -7,6 +7,12 @@ import java.util.List;
 import java.util.Optional;
 
 public interface StudyDocumentRepository extends MongoRepository<StudyDocument, String> {
+
     List<StudyDocument> findByGroupIdOrderByCreatedAtDesc(String groupId);
+
     Optional<StudyDocument> findByIdAndGroupId(String id, String groupId);
+
+    List<StudyDocument> findByReviewStatusInOrderByCreatedAtDesc(
+            List<StudyDocument.ReviewStatus> statuses
+    );
 }
