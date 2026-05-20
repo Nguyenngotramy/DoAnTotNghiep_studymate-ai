@@ -93,10 +93,19 @@ public class AuthController {
         String subject = auth.getName();
         System.out.println("[ME] subject: " + subject);
 
-        return userRepo.findById(subject)
-                .or(() -> userRepo.findByEmail(subject))
-                .map(user -> ResponseEntity.ok(ApiResponse.ok(user)))
-                .orElse(ResponseEntity.status(401).body(ApiResponse.error("User không tồn tại")));
+        Optional<User> userOpt = userRepo.findById(subject)
+                .or(() -> userRepo.findByEmail(subject));
+
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(401).body(ApiResponse.error("User không tồn tại"));
+        }
+
+        User user = userOpt.get();
+        if (user.isLocked()) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Tài khoản đã bị khoá"));
+        }
+
+        return ResponseEntity.ok(ApiResponse.ok(user));
     }
 
     @PutMapping("/me")
@@ -241,6 +250,11 @@ public class AuthController {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
+        if (user.isLocked()) {
+            return ResponseEntity.status(401)
+                    .body(ApiResponse.error("Tài khoản đã bị khoá"));
+        }
+
         return ResponseEntity.ok(ApiResponse.ok(Map.of(
                 "user", user,
                 "accessToken", accessToken,
@@ -256,8 +270,10 @@ public class AuthController {
         }
 
         authService.sendPasswordResetOtp(email);
-        return ResponseEntity.ok(ApiResponse.ok(null,
-                "Nếu email tồn tại, mã OTP đã được gửi. Kiểm tra hộp thư (kể cả spam)."));
+        return ResponseEntity.ok(ApiResponse.ok(
+                null,
+                "Nếu email tồn tại, mã OTP đã được gửi. Kiểm tra hộp thư (kể cả spam)."
+        ));
     }
 
     @PostMapping("/verify-otp")

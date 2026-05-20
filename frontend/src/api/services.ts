@@ -558,6 +558,11 @@ export const documentApi = {
     }).then(r => d<Document>(r))
   },
 
+  report: (docId: string, reason?: string) =>
+    api.post(`/documents/${docId}/report`, {
+      reason: reason || 'Tài liệu cần được xem xét',
+    }).then(r => d<Document>(r)),
+
   delete: (groupId: string, docId: string) =>
     api.delete(`/groups/${groupId}/documents/${docId}`),
 
@@ -641,20 +646,100 @@ export const notificationApi = {
 }
 
 export const adminApi = {
+  getDashboard: () => api.get('/admin/dashboard').then(r => d(r)),
+  getAlertCenter: () => api.get('/admin/alerts/center').then(r => d(r)),
   getSystemStats: () => api.get('/admin/stats').then(r => d(r)),
+
   getUsers: (page = 0, search?: string) =>
     api.get('/admin/users', { params: { page, search } }).then(r => d(r)),
-  lockUser: (id: string) => api.post(`/admin/users/${id}/lock`),
-  unlockUser: (id: string) => api.post(`/admin/users/${id}/unlock`),
-  deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
-  resetPassword: (id: string) => api.post(`/admin/users/${id}/reset-password`),
-  getGroups: (page = 0) => api.get('/admin/groups', { params: { page } }).then(r => d(r)),
-  deleteGroup: (id: string) => api.delete(`/admin/groups/${id}`),
-  getMLResults: () => api.get('/admin/ml/results').then(r => d(r)),
-  getAlerts: () => api.get('/admin/alerts').then(r => d(r)),
+
+  getUserDetail: (userId: string) =>
+    api.get(`/admin/users/${userId}`).then(r => d(r)),
+
+  getUserActivity: (userId: string) =>
+    api.get(`/admin/users/${userId}/activity`).then(r => d(r)),
+
+  getUserPredictHistory: (userId: string) =>
+    api.get(`/admin/users/${userId}/predict-history`).then(r => d(r)),
+
+  getUserStudyTerms: (userId: string) =>
+    api.get(`/admin/users/${userId}/study-terms`).then(r => d(r)),
+
+  lockUser: (id: string) =>
+    api.post(`/admin/users/${id}/lock`),
+
+  unlockUser: (id: string) =>
+    api.post(`/admin/users/${id}/unlock`),
+
+  deleteUser: (id: string) =>
+    api.delete(`/admin/users/${id}`),
+
+  resetPassword: (id: string) =>
+    api.post(`/admin/users/${id}/reset-password`),
+
+  sendSupportReminder: (userId: string, message: string) =>
+    api.post(`/admin/users/${userId}/support-reminder`, {
+      title: 'Hỗ trợ học tập từ StudyMate AI',
+      message,
+    }),
+
+  getGroups: (page = 0, search?: string, filter?: string) =>
+    api.get('/admin/groups', {
+      params: { page, search, filter },
+    }).then(r => d(r)),
+
+  getGroupDetail: (groupId: string) =>
+    api.get(`/admin/groups/${groupId}`).then(r => d(r)),
+
+  deleteGroup: (id: string) =>
+    api.delete(`/admin/groups/${id}`),
+
+  forceDeleteGroup: (groupId: string, reason?: string) =>
+    api.delete(`/admin/groups/${groupId}/force`, {
+      data: { reason },
+    }),
+
+  getMLResults: (page = 0) =>
+    api.get('/admin/ml/results', {
+      params: { page },
+    }).then(r => d(r)),
+
+  getAlerts: () =>
+    api.get('/admin/alerts').then(r => d(r)),
+
+  approveGroupPost: (postId: string) =>
+    api.post(`/admin/group-posts/${postId}/approve`).then(r => d(r)),
+
+  rejectGroupPost: (postId: string, reason: string) =>
+    api.post(`/admin/group-posts/${postId}/reject`, { reason }).then(r => d(r)),
+
+  getDocuments: (params?: {
+    status?: string
+    groupId?: string
+    type?: string
+    uploader?: string
+  }) =>
+    api.get('/admin/documents', { params }).then(r => d(r)),
+
+  approveDocument: (docId: string) =>
+    api.post(`/admin/documents/${docId}/approve`).then(r => d(r)),
+
+  markDocumentUnderReview: (docId: string, reason: string) =>
+    api.post(`/admin/documents/${docId}/under-review`, { reason }).then(r => d(r)),
+
+  rejectDocument: (docId: string, reason: string) =>
+    api.post(`/admin/documents/${docId}/reject`, { reason }).then(r => d(r)),
+
+  removeDocument: (docId: string, reason: string) =>
+    api.post(`/admin/documents/${docId}/remove`, { reason }).then(r => d(r)),
+
   broadcast: (title: string, body: string) =>
     api.post('/admin/notifications/broadcast', { title, body }),
-  getLogs: (page = 0) => api.get('/admin/logs', { params: { page } }).then(r => d(r)),
+
+  getLogs: (page = 0) =>
+    api.get('/admin/logs', {
+      params: { page },
+    }).then(r => d(r)),
 }
 
 export const groupPostApi = {

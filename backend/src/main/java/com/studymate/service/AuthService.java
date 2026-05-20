@@ -45,7 +45,6 @@ public class AuthService {
             "AI/ML", "#8b5cf6"
     );
 
-    // ── Đăng nhập ─────────────────────────────────────────
     public AuthResponse login(LoginRequest req) {
         User user = userRepo.findByEmail(req.getEmail())
                 .orElseThrow(() -> new RuntimeException("Email hoặc mật khẩu không đúng"));
@@ -62,7 +61,6 @@ public class AuthService {
         return tokens(user);
     }
 
-    // ── Đăng ký ───────────────────────────────────────────
     public AuthResponse register(RegisterRequest req) {
         if (userRepo.existsByEmail(req.getEmail())) {
             throw new RuntimeException("Email đã được sử dụng");
@@ -117,12 +115,15 @@ public class AuthService {
         return tokens(user);
     }
 
-    // ── Google OAuth — tìm hoặc tạo user ──────────────────
     public AuthResponse loginOrRegisterGoogle(String googleEmail, String fullName, String avatarUrl) {
         Optional<User> existing = userRepo.findByEmail(googleEmail);
 
         if (existing.isPresent()) {
             User user = existing.get();
+
+            if (user.isLocked()) {
+                throw new RuntimeException("Tài khoản đã bị khoá");
+            }
 
             boolean changed = false;
             if (user.getAvatar() == null && avatarUrl != null) {
@@ -158,7 +159,6 @@ public class AuthService {
         return tokens(newUser);
     }
 
-    // ── Refresh ────────────────────────────────────────────
     public Map<String, String> refresh(String refreshToken) {
         if (!jwtService.isValid(refreshToken)) {
             throw new RuntimeException("Refresh token không hợp lệ");
@@ -168,16 +168,16 @@ public class AuthService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
+        if (user.isLocked()) {
+            throw new RuntimeException("Tài khoản đã bị khoá");
+        }
+
         user = ensureBannerDefaults(user);
 
         return Map.of(
                 "accessToken", jwtService.generateAccessToken(user.getId(), user.getRole().name())
         );
     }
-
-    // ══════════════════════════════════════════════════════
-    // QUÊN MẬT KHẨU — OTP FLOW
-    // ══════════════════════════════════════════════════════
 
     public void sendPasswordResetOtp(String email) {
         Optional<User> userOpt = userRepo.findByEmail(email);
@@ -188,6 +188,13 @@ public class AuthService {
         otpStore.put(email, new OtpEntry(otp, expiresAt));
 
         emailService.sendPasswordResetEmail(email, userOpt.get().getFullName(), otp);
+    }
+
+    public void sendAdminPasswordResetByUserId(String userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        sendPasswordResetOtp(user.getEmail());
     }
 
     public void verifyOtp(String email, String otp) {
@@ -217,8 +224,6 @@ public class AuthService {
         emailService.sendPasswordChangedConfirmation(email, user.getFullName());
     }
 
-    // ── Helpers ────────────────────────────────────────────
-
     private String generateOtp() {
         return String.format("%06d", new Random().nextInt(1_000_000));
     }
@@ -229,10 +234,6 @@ public class AuthService {
         return new AuthResponse(user, access, refresh);
     }
 
-    /**
-     * Vá dữ liệu cho user cũ để banner không bị 0 mãi.
-     * Chỉ set mặc định khi field đang <= 0.
-     */
     private User ensureBannerDefaults(User user) {
         User normalized = normalizeBannerFields(user);
 

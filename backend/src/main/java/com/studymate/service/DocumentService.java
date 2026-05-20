@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -67,6 +68,7 @@ public class DocumentService {
                     .uploaderId(uploaderId)
                     .uploaderName(uploaderName)
                     .sourceType(StudyDocument.SourceType.PAGE)
+                    .reviewStatus(StudyDocument.ReviewStatus.APPROVED)
                     .build();
 
             return docRepo.save(doc);
@@ -119,6 +121,7 @@ public class DocumentService {
                     .uploaderName(userName)
                     .sourceType(StudyDocument.SourceType.CHAT)
                     .messageId(messageId)
+                    .reviewStatus(StudyDocument.ReviewStatus.APPROVED)
                     .build();
 
             docRepo.save(doc);
@@ -163,6 +166,70 @@ public class DocumentService {
         String answer = openAiDocumentService.answerQuestion(text, doc.getName(), question.trim());
 
         return Map.of("answer", answer);
+    }
+
+    public StudyDocument reportDocument(String docId, String reporterId, String reporterName, String reason) {
+        StudyDocument doc = getOne(docId);
+
+        if (doc.getReviewStatus() == StudyDocument.ReviewStatus.REJECTED
+                || doc.getReviewStatus() == StudyDocument.ReviewStatus.REMOVED) {
+            throw new RuntimeException("Tài liệu này đã bị gỡ hoặc từ chối");
+        }
+
+        if (doc.getReports() == null) {
+            doc.setReports(new ArrayList<>());
+        }
+
+        boolean alreadyReported = doc.getReports().stream()
+                .anyMatch(r -> Objects.equals(r.getUserId(), reporterId));
+
+        if (alreadyReported) {
+            throw new RuntimeException("Bạn đã report tài liệu này rồi");
+        }
+
+        doc.getReports().add(StudyDocument.DocumentReport.builder()
+                .id(UUID.randomUUID().toString())
+                .userId(reporterId)
+                .fullName(reporterName)
+                .reason(reason == null || reason.isBlank() ? "Nội dung cần xem xét" : reason.trim())
+                .createdAt(Instant.now())
+                .build());
+
+        doc.setReviewStatus(StudyDocument.ReviewStatus.REPORTED);
+        doc.setFlagReason(reason == null || reason.isBlank() ? "Tài liệu bị người dùng report" : reason.trim());
+        return docRepo.save(doc);
+    }
+
+    public StudyDocument markUnderReview(String docId, String reviewerId, String reviewerName, String note) {
+        StudyDocument doc = getOne(docId);
+        doc.setReviewStatus(StudyDocument.ReviewStatus.UNDER_REVIEW);
+        doc.setReviewedBy(reviewerId);
+        doc.setReviewedByName(reviewerName);
+        doc.setReviewedAt(Instant.now());
+        doc.setReviewNote(note);
+        return docRepo.save(doc);
+    }
+
+    public StudyDocument approveDocument(String docId, String reviewerId, String reviewerName, String note) {
+        StudyDocument doc = getOne(docId);
+        doc.setReviewStatus(StudyDocument.ReviewStatus.APPROVED);
+        doc.setReviewedBy(reviewerId);
+        doc.setReviewedByName(reviewerName);
+        doc.setReviewedAt(Instant.now());
+        doc.setReviewNote(note);
+        doc.setFlagReason(null);
+        doc.setReports(new ArrayList<>());
+        return docRepo.save(doc);
+    }
+
+    public StudyDocument rejectDocument(String docId, String reviewerId, String reviewerName, String note) {
+        StudyDocument doc = getOne(docId);
+        doc.setReviewStatus(StudyDocument.ReviewStatus.REJECTED);
+        doc.setReviewedBy(reviewerId);
+        doc.setReviewedByName(reviewerName);
+        doc.setReviewedAt(Instant.now());
+        doc.setReviewNote(note);
+        return docRepo.save(doc);
     }
 
     public void delete(String groupId, String docId, String userId) {
@@ -230,42 +297,18 @@ public class DocumentService {
 
         String lower = filename.toLowerCase(Locale.ROOT);
 
-        if (lower.endsWith(".pdf.pdf")) {
-            return filename.substring(0, filename.length() - 4);
-        }
-        if (lower.endsWith(".doc.doc")) {
-            return filename.substring(0, filename.length() - 4);
-        }
-        if (lower.endsWith(".docx.docx")) {
-            return filename.substring(0, filename.length() - 5);
-        }
-        if (lower.endsWith(".ppt.ppt")) {
-            return filename.substring(0, filename.length() - 4);
-        }
-        if (lower.endsWith(".pptx.pptx")) {
-            return filename.substring(0, filename.length() - 5);
-        }
-        if (lower.endsWith(".xls.xls")) {
-            return filename.substring(0, filename.length() - 4);
-        }
-        if (lower.endsWith(".xlsx.xlsx")) {
-            return filename.substring(0, filename.length() - 5);
-        }
-        if (lower.endsWith(".csv.csv")) {
-            return filename.substring(0, filename.length() - 4);
-        }
-        if (lower.endsWith(".txt.txt")) {
-            return filename.substring(0, filename.length() - 4);
-        }
-        if (lower.endsWith(".jpg.jpg")) {
-            return filename.substring(0, filename.length() - 4);
-        }
-        if (lower.endsWith(".jpeg.jpeg")) {
-            return filename.substring(0, filename.length() - 5);
-        }
-        if (lower.endsWith(".png.png")) {
-            return filename.substring(0, filename.length() - 4);
-        }
+        if (lower.endsWith(".pdf.pdf")) return filename.substring(0, filename.length() - 4);
+        if (lower.endsWith(".doc.doc")) return filename.substring(0, filename.length() - 4);
+        if (lower.endsWith(".docx.docx")) return filename.substring(0, filename.length() - 5);
+        if (lower.endsWith(".ppt.ppt")) return filename.substring(0, filename.length() - 4);
+        if (lower.endsWith(".pptx.pptx")) return filename.substring(0, filename.length() - 5);
+        if (lower.endsWith(".xls.xls")) return filename.substring(0, filename.length() - 4);
+        if (lower.endsWith(".xlsx.xlsx")) return filename.substring(0, filename.length() - 5);
+        if (lower.endsWith(".csv.csv")) return filename.substring(0, filename.length() - 4);
+        if (lower.endsWith(".txt.txt")) return filename.substring(0, filename.length() - 4);
+        if (lower.endsWith(".jpg.jpg")) return filename.substring(0, filename.length() - 4);
+        if (lower.endsWith(".jpeg.jpeg")) return filename.substring(0, filename.length() - 5);
+        if (lower.endsWith(".png.png")) return filename.substring(0, filename.length() - 4);
 
         return filename;
     }
