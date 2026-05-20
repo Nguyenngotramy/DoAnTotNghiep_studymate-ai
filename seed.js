@@ -7,7 +7,7 @@
 const { MongoClient, ObjectId } = require('mongodb')
 const bcrypt = require('bcryptjs')
 
-const MONGO_URI = 'mongodb://localhost:27017'
+const MONGO_URI = 'mongodb+srv://dieulinhnguyenthi1810_db_user:rDUMX-n4BcnEaUC@cluster0.9tireaq.mongodb.net/studymate?appName=Cluster0'
 const DB_NAME = 'studymate'
 
 // ── Helpers ───────────────────────────────────────────────
