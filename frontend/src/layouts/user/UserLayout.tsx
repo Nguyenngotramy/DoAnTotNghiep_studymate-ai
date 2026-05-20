@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import SideToolbar from '@/components/SideToolbar'
+import FloatingAgent from '@/components/FloatingAgent'
 import { useAuthStore } from '@/store/authStore'
 import { authApi, notificationApi, dmApi } from '@/api/services'
 import toast from 'react-hot-toast'
@@ -469,6 +470,7 @@ export default function UserLayout() {
       {showSearch && <SearchModal onClose={() => setShowSearch(false)} />}
 
       <SideToolbar />
+      <FloatingAgent /> 
 
       <aside
         className="w-[210px] min-w-[210px] flex flex-col"

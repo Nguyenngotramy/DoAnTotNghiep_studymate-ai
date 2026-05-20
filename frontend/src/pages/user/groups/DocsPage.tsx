@@ -23,18 +23,28 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+// ─────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────
+
+const BACKEND_URL = 'http://localhost:3000'
+
 const DOC_ICON: Record<string, { label: string; bg: string; color: string }> = {
-  PDF: { label: 'PDF', bg: 'rgba(239,68,68,.12)', color: '#ef4444' },
-  DOCX: { label: 'DOC', bg: 'rgba(59,130,246,.12)', color: '#3b82f6' },
-  PPTX: { label: 'PPT', bg: 'rgba(249,115,22,.12)', color: '#f97316' },
-  EXCEL: { label: 'XLS', bg: 'rgba(34,197,94,.12)', color: '#22c55e' },
-  IMAGE: { label: 'IMG', bg: 'rgba(168,85,247,.12)', color: '#a855f7' },
-  TEXT: { label: 'TXT', bg: 'rgba(14,165,233,.12)', color: '#0ea5e9' },
-  OTHER: { label: 'FILE', bg: 'rgba(99,102,241,.12)', color: '#6366f1' },
+  PDF:   { label: 'PDF',  bg: 'rgba(239,68,68,.12)',   color: '#ef4444' },
+  DOCX:  { label: 'DOC',  bg: 'rgba(59,130,246,.12)',  color: '#3b82f6' },
+  PPTX:  { label: 'PPT',  bg: 'rgba(249,115,22,.12)',  color: '#f97316' },
+  EXCEL: { label: 'XLS',  bg: 'rgba(34,197,94,.12)',   color: '#22c55e' },
+  IMAGE: { label: 'IMG',  bg: 'rgba(168,85,247,.12)',  color: '#a855f7' },
+  TEXT:  { label: 'TXT',  bg: 'rgba(14,165,233,.12)',  color: '#0ea5e9' },
+  OTHER: { label: 'FILE', bg: 'rgba(99,102,241,.12)',  color: '#6366f1' },
 }
 
-const DOC_TYPES = ['ALL', 'PDF', 'DOCX', 'PPTX', 'EXCEL', 'IMAGE', 'TEXT', 'OTHER'] as const
+const DOC_TYPES   = ['ALL', 'PDF', 'DOCX', 'PPTX', 'EXCEL', 'IMAGE', 'TEXT', 'OTHER'] as const
 const SOURCE_TABS = ['ALL', 'PAGE', 'CHAT'] as const
+
+// ─────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────
 
 const fmtSize = (kb: number) => {
   if (!kb && kb !== 0) return '—'
@@ -46,6 +56,273 @@ const resolveDocUrl = (fileUrl?: string) => {
   if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) return fileUrl
   return `http://localhost:8080/api${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`
 }
+
+// ─────────────────────────────────────────
+// BACKEND AI CALLS
+// Tất cả đều truyền file_url để backend fetch nội dung file thực.
+// Không còn dùng extractMarkdown() ở frontend nữa.
+// ─────────────────────────────────────────
+
+async function backendSummary(doc: Document, style: string, length: string): Promise<string> {
+  const res = await fetch(`${BACKEND_URL}/summary`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topic:    doc.name,
+      file_url: doc.fileUrl,   // ← backend sẽ fetch nội dung file thực từ URL này
+      style,
+      length,
+    }),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  const data = await res.json()
+  return data.summary as string
+}
+
+async function backendFlashcard(
+  doc: Document,
+  card_type: string,
+  num_cards: number,
+): Promise<Flashcard[]> {
+  const res = await fetch(`${BACKEND_URL}/flashcard`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topic:    doc.name,
+      file_url: doc.fileUrl,   // ← backend sẽ fetch nội dung file thực từ URL này
+      card_type,
+      num_cards,
+      format: 'qa',
+    }),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  const data = await res.json()
+  // Backend trả [{question, answer}] → map sang Flashcard shape
+  return (data.flashcards as { question: string; answer: string }[]).map((c, i) => ({
+    id: String(i),
+    question: c.question,
+    answer: c.answer,
+  })) as unknown as Flashcard[]
+}
+
+async function backendQuiz(
+  doc: Document,
+  bloom_level: string,
+  num_questions: number,
+): Promise<QuizQuestion[]> {
+  const res = await fetch(`${BACKEND_URL}/quiz`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topic:    doc.name,
+      file_url: doc.fileUrl,   // ← backend sẽ fetch nội dung file thực từ URL này
+      bloom_level,
+      num_questions,
+    }),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  const data = await res.json()
+  return data.questions as QuizQuestion[]
+}
+
+async function backendChat(doc: Document, question: string): Promise<string> {
+  // Chat vẫn dùng file_url thay vì extractMarkdown ở frontend
+  const res = await fetch(`${BACKEND_URL}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text: `Tài liệu: ${doc.name}\nFile URL: ${doc.fileUrl ?? ''}\n\nCâu hỏi: ${question}`,
+    }),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  const data = await res.json()
+  return data.response as string
+}
+
+// ─────────────────────────────────────────
+// AI OPTIONS MODAL
+// ─────────────────────────────────────────
+
+function AiOptionsModal({
+  type,
+  doc,
+  onClose,
+  onSubmit,
+  loading,
+}: {
+  type: 'flashcard' | 'quiz' | 'summarize'
+  doc: Document
+  onClose: () => void
+  onSubmit: (opts: Record<string, string | number>) => void
+  loading: boolean
+}) {
+  const [style,     setStyle]     = useState('bullet')
+  const [length,    setLength]    = useState('medium')
+  const [cardType,  setCardType]  = useState('mixed')
+  const [numCards,  setNumCards]  = useState(6)
+  const [bloom,     setBloom]     = useState('understand')
+  const [numQ,      setNumQ]      = useState(5)
+
+  const handleSubmit = () => {
+    if (type === 'summarize') onSubmit({ style, length })
+    if (type === 'flashcard') onSubmit({ card_type: cardType, num_cards: numCards })
+    if (type === 'quiz')      onSubmit({ bloom_level: bloom, num_questions: numQ })
+  }
+
+  const title = type === 'summarize' ? 'Tóm tắt tài liệu' : type === 'flashcard' ? 'Tạo Flashcard' : 'Tạo Quiz'
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/65 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-3xl border p-5"
+        style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <div className="text-[12px]" style={{ color: 'var(--text3)' }}>{title}</div>
+            <div className="text-[15px] font-medium truncate" style={{ color: 'var(--text)' }}>
+              {doc.name}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Options */}
+        <div className="grid gap-3 mb-4">
+          {type === 'summarize' && (
+            <>
+              <div>
+                <p className="text-[12px] mb-1.5" style={{ color: 'var(--text3)' }}>Định dạng</p>
+                <select
+                  value={style}
+                  onChange={e => setStyle(e.target.value)}
+                  className="w-full h-10 rounded-xl px-3 outline-none text-[13px]"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                >
+                  <option value="bullet">Gạch đầu dòng</option>
+                  <option value="paragraph">Văn xuôi</option>
+                  <option value="outline">Dàn ý có cấp</option>
+                  <option value="map">Sơ đồ text</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-[12px] mb-1.5" style={{ color: 'var(--text3)' }}>Độ dài</p>
+                <select
+                  value={length}
+                  onChange={e => setLength(e.target.value)}
+                  className="w-full h-10 rounded-xl px-3 outline-none text-[13px]"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                >
+                  <option value="short">Ngắn (&lt;100 từ)</option>
+                  <option value="medium">Trung bình</option>
+                  <option value="long">Chi tiết (300+ từ)</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {type === 'flashcard' && (
+            <>
+              <div>
+                <p className="text-[12px] mb-1.5" style={{ color: 'var(--text3)' }}>Loại thẻ</p>
+                <select
+                  value={cardType}
+                  onChange={e => setCardType(e.target.value)}
+                  className="w-full h-10 rounded-xl px-3 outline-none text-[13px]"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                >
+                  <option value="definition">Định nghĩa</option>
+                  <option value="formula">Công thức</option>
+                  <option value="concept">Khái niệm</option>
+                  <option value="mixed">Hỗn hợp</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-[12px] mb-1.5" style={{ color: 'var(--text3)' }}>Số thẻ</p>
+                <select
+                  value={numCards}
+                  onChange={e => setNumCards(Number(e.target.value))}
+                  className="w-full h-10 rounded-xl px-3 outline-none text-[13px]"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                >
+                  {[4, 6, 8, 10].map(n => (
+                    <option key={n} value={n}>{n} thẻ</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+
+          {type === 'quiz' && (
+            <>
+              <div>
+                <p className="text-[12px] mb-1.5" style={{ color: 'var(--text3)' }}>Mức độ Bloom's</p>
+                <select
+                  value={bloom}
+                  onChange={e => setBloom(e.target.value)}
+                  className="w-full h-10 rounded-xl px-3 outline-none text-[13px]"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                >
+                  <option value="remember">Ghi nhớ</option>
+                  <option value="understand">Hiểu</option>
+                  <option value="apply">Áp dụng</option>
+                  <option value="analyze">Phân tích</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-[12px] mb-1.5" style={{ color: 'var(--text3)' }}>Số câu hỏi</p>
+                <select
+                  value={numQ}
+                  onChange={e => setNumQ(Number(e.target.value))}
+                  className="w-full h-10 rounded-xl px-3 outline-none text-[13px]"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                >
+                  {[3, 5, 7, 10].map(n => (
+                    <option key={n} value={n}>{n} câu</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            className="flex-1 h-10 rounded-xl border text-[13px] font-medium"
+            style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
+          >
+            Huỷ
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="flex-1 h-10 rounded-xl text-[13px] font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+            style={{ background: '#6366f1', color: '#fff' }}
+          >
+            {loading ? <><Loader2 size={13} className="animate-spin" /> Đang xử lý...</> : 'Bắt đầu'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────
+// SUMMARY MODAL
+// ─────────────────────────────────────────
 
 function SummaryModal({
   docName,
@@ -65,12 +342,8 @@ function SummaryModal({
       >
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="min-w-0">
-            <div className="text-[12px]" style={{ color: 'var(--text3)' }}>
-              Tóm tắt tài liệu
-            </div>
-            <div className="text-[16px] font-semibold truncate" style={{ color: 'var(--text)' }}>
-              {docName}
-            </div>
+            <div className="text-[12px]" style={{ color: 'var(--text3)' }}>Tóm tắt tài liệu</div>
+            <div className="text-[16px] font-semibold truncate" style={{ color: 'var(--text)' }}>{docName}</div>
           </div>
           <button
             onClick={onClose}
@@ -80,7 +353,6 @@ function SummaryModal({
             <X size={16} />
           </button>
         </div>
-
         <div
           className="rounded-2xl border p-4 max-h-[65vh] overflow-y-auto whitespace-pre-wrap leading-7 text-[14px]"
           style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }}
@@ -91,6 +363,10 @@ function SummaryModal({
     </div>
   )
 }
+
+// ─────────────────────────────────────────
+// SAVE FLASHCARD MODAL
+// ─────────────────────────────────────────
 
 function SaveFlashcardModal({
   doc,
@@ -107,7 +383,7 @@ function SaveFlashcardModal({
   onClose: () => void
   onSubmit: (payload: { title: string; folderId?: string }) => void
 }) {
-  const [title, setTitle] = useState(`Flashcard - ${doc.name}`)
+  const [title,    setTitle]    = useState(`Flashcard - ${doc.name}`)
   const [folderId, setFolderId] = useState('')
 
   return (
@@ -119,12 +395,8 @@ function SaveFlashcardModal({
       >
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="min-w-0">
-            <div className="text-[12px]" style={{ color: 'var(--text3)' }}>
-              Lưu vào Flashcard
-            </div>
-            <div className="text-[16px] font-semibold truncate" style={{ color: 'var(--text)' }}>
-              {doc.name}
-            </div>
+            <div className="text-[12px]" style={{ color: 'var(--text3)' }}>Lưu vào Flashcard</div>
+            <div className="text-[16px] font-semibold truncate" style={{ color: 'var(--text)' }}>{doc.name}</div>
           </div>
           <button
             onClick={onClose}
@@ -137,9 +409,7 @@ function SaveFlashcardModal({
 
         <div className="grid gap-3">
           <div>
-            <p className="text-[12px] mb-2" style={{ color: 'var(--text3)' }}>
-              Tên bộ flashcard
-            </p>
+            <p className="text-[12px] mb-2" style={{ color: 'var(--text3)' }}>Tên bộ flashcard</p>
             <input
               value={title}
               onChange={e => setTitle(e.target.value)}
@@ -148,11 +418,8 @@ function SaveFlashcardModal({
               placeholder="Nhập tên bộ thẻ"
             />
           </div>
-
           <div>
-            <p className="text-[12px] mb-2" style={{ color: 'var(--text3)' }}>
-              Folder
-            </p>
+            <p className="text-[12px] mb-2" style={{ color: 'var(--text3)' }}>Folder</p>
             <select
               value={folderId}
               onChange={e => setFolderId(e.target.value)}
@@ -161,13 +428,10 @@ function SaveFlashcardModal({
             >
               <option value="">Không chọn folder</option>
               {folders.map(folder => (
-                <option key={folder.id} value={folder.id}>
-                  {folder.name}
-                </option>
+                <option key={folder.id} value={folder.id}>{folder.name}</option>
               ))}
             </select>
           </div>
-
           <div
             className="rounded-2xl border p-4 text-[13px]"
             style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
@@ -205,6 +469,10 @@ function SaveFlashcardModal({
   )
 }
 
+// ─────────────────────────────────────────
+// FLASHCARD MODAL
+// ─────────────────────────────────────────
+
 function FlashcardModal({
   cards,
   onClose,
@@ -214,7 +482,7 @@ function FlashcardModal({
   onClose: () => void
   onSave?: () => void
 }) {
-  const [idx, setIdx] = useState(0)
+  const [idx,     setIdx]     = useState(0)
   const [flipped, setFlipped] = useState(false)
   const card = cards[idx]
 
@@ -255,10 +523,7 @@ function FlashcardModal({
 
         <div className="flex gap-2 mb-3">
           <button
-            onClick={() => {
-              setIdx(i => Math.max(0, i - 1))
-              setFlipped(false)
-            }}
+            onClick={() => { setIdx(i => Math.max(0, i - 1)); setFlipped(false) }}
             disabled={idx === 0}
             className="flex-1 h-10 rounded-xl border text-[13px] disabled:opacity-40"
             style={{ borderColor: 'var(--border)', color: 'var(--text2)', background: 'var(--bg3)' }}
@@ -266,10 +531,7 @@ function FlashcardModal({
             ← Trước
           </button>
           <button
-            onClick={() => {
-              setIdx(i => Math.min(cards.length - 1, i + 1))
-              setFlipped(false)
-            }}
+            onClick={() => { setIdx(i => Math.min(cards.length - 1, i + 1)); setFlipped(false) }}
             disabled={idx === cards.length - 1}
             className="flex-1 h-10 rounded-xl border text-[13px] disabled:opacity-40"
             style={{ borderColor: 'var(--border)', color: 'var(--text2)', background: 'var(--bg3)' }}
@@ -293,11 +555,15 @@ function FlashcardModal({
   )
 }
 
+// ─────────────────────────────────────────
+// QUIZ MODAL
+// ─────────────────────────────────────────
+
 function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose: () => void }) {
-  const [idx, setIdx] = useState(0)
+  const [idx,      setIdx]      = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
-  const [score, setScore] = useState(0)
-  const [done, setDone] = useState(false)
+  const [score,    setScore]    = useState(0)
+  const [done,     setDone]     = useState(false)
   const q = questions[idx]
 
   const pick = (i: number) => {
@@ -341,7 +607,9 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
               {score}/{questions.length}
             </div>
             <p className="text-[13px]" style={{ color: 'var(--text2)' }}>
-              {score === questions.length ? 'Xuất sắc! Bạn trả lời đúng tất cả!' : `Bạn trả lời đúng ${score} câu`}
+              {score === questions.length
+                ? 'Xuất sắc! Bạn trả lời đúng tất cả!'
+                : `Bạn trả lời đúng ${score} câu`}
             </p>
             <button
               onClick={onClose}
@@ -356,7 +624,6 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
             <p className="text-[14px] leading-relaxed mb-4" style={{ color: 'var(--text)' }}>
               {q.question}
             </p>
-
             <div className="space-y-2 mb-4">
               {q.options.map((opt, i) => (
                 <button
@@ -364,30 +631,9 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
                   onClick={() => pick(i)}
                   className="w-full text-left px-3 py-3 rounded-xl text-[13px] border transition-all"
                   style={{
-                    borderColor:
-                      selected === null
-                        ? 'var(--border)'
-                        : i === q.correctIndex
-                          ? '#22c55e'
-                          : selected === i
-                            ? '#ef4444'
-                            : 'var(--border)',
-                    background:
-                      selected === null
-                        ? 'var(--bg3)'
-                        : i === q.correctIndex
-                          ? 'rgba(34,197,94,.10)'
-                          : selected === i
-                            ? 'rgba(239,68,68,.10)'
-                            : 'var(--bg3)',
-                    color:
-                      selected === null
-                        ? 'var(--text)'
-                        : i === q.correctIndex
-                          ? '#22c55e'
-                          : selected === i
-                            ? '#ef4444'
-                            : 'var(--text3)',
+                    borderColor: selected === null ? 'var(--border)' : i === q.correctIndex ? '#22c55e' : selected === i ? '#ef4444' : 'var(--border)',
+                    background:  selected === null ? 'var(--bg3)'    : i === q.correctIndex ? 'rgba(34,197,94,.10)' : selected === i ? 'rgba(239,68,68,.10)' : 'var(--bg3)',
+                    color:       selected === null ? 'var(--text)'   : i === q.correctIndex ? '#22c55e' : selected === i ? '#ef4444' : 'var(--text3)',
                   }}
                 >
                   <span className="font-mono mr-2 text-[11px]">{String.fromCharCode(65 + i)}.</span>
@@ -395,7 +641,6 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
                 </button>
               ))}
             </div>
-
             {selected !== null && (
               <div
                 className="rounded-xl p-3 mb-3 text-[12px] leading-relaxed border"
@@ -405,7 +650,6 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
                 {q.explanation}
               </div>
             )}
-
             {selected !== null && (
               <button
                 onClick={next}
@@ -421,6 +665,10 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
     </div>
   )
 }
+
+// ─────────────────────────────────────────
+// CHAT DOC MODAL
+// ─────────────────────────────────────────
 
 function ChatDocModal({
   doc,
@@ -448,12 +696,8 @@ function ChatDocModal({
       >
         <div className="flex items-center justify-between mb-4 gap-3">
           <div className="min-w-0">
-            <p className="text-[12px]" style={{ color: 'var(--text3)' }}>
-              Hỏi đáp với tài liệu
-            </p>
-            <p className="text-[15px] font-medium truncate" style={{ color: 'var(--text)' }}>
-              {doc.name}
-            </p>
+            <p className="text-[12px]" style={{ color: 'var(--text3)' }}>Hỏi đáp với tài liệu</p>
+            <p className="text-[15px] font-medium truncate" style={{ color: 'var(--text)' }}>{doc.name}</p>
           </div>
           <button
             onClick={onClose}
@@ -463,28 +707,27 @@ function ChatDocModal({
             <X size={16} />
           </button>
         </div>
-
         <textarea
           value={input}
           onChange={e => onChangeInput(e.target.value)}
           placeholder="Nhập câu hỏi về tài liệu..."
           className="w-full min-h-[96px] px-4 py-3 rounded-2xl outline-none text-[14px] resize-none"
-          style={{
-            background: 'var(--bg3)',
-            border: '1px solid var(--border)',
-            color: 'var(--text)',
+          style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) onSend()
           }}
         />
-
+        <p className="text-[11px] mt-1 mb-2" style={{ color: 'var(--text3)' }}>
+          Ctrl+Enter để gửi
+        </p>
         <button
           onClick={onSend}
           disabled={loading || !input.trim()}
-          className="w-full h-10 mt-3 rounded-xl text-[13px] font-medium disabled:opacity-60"
+          className="w-full h-10 rounded-xl text-[13px] font-medium disabled:opacity-60 flex items-center justify-center gap-2"
           style={{ background: '#6366f1', color: '#fff' }}
         >
-          {loading ? 'AI đang trả lời...' : 'Gửi câu hỏi'}
+          {loading ? <><Loader2 size={13} className="animate-spin" />AI đang trả lời...</> : 'Gửi câu hỏi'}
         </button>
-
         {answer && (
           <div
             className="rounded-2xl border p-4 mt-4 text-[14px] leading-7 whitespace-pre-wrap"
@@ -498,6 +741,10 @@ function ChatDocModal({
   )
 }
 
+// ─────────────────────────────────────────
+// DOC CARD
+// ─────────────────────────────────────────
+
 function DocCard({
   doc,
   onAction,
@@ -507,8 +754,8 @@ function DocCard({
   onAction: (type: string, doc: Document) => void
   onDelete: (doc: Document) => void
 }) {
-  const icon = DOC_ICON[doc.type] ?? DOC_ICON.OTHER
-  const uploader = doc.uploaderName?.split(' ').pop() || 'Unknown'
+  const icon        = DOC_ICON[doc.type] ?? DOC_ICON.OTHER
+  const uploader    = doc.uploaderName?.split(' ').pop() || 'Unknown'
   const sourceLabel = doc.sourceType === 'CHAT' ? 'Từ chat' : 'Trên page'
 
   return (
@@ -523,7 +770,6 @@ function DocCard({
         >
           {icon.label}
         </div>
-
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-medium leading-snug truncate" style={{ color: 'var(--text)' }}>
             {doc.name}
@@ -539,12 +785,16 @@ function DocCard({
             {sourceLabel}
           </div>
         </div>
-
-        <button onClick={() => onDelete(doc)} className="p-1 rounded-lg transition-colors" style={{ color: '#ef4444' }}>
+        <button
+          onClick={() => onDelete(doc)}
+          className="p-1 rounded-lg transition-colors"
+          style={{ color: '#ef4444' }}
+        >
           <Trash2 size={14} />
         </button>
       </div>
 
+      {/* Open / Download */}
       <div className="grid grid-cols-2 gap-2 mb-2">
         <a
           href={resolveDocUrl(doc.fileUrl)}
@@ -556,7 +806,6 @@ function DocCard({
           <Eye size={13} />
           Mở file
         </a>
-
         <a
           href={resolveDocUrl(doc.fileUrl)}
           download
@@ -568,12 +817,13 @@ function DocCard({
         </a>
       </div>
 
+      {/* AI Actions */}
       <div className="grid grid-cols-2 gap-2">
         {[
-          { type: 'chat', icon: MessageSquare, label: 'Hỏi đáp AI' },
-          { type: 'flashcard', icon: Layers, label: 'Flashcard' },
-          { type: 'quiz', icon: HelpCircle, label: 'Tạo Quiz' },
-          { type: 'summarize', icon: AlignLeft, label: 'Tóm tắt' },
+          { type: 'chat',      icon: MessageSquare, label: 'Hỏi đáp AI' },
+          { type: 'flashcard', icon: Layers,        label: 'Flashcard'  },
+          { type: 'quiz',      icon: HelpCircle,    label: 'Tạo Quiz'   },
+          { type: 'summarize', icon: AlignLeft,     label: 'Tóm tắt'    },
         ].map(a => (
           <button
             key={a.type}
@@ -590,48 +840,64 @@ function DocCard({
   )
 }
 
+// ─────────────────────────────────────────
+// MAIN PAGE
+// ─────────────────────────────────────────
+
 export default function DocsPage() {
   const { groupId = '' } = useParams<{ groupId: string }>()
-  const qc = useQueryClient()
+  const qc        = useQueryClient()
   const fileInput = useRef<HTMLInputElement>(null)
 
+  // Upload state
   const [uploadPct, setUploadPct] = useState<number | null>(null)
-  const [flashcards, setFlashcards] = useState<Flashcard[] | null>(null)
-  const [flashcardDoc, setFlashcardDoc] = useState<Document | null>(null)
-  const [showSaveFlashcard, setShowSaveFlashcard] = useState(false)
-  const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null)
-  const [summaryDocName, setSummaryDocName] = useState('')
-  const [summaryText, setSummaryText] = useState('')
-  const [aiLoading, setAiLoading] = useState<string | null>(null)
-  const [chatDoc, setChatDoc] = useState<Document | null>(null)
-  const [chatInput, setChatInput] = useState('')
-  const [chatAnswer, setChatAnswer] = useState('')
-  const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState<(typeof DOC_TYPES)[number]>('ALL')
-  const [sourceFilter, setSourceFilter] = useState<(typeof SOURCE_TABS)[number]>('ALL')
 
+  // AI result state
+  const [flashcards,        setFlashcards]        = useState<Flashcard[] | null>(null)
+  const [flashcardDoc,      setFlashcardDoc]      = useState<Document | null>(null)
+  const [showSaveFlashcard, setShowSaveFlashcard] = useState(false)
+  const [quiz,              setQuiz]              = useState<QuizQuestion[] | null>(null)
+  const [summaryDocName,    setSummaryDocName]    = useState('')
+  const [summaryText,       setSummaryText]       = useState('')
+  const [aiLoading,         setAiLoading]         = useState<string | null>(null)
+
+  // Chat state
+  const [chatDoc,    setChatDoc]    = useState<Document | null>(null)
+  const [chatInput,  setChatInput]  = useState('')
+  const [chatAnswer, setChatAnswer] = useState('')
+
+  // Filter state
+  const [search,       setSearch]       = useState('')
+  const [typeFilter,   setTypeFilter]   = useState<typeof DOC_TYPES[number]>('ALL')
+  const [sourceFilter, setSourceFilter] = useState<typeof SOURCE_TABS[number]>('ALL')
+
+  // AI Options modal state
+  const [aiOptionsDoc,  setAiOptionsDoc]  = useState<Document | null>(null)
+  const [aiOptionsType, setAiOptionsType] = useState<'flashcard' | 'quiz' | 'summarize' | null>(null)
+
+  // ── Queries ─────────────────────────────────────────────────
   const { data: docs = [], isLoading } = useQuery({
     queryKey: ['docs', groupId],
-    queryFn: () => documentApi.list(groupId),
-    enabled: !!groupId,
+    queryFn:  () => documentApi.list(groupId),
+    enabled:  !!groupId,
   })
 
   const { data: folders = [] } = useQuery({
     queryKey: ['flashcard-folders'],
-    queryFn: () => flashcardApi.listFolders(),
+    queryFn:  () => flashcardApi.listFolders(),
   })
 
   const filteredDocs = useMemo(() => {
     const q = search.trim().toLowerCase()
-
     return docs.filter(doc => {
-      const okType = typeFilter === 'ALL' ? true : doc.type === typeFilter
+      const okType   = typeFilter   === 'ALL' ? true : doc.type === typeFilter
       const okSource = sourceFilter === 'ALL' ? true : (doc.sourceType || 'PAGE') === sourceFilter
       const okSearch = !q || doc.name?.toLowerCase().includes(q) || doc.uploaderName?.toLowerCase().includes(q)
       return okType && okSource && okSearch
     })
   }, [docs, search, typeFilter, sourceFilter])
 
+  // ── Mutations ────────────────────────────────────────────────
   const uploadMut = useMutation({
     mutationFn: (file: File) => documentApi.upload(groupId, file, p => setUploadPct(p)),
     onSuccess: () => {
@@ -651,59 +917,72 @@ export default function DocsPage() {
       qc.invalidateQueries({ queryKey: ['docs', groupId] })
       toast.success('Đã xoá tài liệu')
     },
-    onError: (e: any) => {
-      toast.error(e?.response?.data?.message ?? 'Không thể xoá tài liệu')
-    },
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Không thể xoá tài liệu'),
   })
 
   const saveFlashcardMut = useMutation({
-    mutationFn: (payload: { docId: string; title: string; folderId?: string; cards: { question: string; answer: string }[] }) =>
-      flashcardApi.saveFromDocument(payload),
+    mutationFn: (payload: {
+      docId: string
+      title: string
+      folderId?: string
+      cards: { question: string; answer: string }[]
+    }) => flashcardApi.saveFromDocument(payload),
     onSuccess: () => {
       toast.success('Đã lưu sang Flashcard')
       qc.invalidateQueries({ queryKey: ['flashcard-decks'] })
       setShowSaveFlashcard(false)
     },
-    onError: (e: any) => {
-      toast.error(e?.response?.data?.message ?? 'Không thể lưu flashcard')
-    },
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Không thể lưu flashcard'),
   })
 
+  // ── Handlers ─────────────────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error('File tối đa 50MB')
-      return
-    }
+    if (file.size > 50 * 1024 * 1024) { toast.error('File tối đa 50MB'); return }
     uploadMut.mutate(file)
     e.target.value = ''
   }
 
-  const handleAction = async (type: string, doc: Document) => {
+  const handleAction = (type: string, doc: Document) => {
     if (type === 'chat') {
       setChatDoc(doc)
       setChatAnswer('')
       setChatInput('')
       return
     }
+    setAiOptionsDoc(doc)
+    setAiOptionsType(type as 'flashcard' | 'quiz' | 'summarize')
+  }
 
-    setAiLoading(`${type}-${doc.id}`)
+  const handleAiSubmit = async (opts: Record<string, string | number>) => {
+    if (!aiOptionsDoc || !aiOptionsType) return
+    const doc = aiOptionsDoc
+
+    setAiLoading(`${aiOptionsType}-${doc.id}`)
     try {
-      if (type === 'flashcard') {
-        const cards = await documentApi.generateFlashcards(doc.id)
-        setFlashcards(cards)
-        setFlashcardDoc(doc)
-      } else if (type === 'quiz') {
-        const qs = await documentApi.generateQuiz(doc.id)
-        setQuiz(qs)
-      } else if (type === 'summarize') {
-        const { summary } = await documentApi.summarize(doc.id)
+      if (aiOptionsType === 'summarize') {
+        const summary = await backendSummary(doc, String(opts.style), String(opts.length))
         setSummaryDocName(doc.name)
         setSummaryText(summary)
+        setAiOptionsDoc(null)
+        setAiOptionsType(null)
+
+      } else if (aiOptionsType === 'flashcard') {
+        const cards = await backendFlashcard(doc, String(opts.card_type), Number(opts.num_cards))
+        setFlashcards(cards)
+        setFlashcardDoc(doc)
+        setAiOptionsDoc(null)
+        setAiOptionsType(null)
+
+      } else if (aiOptionsType === 'quiz') {
+        const questions = await backendQuiz(doc, String(opts.bloom_level), Number(opts.num_questions))
+        setQuiz(questions)
+        setAiOptionsDoc(null)
+        setAiOptionsType(null)
       }
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'AI đang bận, thử lại sau')
+      toast.error(e?.message ?? 'Backend AI lỗi, thử lại sau')
     } finally {
       setAiLoading(null)
     }
@@ -713,24 +992,29 @@ export default function DocsPage() {
     if (!chatDoc || !chatInput.trim()) return
     setAiLoading('chat')
     try {
-      const { answer } = await documentApi.chatWithDoc(chatDoc.id, chatInput)
+      const answer = await backendChat(chatDoc, chatInput)
       setChatAnswer(answer)
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'Lỗi kết nối AI')
+      toast.error(e?.message ?? 'Lỗi kết nối AI')
     } finally {
       setAiLoading(null)
     }
   }
 
+  // ── Render ───────────────────────────────────────────────────
   return (
     <div className="page-enter max-w-6xl">
+      {/* ── Header / Filters ── */}
       <div
         className="rounded-3xl border p-5 mb-5"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
       >
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-[18px] font-semibold tracking-tight flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <h1
+              className="text-[18px] font-semibold tracking-tight flex items-center gap-2"
+              style={{ color: 'var(--text)' }}
+            >
               <Files size={18} className="text-indigo-400" />
               Tài liệu nhóm
             </h1>
@@ -744,7 +1028,7 @@ export default function DocsPage() {
               ref={fileInput}
               type="file"
               className="hidden"
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.csv,.xls,.xlsx,.txt,.jpg,.jpeg,.png"
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.csv,.xls,.xlsx,.txt,.md,.jpg,.jpeg,.png"
               onChange={handleFileChange}
             />
             <button
@@ -754,20 +1038,15 @@ export default function DocsPage() {
               style={{ background: '#6366f1', color: '#fff' }}
             >
               {uploadMut.isPending ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  {uploadPct ?? 0}%
-                </>
+                <><Loader2 size={14} className="animate-spin" />{uploadPct ?? 0}%</>
               ) : (
-                <>
-                  <Upload size={14} />
-                  Upload tài liệu
-                </>
+                <><Upload size={14} />Upload tài liệu</>
               )}
             </button>
           </div>
         </div>
 
+        {/* Search */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 mt-4">
           <div
             className="h-11 rounded-2xl border flex items-center px-3 gap-2"
@@ -783,6 +1062,7 @@ export default function DocsPage() {
             />
           </div>
 
+          {/* Type filter */}
           <div className="flex items-center gap-2 flex-wrap">
             <div className="inline-flex items-center gap-1 text-[12px]" style={{ color: 'var(--text3)' }}>
               <Filter size={14} />
@@ -794,9 +1074,9 @@ export default function DocsPage() {
                 onClick={() => setTypeFilter(type)}
                 className="px-3 h-9 rounded-xl text-[12px] font-medium border"
                 style={{
-                  background: typeFilter === type ? 'rgba(99,102,241,.12)' : 'var(--bg3)',
-                  borderColor: typeFilter === type ? 'rgba(99,102,241,.25)' : 'var(--border)',
-                  color: typeFilter === type ? '#818cf8' : 'var(--text2)',
+                  background:   typeFilter === type ? 'rgba(99,102,241,.12)' : 'var(--bg3)',
+                  borderColor:  typeFilter === type ? 'rgba(99,102,241,.25)' : 'var(--border)',
+                  color:        typeFilter === type ? '#818cf8'              : 'var(--text2)',
                 }}
               >
                 {type === 'ALL' ? 'Tất cả' : type}
@@ -805,6 +1085,7 @@ export default function DocsPage() {
           </div>
         </div>
 
+        {/* Source filter */}
         <div className="flex items-center gap-2 flex-wrap mt-3">
           <div className="inline-flex items-center gap-1 text-[12px]" style={{ color: 'var(--text3)' }}>
             <FileText size={14} />
@@ -816,9 +1097,9 @@ export default function DocsPage() {
               onClick={() => setSourceFilter(tab)}
               className="px-3 h-9 rounded-xl text-[12px] font-medium border"
               style={{
-                background: sourceFilter === tab ? 'rgba(99,102,241,.12)' : 'var(--bg3)',
+                background:  sourceFilter === tab ? 'rgba(99,102,241,.12)' : 'var(--bg3)',
                 borderColor: sourceFilter === tab ? 'rgba(99,102,241,.25)' : 'var(--border)',
-                color: sourceFilter === tab ? '#818cf8' : 'var(--text2)',
+                color:       sourceFilter === tab ? '#818cf8'              : 'var(--text2)',
               }}
             >
               {tab === 'ALL' ? 'Tất cả' : tab === 'PAGE' ? 'Trên page' : 'Qua chat'}
@@ -832,6 +1113,7 @@ export default function DocsPage() {
         </div>
       </div>
 
+      {/* ── Doc Grid ── */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => (
@@ -862,14 +1144,11 @@ export default function DocsPage() {
                   <Loader2 size={22} className="animate-spin text-indigo-400" />
                 </div>
               )}
-
               <DocCard
                 doc={doc}
                 onAction={handleAction}
                 onDelete={docItem => {
-                  if (window.confirm(`Xoá tài liệu "${docItem.name}"?`)) {
-                    deleteMut.mutate(docItem)
-                  }
+                  if (window.confirm(`Xoá tài liệu "${docItem.name}"?`)) deleteMut.mutate(docItem)
                 }}
               />
             </div>
@@ -877,6 +1156,18 @@ export default function DocsPage() {
         </div>
       )}
 
+      {/* ── AI Options Modal ── */}
+      {aiOptionsDoc && aiOptionsType && (
+        <AiOptionsModal
+          type={aiOptionsType}
+          doc={aiOptionsDoc}
+          loading={!!aiLoading}
+          onClose={() => { setAiOptionsDoc(null); setAiOptionsType(null) }}
+          onSubmit={handleAiSubmit}
+        />
+      )}
+
+      {/* ── Chat Modal ── */}
       {chatDoc && (
         <ChatDocModal
           doc={chatDoc}
@@ -885,36 +1176,29 @@ export default function DocsPage() {
           loading={aiLoading === 'chat'}
           onChangeInput={setChatInput}
           onSend={sendChatQuestion}
-          onClose={() => {
-            setChatDoc(null)
-            setChatAnswer('')
-            setChatInput('')
-          }}
+          onClose={() => { setChatDoc(null); setChatAnswer(''); setChatInput('') }}
         />
       )}
 
+      {/* ── Summary Modal ── */}
       {summaryText && (
         <SummaryModal
           docName={summaryDocName}
           summary={summaryText}
-          onClose={() => {
-            setSummaryDocName('')
-            setSummaryText('')
-          }}
+          onClose={() => { setSummaryDocName(''); setSummaryText('') }}
         />
       )}
 
+      {/* ── Flashcard Modal ── */}
       {flashcards && (
         <FlashcardModal
           cards={flashcards}
-          onClose={() => {
-            setFlashcards(null)
-            setFlashcardDoc(null)
-          }}
+          onClose={() => { setFlashcards(null); setFlashcardDoc(null) }}
           onSave={flashcardDoc ? () => setShowSaveFlashcard(true) : undefined}
         />
       )}
 
+      {/* ── Save Flashcard Modal ── */}
       {showSaveFlashcard && flashcards && flashcardDoc && (
         <SaveFlashcardModal
           doc={flashcardDoc}
@@ -927,15 +1211,13 @@ export default function DocsPage() {
               docId: flashcardDoc.id,
               title,
               folderId,
-              cards: flashcards.map(card => ({
-                question: card.question,
-                answer: card.answer,
-              })),
+              cards: flashcards.map(card => ({ question: card.question, answer: card.answer })),
             })
           }
         />
       )}
 
+      {/* ── Quiz Modal ── */}
       {quiz && <QuizModal questions={quiz} onClose={() => setQuiz(null)} />}
     </div>
   )
