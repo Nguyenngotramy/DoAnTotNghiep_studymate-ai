@@ -39,6 +39,22 @@ public class User {
     @Builder.Default
     private boolean locked = false;
 
+    /** Khóa tạm thời — hết hạn thì tự mở (trừ khóa vĩnh viễn). */
+    private Instant lockedUntil;
+
+    @Builder.Default
+    private boolean permanentlyBanned = false;
+
+    /** Đã từng bị khóa tạm do đủ ngưỡng cảnh cáo mức tương ứng — lần sau → vĩnh viễn. */
+    @Builder.Default
+    private boolean reminderDisciplineApplied = false;
+
+    @Builder.Default
+    private boolean warningDisciplineApplied = false;
+
+    @Builder.Default
+    private boolean severeDisciplineApplied = false;
+
     @Builder.Default
     private int xp = 0;
 
@@ -78,6 +94,17 @@ public class User {
     // Danh sách bài viết user đã ẩn khỏi feed cá nhân
     @Builder.Default
     private List<String> hiddenPostIds = new ArrayList<>();
+
+    // ── Gói thành viên ───────────────────────────────────────────
+    @Builder.Default
+    private MembershipTier membershipTier = MembershipTier.MEMBER;
+
+    /** Hết hạn gói SILVER/GOLD */
+    private Instant membershipExpiresAt;
+
+    // ── Balance (số dư tài khoản) ────────────────────────────────
+    @Builder.Default
+    private long balance = 0;
 
     // ── Settings (notification prefs, theme...) ──────────────────
     private Object settings;

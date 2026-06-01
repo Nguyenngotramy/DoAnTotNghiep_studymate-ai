@@ -1,6 +1,7 @@
 package com.studymate.controller;
 
 import com.studymate.dto.*;
+import com.studymate.dto.request.PostAiCheckRequest;
 import com.studymate.dto.request.PostRequest;
 import com.studymate.repository.PostRepository;
 import com.studymate.repository.UserRepository;
@@ -45,6 +46,20 @@ public class PostController {
     @GetMapping("/trending-tags")
     public ResponseEntity<?> trendingTags() {
         return ResponseEntity.ok(ApiResponse.ok(postService.getTrendingTags()));
+    }
+
+    @GetMapping("/tags")
+    public ResponseEntity<?> tags(@RequestParam(required = false, defaultValue = "") String search) {
+        return ResponseEntity.ok(ApiResponse.ok(postService.searchTags(search)));
+    }
+
+    @PostMapping("/ai-check")
+    public ResponseEntity<?> aiCheck(@RequestBody PostAiCheckRequest req) {
+        try {
+            return ResponseEntity.ok(ApiResponse.ok(postService.aiCheck(req)));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.error("AI đang bận, bạn vẫn có thể đăng bài để hệ thống kiểm duyệt sau"));
+        }
     }
 
     @GetMapping("/saved")
@@ -115,9 +130,79 @@ public class PostController {
                 postService.addComment(id, auth.getName(), user.getFullName(), body.get("content"))));
     }
 
+    @PostMapping("/{id}/comments/{commentId}/reply")
+    public ResponseEntity<?> replyComment(@PathVariable String id, @PathVariable String commentId, Authentication auth,
+                                           @RequestBody Map<String, String> body) {
+        var user = userRepo.findById(auth.getName()).orElseThrow();
+        return ResponseEntity.ok(ApiResponse.ok(
+                postService.replyComment(id, commentId, auth.getName(), user.getFullName(), body.get("content"))));
+    }
+
+    @DeleteMapping("/{id}/comments/{commentId}")
+    public ResponseEntity<?> deleteComment(@PathVariable String id, @PathVariable String commentId, Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                postService.deleteComment(id, commentId, auth.getName())));
+    }
+
+    @PatchMapping("/{id}/comments/{commentId}")
+    public ResponseEntity<?> editComment(@PathVariable String id, @PathVariable String commentId, Authentication auth,
+                                         @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                postService.editComment(id, commentId, auth.getName(), body.get("content"))));
+    }
+
+    @PostMapping("/{id}/share")
+    public ResponseEntity<?> sharePost(
+            @PathVariable String id,
+            Authentication auth,
+            @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                postService.sharePost(
+                        id,
+                        auth.getName(),
+                        body.get("targetType"),
+                        body.get("targetUserId"),
+                        body.get("targetGroupId"),
+                        body.get("message")
+                ),
+                "Đã chia sẻ bài viết thành công"
+        ));
+    }
+
+    @GetMapping("/{id}/shares")
+    public ResponseEntity<?> getShares(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(postService.getShares(id)));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable String id, Authentication auth) {
         postService.delete(id, auth.getName());
         return ResponseEntity.ok(ApiResponse.ok(null, "Đã xoá bài viết"));
+    }
+
+    @PostMapping("/{id}/report")
+    public ResponseEntity<?> report(@PathVariable String id, Authentication auth, @RequestBody Map<String, String> body) {
+        var user = userRepo.findById(auth.getName()).orElseThrow();
+        String reasonType = body.get("reasonType");
+        String reasonText = body.get("reasonText");
+        return ResponseEntity.ok(ApiResponse.ok(
+                postService.reportPost(id, auth.getName(), user.getFullName(), reasonType, reasonText),
+                "Báo cáo bài viết thành công"
+        ));
+    }
+
+    @PostMapping("/{id}/resubmit")
+    public ResponseEntity<?> resubmit(@PathVariable String id, Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                postService.resubmitPost(id, auth.getName()),
+                "Đã gửi lại bài viết để AI duyệt lại"
+        ));
+    }
+
+    @GetMapping("/my-pending")
+    public ResponseEntity<?> myPending(Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                postRepo.findRevisionPostsByAuthor(auth.getName())
+        ));
     }
 }

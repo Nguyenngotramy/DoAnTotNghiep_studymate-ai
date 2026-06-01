@@ -10,7 +10,8 @@ import com.studymate.repository.PredictRecordRepository;
 import com.studymate.repository.UserRepository;
 import com.studymate.service.AdminService;
 import com.studymate.service.AuthService;
-import com.studymate.service.NotificationService;
+import com.studymate.service.UserAccountLockService;
+import com.studymate.service.UserWarningDisciplineService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
@@ -28,9 +29,10 @@ public class AdminController {
     private final UserRepository userRepo;
     private final GroupRepository groupRepo;
     private final PredictRecordRepository predictRepo;
-    private final NotificationService notifService;
     private final AdminService adminService;
     private final AuthService authService;
+    private final UserAccountLockService accountLockService;
+    private final UserWarningDisciplineService warningDisciplineService;
 
     @GetMapping("/dashboard")
     public ResponseEntity<?> dashboard() {
@@ -168,9 +170,11 @@ public class AdminController {
     @GetMapping("/users")
     public ResponseEntity<?> users(
             @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String search
     ) {
-        PageRequest pr = PageRequest.of(page, 20, Sort.by("createdAt").descending());
+        int safeSize = Math.min(Math.max(size, 1), 10000);
+        PageRequest pr = PageRequest.of(page, safeSize, Sort.by("createdAt").descending());
         Page<User> result;
 
         if (search != null && !search.isBlank()) {
@@ -181,15 +185,51 @@ public class AdminController {
                             || (u.getStudentCode() != null && u.getStudentCode().toLowerCase().contains(q)))
                     .collect(Collectors.toList());
 
-            int start = page * 20;
-            int end = Math.min(start + 20, filtered.size());
+            int start = page * safeSize;
+            int end = Math.min(start + safeSize, filtered.size());
             List<User> pageContent = (start < filtered.size()) ? filtered.subList(start, end) : List.of();
             result = new PageImpl<>(pageContent, pr, filtered.size());
         } else {
             result = userRepo.findAll(pr);
         }
 
-        return ResponseEntity.ok(ApiResponse.ok(PageResponse.of(result)));
+        List<String> userIds = result.getContent().stream().map(User::getId).toList();
+        Map<String, UserWarningDisciplineService.WarningCounts> warningCounts =
+                warningDisciplineService.countWarningsByUserIds(userIds);
+
+        List<Map<String, Object>> rows = result.getContent().stream()
+                .map(u -> toAdminUserRow(u, warningCounts.get(u.getId())))
+                .toList();
+
+        Page<Map<String, Object>> mapped = new PageImpl<>(rows, pr, result.getTotalElements());
+        return ResponseEntity.ok(ApiResponse.ok(PageResponse.of(mapped)));
+    }
+
+    private Map<String, Object> toAdminUserRow(User u, UserWarningDisciplineService.WarningCounts warnings) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("id", u.getId());
+        row.put("email", u.getEmail());
+        row.put("fullName", u.getFullName());
+        row.put("studentCode", u.getStudentCode());
+        row.put("avatar", u.getAvatar());
+        row.put("role", u.getRole() != null ? u.getRole().name() : "USER");
+        row.put("userType", u.getUserType());
+        row.put("locked", u.isLocked());
+        row.put("permanentlyBanned", u.isPermanentlyBanned());
+        row.put("lockedUntil", u.getLockedUntil());
+        row.put("createdAt", u.getCreatedAt());
+        row.put("xp", u.getXp());
+        row.put("streak", u.getStreak());
+
+        UserWarningDisciplineService.WarningCounts wc = warnings != null
+                ? warnings
+                : new UserWarningDisciplineService.WarningCounts(0, 0, 0);
+        row.put("warningCounts", wc.toMap());
+        row.put("warningReminderCount", wc.reminder());
+        row.put("warningLevelCount", wc.warning());
+        row.put("warningSevereCount", wc.severe());
+        row.put("warningTotalCount", wc.reminder() + wc.warning() + wc.severe());
+        return row;
     }
 
     @DeleteMapping("/users/{id}")
@@ -209,11 +249,8 @@ public class AdminController {
 
     @PostMapping("/users/{id}/unlock")
     public ResponseEntity<?> unlock(@PathVariable String id) {
-        userRepo.findById(id).ifPresent(u -> {
-            u.setLocked(false);
-            userRepo.save(u);
-        });
-        return ResponseEntity.ok(ApiResponse.ok(null, "Đã mở khoá"));
+        userRepo.findById(id).ifPresent(u -> accountLockService.adminUnlock(u));
+        return ResponseEntity.ok(ApiResponse.ok(null, "Đã mở khoá tài khoản"));
     }
 
     @PostMapping("/users/{id}/reset-password")
@@ -308,13 +345,6 @@ public class AdminController {
         data.put("page", page);
 
         return ResponseEntity.ok(ApiResponse.ok(data));
-    }
-
-    @PostMapping("/notifications/broadcast")
-    public ResponseEntity<?> broadcast(@RequestBody Map<String, String> body) {
-        List<String> ids = userRepo.findAll().stream().map(User::getId).toList();
-        notifService.broadcast(ids, body.get("title"), body.get("body"));
-        return ResponseEntity.ok(ApiResponse.ok(null, "Đã gửi thông báo đến " + ids.size() + " người dùng"));
     }
 
     @GetMapping("/documents")

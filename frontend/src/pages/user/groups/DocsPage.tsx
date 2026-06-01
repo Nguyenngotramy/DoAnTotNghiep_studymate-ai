@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { documentApi, flashcardApi } from '@/api/services'
-import type { Document, Flashcard, QuizQuestion, FlashcardFolder } from '@/types'
+import { documentApi, flashcardApi, quizApi } from '@/api/services'
+import type { Document, Flashcard, QuizQuestion, FlashcardFolder, QuizFolder } from '@/types'
 import {
   Upload,
   Trash2,
@@ -205,6 +205,120 @@ function SaveFlashcardModal({
   )
 }
 
+function SaveQuizModal({
+  doc,
+  questions,
+  folders,
+  loading,
+  onClose,
+  onSubmit,
+}: {
+  doc: Document
+  questions: QuizQuestion[]
+  folders: QuizFolder[]
+  loading: boolean
+  onClose: () => void
+  onSubmit: (payload: { title: string; folderId?: string }) => void
+}) {
+  const [title, setTitle] = useState(`Quiz - ${doc.name}`)
+  const [folderId, setFolderId] = useState('')
+
+  return (
+    <div className="fixed inset-0 bg-black/65 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-xl rounded-3xl border p-5"
+        style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <div className="text-[12px]" style={{ color: 'var(--text3)' }}>
+              Lưu vào Quiz
+            </div>
+            <div className="text-[16px] font-semibold truncate" style={{ color: 'var(--text)' }}>
+              {doc.name}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="grid gap-3">
+          <div>
+            <p className="text-[12px] mb-2" style={{ color: 'var(--text3)' }}>
+              Tên bộ quiz
+            </p>
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="w-full h-11 rounded-xl px-4 outline-none"
+              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              placeholder="Nhập tên bộ quiz"
+            />
+          </div>
+
+          <div>
+            <p className="text-[12px] mb-2" style={{ color: 'var(--text3)' }}>
+              Folder
+            </p>
+            <select
+              value={folderId}
+              onChange={e => setFolderId(e.target.value)}
+              className="w-full h-11 rounded-xl px-4 outline-none"
+              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+            >
+              <option value="">Không chọn folder</option>
+              {folders.map(folder => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div
+            className="rounded-2xl border p-4 text-[13px]"
+            style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <HelpCircle size={14} className="text-indigo-400" />
+              <span>Số câu hỏi sẽ lưu: <strong style={{ color: 'var(--text)' }}>{questions.length}</strong></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Folder size={14} style={{ color: 'var(--text3)' }} />
+              <span>Nguồn: tạo từ tài liệu nhóm</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={onClose}
+            className="flex-1 h-11 rounded-xl border text-[13px] font-medium"
+            style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
+          >
+            Huỷ
+          </button>
+          <button
+            onClick={() => onSubmit({ title, folderId: folderId || undefined })}
+            disabled={loading || !title.trim()}
+            className="flex-1 h-11 rounded-xl text-[13px] font-medium disabled:opacity-60"
+            style={{ background: '#6366f1', color: '#fff' }}
+          >
+            {loading ? 'Đang lưu...' : 'Lưu vào Quiz'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 function FlashcardModal({
   cards,
   onClose,
@@ -293,7 +407,15 @@ function FlashcardModal({
   )
 }
 
-function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose: () => void }) {
+function QuizModal({
+  questions,
+  onClose,
+  onSave,
+}: {
+  questions: QuizQuestion[]
+  onClose: () => void
+  onSave?: () => void
+}) {
   const [idx, setIdx] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
   const [score, setScore] = useState(0)
@@ -343,13 +465,25 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
             <p className="text-[13px]" style={{ color: 'var(--text2)' }}>
               {score === questions.length ? 'Xuất sắc! Bạn trả lời đúng tất cả!' : `Bạn trả lời đúng ${score} câu`}
             </p>
-            <button
-              onClick={onClose}
-              className="mt-5 px-5 h-10 rounded-xl text-[13px] font-medium"
-              style={{ background: '#6366f1', color: '#fff' }}
-            >
-              Đóng
-            </button>
+            <div className="flex gap-2 mt-5">
+              {onSave && (
+                <button
+                  onClick={onSave}
+                  className="flex-1 h-10 rounded-xl text-[13px] font-medium flex items-center justify-center gap-2"
+                  style={{ background: '#6366f1', color: '#fff' }}
+                >
+                  <Save size={14} />
+                  Lưu vào Quiz
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="flex-1 h-10 rounded-xl text-[13px] font-medium"
+                style={{ background: onSave ? 'var(--bg3)' : '#6366f1', color: onSave ? 'var(--text2)' : '#fff', border: onSave ? '1px solid var(--border)' : 'none' }}
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -413,6 +547,17 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
                 style={{ background: '#6366f1', color: '#fff' }}
               >
                 {idx < questions.length - 1 ? 'Câu tiếp theo →' : 'Xem kết quả'}
+              </button>
+            )}
+
+            {onSave && (
+              <button
+                onClick={onSave}
+                className="w-full h-10 mt-2 rounded-xl text-[13px] font-medium flex items-center justify-center gap-2"
+                style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)' }}
+              >
+                <Save size={14} />
+                Lưu vào Quiz
               </button>
             )}
           </>
@@ -600,6 +745,8 @@ export default function DocsPage() {
   const [flashcardDoc, setFlashcardDoc] = useState<Document | null>(null)
   const [showSaveFlashcard, setShowSaveFlashcard] = useState(false)
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null)
+  const [quizDoc, setQuizDoc] = useState<Document | null>(null)
+  const [showSaveQuiz, setShowSaveQuiz] = useState(false)
   const [summaryDocName, setSummaryDocName] = useState('')
   const [summaryText, setSummaryText] = useState('')
   const [aiLoading, setAiLoading] = useState<string | null>(null)
@@ -619,6 +766,11 @@ export default function DocsPage() {
   const { data: folders = [] } = useQuery({
     queryKey: ['flashcard-folders'],
     queryFn: () => flashcardApi.listFolders(),
+  })
+
+  const { data: quizFolders = [] } = useQuery({
+    queryKey: ['quiz-folders'],
+    queryFn: () => quizApi.listFolders(),
   })
 
   const filteredDocs = useMemo(() => {
@@ -669,6 +821,28 @@ export default function DocsPage() {
     },
   })
 
+  const saveQuizMut = useMutation({
+    mutationFn: (payload: {
+      docId: string
+      title: string
+      folderId?: string
+      questions: {
+        question: string
+        options: string[]
+        correctIndex: number
+        explanation: string
+      }[]
+    }) => quizApi.saveFromDocument(payload),
+    onSuccess: () => {
+      toast.success('Đã lưu sang Quiz')
+      qc.invalidateQueries({ queryKey: ['quiz-sets'] })
+      setShowSaveQuiz(false)
+    },
+    onError: (e: any) => {
+      toast.error(e?.response?.data?.message ?? 'Không thể lưu quiz')
+    },
+  })
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -697,6 +871,7 @@ export default function DocsPage() {
       } else if (type === 'quiz') {
         const qs = await documentApi.generateQuiz(doc.id)
         setQuiz(qs)
+        setQuizDoc(doc)
       } else if (type === 'summarize') {
         const { summary } = await documentApi.summarize(doc.id)
         setSummaryDocName(doc.name)
@@ -936,7 +1111,39 @@ export default function DocsPage() {
         />
       )}
 
-      {quiz && <QuizModal questions={quiz} onClose={() => setQuiz(null)} />}
+      {quiz && (
+        <QuizModal
+          questions={quiz}
+          onClose={() => {
+            setQuiz(null)
+            setQuizDoc(null)
+          }}
+          onSave={quizDoc ? () => setShowSaveQuiz(true) : undefined}
+        />
+      )}
+
+      {showSaveQuiz && quiz && quizDoc && (
+        <SaveQuizModal
+          doc={quizDoc}
+          questions={quiz}
+          folders={quizFolders}
+          loading={saveQuizMut.isPending}
+          onClose={() => setShowSaveQuiz(false)}
+          onSubmit={({ title, folderId }) =>
+            saveQuizMut.mutate({
+              docId: quizDoc.id,
+              title,
+              folderId,
+              questions: quiz.map(q => ({
+                question: q.question,
+                options: q.options,
+                correctIndex: q.correctIndex,
+                explanation: q.explanation,
+              })),
+            })
+          }
+        />
+      )}
     </div>
   )
 }

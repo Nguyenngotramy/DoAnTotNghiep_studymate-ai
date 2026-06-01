@@ -602,4 +602,107 @@ public class TaskService {
             return null;
         }
     }
+
+    // =========================
+    // PROJECT-BASED TASKS
+    // =========================
+
+    public List<Task> getByProject(String groupId, String projectId) {
+        return taskRepo.findByGroupIdAndProjectIdOrderByCreatedAtDesc(groupId, projectId);
+    }
+
+    public Task createProjectTask(String groupId, String projectId, String userId, TaskRequest req) {
+        String assigneeId = blankToNull(req.getAssigneeId());
+        String assigneeName = findUserFullName(assigneeId);
+        String creatorName = findUserFullName(userId);
+
+        Task task = Task.builder()
+                .groupId(groupId)
+                .projectId(projectId)
+                .personal(false)
+                .title(req.getTitle())
+                .description(req.getDescription())
+                .status(defaultStatus(req.getStatus()))
+                .priority(defaultPriority(req.getPriority()))
+                .label(req.getLabel())
+                .labelColor(defaultLabelColor(req.getLabelColor()))
+                .assigneeId(assigneeId)
+                .assigneeName(assigneeName)
+                .deadline(req.getDeadline())
+                .createdById(userId)
+                .createdByName(creatorName)
+                .build();
+
+        Task saved = taskRepo.save(task);
+
+        if (assigneeId != null && !assigneeId.equals(userId)) {
+            notifService.send(
+                    assigneeId,
+                    "Bạn được giao task mới",
+                    "Task: " + req.getTitle(),
+                    "TASK_ASSIGNED",
+                    "/groups/" + groupId + "/projects/" + projectId + "/kanban"
+            );
+        }
+
+        return saved;
+    }
+
+    public Task updateProjectTask(String groupId, String projectId, String taskId, String userId, TaskRequest req) {
+        Task task = taskRepo.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy task"));
+
+        if (!task.getGroupId().equals(groupId) || !task.getProjectId().equals(projectId)) {
+            throw new RuntimeException("Task không thuộc dự án này");
+        }
+
+        String assigneeId = blankToNull(req.getAssigneeId());
+
+        task.setTitle(req.getTitle());
+        task.setDescription(req.getDescription());
+        task.setStatus(defaultStatus(req.getStatus()));
+        task.setPriority(defaultPriority(req.getPriority()));
+        task.setLabel(req.getLabel());
+        task.setLabelColor(defaultLabelColor(req.getLabelColor()));
+        task.setAssigneeId(assigneeId);
+        task.setAssigneeName(findUserFullName(assigneeId));
+        task.setDeadline(req.getDeadline());
+
+        Task saved = taskRepo.save(task);
+
+        if (assigneeId != null && !assigneeId.equals(userId)) {
+            notifService.send(
+                    assigneeId,
+                    "Task của bạn vừa được cập nhật",
+                    "Task: " + req.getTitle(),
+                    "TASK_UPDATED",
+                    "/groups/" + groupId + "/projects/" + projectId + "/kanban"
+            );
+        }
+
+        return saved;
+    }
+
+    public Task updateProjectTaskStatus(String groupId, String projectId, String taskId, Task.Status status) {
+        Task task = taskRepo.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy task"));
+
+        if (!task.getGroupId().equals(groupId) || !task.getProjectId().equals(projectId)) {
+            throw new RuntimeException("Task không thuộc dự án này");
+        }
+
+        task.setStatus(status);
+        return taskRepo.save(task);
+    }
+
+    public void deleteProjectTask(String groupId, String projectId, String taskId) {
+        Task task = taskRepo.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy task"));
+
+        if (!task.getGroupId().equals(groupId) || !task.getProjectId().equals(projectId)) {
+            throw new RuntimeException("Task không thuộc dự án này");
+        }
+
+        taskRepo.delete(task);
+    }
 }

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminApi } from '@/api/services'
 import { Search, Lock, Unlock, Users, Eye, KeyRound } from 'lucide-react'
-import { initials } from '@/utils/helpers'
+import UserAvatar from '@/components/UserAvatar'
 import toast from 'react-hot-toast'
 
 type FilterKey = 'ALL' | 'ACTIVE' | 'LOCKED' | 'WEAK'
@@ -59,8 +59,8 @@ export default function AdminUsers() {
 
   const filteredUsers = useMemo(() => {
     return allUsers.filter((u: any) => {
-      if (filter === 'ACTIVE') return !u.locked
-      if (filter === 'LOCKED') return !!u.locked
+      if (filter === 'ACTIVE') return !u.locked && !u.permanentlyBanned
+      if (filter === 'LOCKED') return !!u.locked || !!u.permanentlyBanned
       if (filter === 'WEAK') return weakIds.has(u.id)
       return true
     })
@@ -79,6 +79,38 @@ export default function AdminUsers() {
       default:
         return 'Khác'
     }
+  }
+
+  const WarningCountsCell = ({ u }: { u: any }) => {
+    const r = u.warningReminderCount ?? 0
+    const w = u.warningLevelCount ?? 0
+    const s = u.warningSevereCount ?? 0
+    const total = r + w + s
+    const weak = weakIds.has(u.id)
+
+    const pill = (label: string, count: number, max: number, color: string) => (
+      <span
+        key={label}
+        className={`text-[9.5px] font-semibold px-1.5 py-0.5 rounded ${color}`}
+        title={`${label}: ${count}/${max} lần cảnh cáo`}
+      >
+        {label} {count}/{max}
+      </span>
+    )
+
+    return (
+      <div className="flex flex-col gap-1 min-w-[88px]">
+        {weak && (
+          <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 w-fit">
+            Học yếu
+          </span>
+        )}
+        {pill('Nhẹ', r, 5, r >= 5 ? 'bg-red-500/20 text-red-400' : r > 0 ? 'bg-zinc-500/15 text-zinc-400' : 'bg-white/5 text-[#5a5a6e]')}
+        {pill('TB', w, 3, w >= 3 ? 'bg-red-500/20 text-red-400' : w > 0 ? 'bg-amber-500/15 text-amber-400' : 'bg-white/5 text-[#5a5a6e]')}
+        {pill('Nặng', s, 2, s >= 2 ? 'bg-red-500/20 text-red-400' : s > 0 ? 'bg-orange-500/15 text-orange-400' : 'bg-white/5 text-[#5a5a6e]')}
+        <span className="text-[9px] text-[#5a5a6e]">Tổng: {total} lần</span>
+      </div>
+    )
   }
 
   return (
@@ -143,9 +175,7 @@ export default function AdminUsers() {
               <tr key={u.id} className="border-b border-white/[.04] hover:bg-white/[.02] transition-colors">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-semibold text-white flex-shrink-0">
-                      {initials(u.fullName)}
-                    </div>
+                    <UserAvatar name={u.fullName} avatar={u.avatar} size={32} tier={u.membershipTier} />
                     <div>
                       <p className="text-[12px] font-medium text-[#f0f0f5]">{u.fullName}</p>
                       <p className="text-[10px] text-[#5a5a6e]">{u.email}</p>
@@ -172,19 +202,17 @@ export default function AdminUsers() {
                 </td>
 
                 <td className="px-4 py-3">
-                  <span className={`text-[11px] font-medium ${u.locked ? 'text-red-400' : 'text-green-400'}`}>
-                    {u.locked ? 'Đã khoá' : 'Hoạt động'}
-                  </span>
+                  {u.permanentlyBanned ? (
+                    <span className="text-[11px] font-medium text-red-400">Khóa vĩnh viễn</span>
+                  ) : u.locked ? (
+                    <span className="text-[11px] font-medium text-red-400">Đã khóa</span>
+                  ) : (
+                    <span className="text-[11px] font-medium text-green-400">Hoạt động</span>
+                  )}
                 </td>
 
                 <td className="px-4 py-3">
-                  {weakIds.has(u.id) ? (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
-                      Cần hỗ trợ
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-[#5a5a6e]">—</span>
-                  )}
+                  <WarningCountsCell u={u} />
                 </td>
 
                 <td className="px-4 py-3">
@@ -226,6 +254,31 @@ export default function AdminUsers() {
                         >
                           <KeyRound size={11} />
                           Reset mật khẩu
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const tier = prompt('Set membership tier (MEMBER/SILVER/GOLD):', u.membershipTier || 'MEMBER')
+                            if (tier && ['MEMBER', 'SILVER', 'GOLD'].includes(tier.toUpperCase())) {
+                              fetch(`${import.meta.env.VITE_API_URL}/admin/users/${u.id}/set-membership`, {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+                                },
+                                body: JSON.stringify({ tier: tier.toUpperCase(), period: 'MONTH' }),
+                              })
+                                .then(res => res.json())
+                                .then(() => {
+                                  toast.success('Đã cập nhật gói hội viên')
+                                  qc.invalidateQueries({ queryKey: ['admin-users'] })
+                                })
+                                .catch(() => toast.error('Lỗi khi cập nhật'))
+                            }
+                          }}
+                          className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-lg border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-all"
+                        >
+                          Set gói
                         </button>
                       </>
                     )}

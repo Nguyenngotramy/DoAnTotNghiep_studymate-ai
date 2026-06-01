@@ -11,6 +11,7 @@ export interface AvailableSlot {
 }
 
 export type UserType = 'STUDENT' | 'HIGHSCHOOL' | 'TEACHER' | 'OTHER'
+export type MembershipTier = 'MEMBER' | 'SILVER' | 'GOLD'
 
 export interface User {
   id: string
@@ -30,6 +31,21 @@ export interface User {
   postCount?: number
   friendCount?: number
   locked?: boolean
+  permanentlyBanned?: boolean
+  lockedUntil?: string
+  warningReminderCount?: number
+  warningLevelCount?: number
+  warningSevereCount?: number
+  warningTotalCount?: number
+  warningCounts?: {
+    reminder: number
+    warning: number
+    severe: number
+    total: number
+    reminderThreshold: number
+    warningThreshold: number
+    severeThreshold: number
+  }
   createdAt?: string
   updatedAt?: string
   lastActiveAt?: string
@@ -38,6 +54,8 @@ export interface User {
   strongSubjects?: string[]
   weakSubjects?: string[]
   goal?: string
+  membershipTier?: MembershipTier
+  membershipExpiresAt?: string
   availableSchedule?: AvailableSlot[]
 }
 
@@ -67,6 +85,25 @@ export interface Post {
   title: string
   content: string
   summary?: string
+  subject?: string
+  aiSummary?: string
+  aiSummaryStatus?: 'PENDING' | 'DONE' | 'FAILED'
+  aiSummaryUpdatedAt?: string
+  moderationStatus?: 'APPROVED' | 'PENDING_REVIEW' | 'NEEDS_REVISION' | 'REJECTED' | 'REMOVED'
+  moderationReason?: string
+  aiDetectedSubject?: string
+  aiTagConfidence?: number
+  aiSafetyStatus?: string
+  aiSafetyReason?: string
+  aiTagSuggestion?: string[]
+  mediaSafetyStatus?: 'SAFE' | 'WARNING' | 'VIOLATION' | 'UNKNOWN'
+  mediaSafetyReason?: string
+  flaggedImageUrls?: string[]
+  mediaModeratedAt?: string
+  reviewedByAdminId?: string
+  reviewedAt?: string
+  revisionMessage?: string
+  authorRevisionRequired?: boolean
   tags: string[]
   likesCount: number
   commentsCount: number
@@ -87,12 +124,59 @@ export interface Post {
 
 export interface PostComment {
   id: string
-  postId: string
+  postId?: string
   authorId: string
   authorName?: string
+  authorAvatar?: string
   author?: User
   content: string
   createdAt: string
+  updatedAt?: string
+  parentId?: string
+  deleted?: boolean
+  deletedBy?: string
+  deletedAt?: string
+}
+
+export interface PostAiCheckResult {
+  detectedSubject: string
+  suggestedTags: string[]
+  tagMatch: boolean
+  tagConfidence: number
+  safetyStatus: 'SAFE' | 'WARNING' | 'VIOLATION'
+  safetyReason: string
+  message: string
+}
+
+export interface PostReport {
+  id: string
+  reportId?: string
+  postId: string
+  reporterId: string
+  reporterName: string
+  reasonType: string
+  reasonText: string
+  status: 'OPEN' | 'REVIEWED' | 'DISMISSED'
+  reportStatus?: 'OPEN' | 'REVIEWED' | 'DISMISSED'
+  createdAt: string
+  reviewedAt?: string
+  reviewedByAdminId?: string
+  reviewNote?: string
+  post?: Post & {
+    aiSuggestedTags?: string[]
+  }
+}
+
+export interface UserWarning {
+  id: string
+  userId: string
+  postId?: string
+  level: 'REMINDER' | 'WARNING' | 'SEVERE'
+  reason: string
+  message: string
+  createdByAdminId: string
+  createdAt: string
+  acknowledged: boolean
 }
 
 export type MessageType = 'TEXT' | 'FILE' | 'IMAGE' | 'VIDEO' | 'AI' | 'SYSTEM'
@@ -543,10 +627,36 @@ export interface StudySubjectRecord {
 
 export interface StudyPrediction {
   predictedAverage: number
-  predictedClassification: string
-  confidenceLevel: 'low' | 'medium' | 'high'
-  weakSubjects: string[]
-  strongSubjects: string[]
-  suggestions: string[]
-  warnings: string[]
+  predictedLetterGrade: string
+  recommendedActions: string[]
+}
+
+export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ARCHIVED'
+
+export interface Project {
+  id: string
+  groupId: string
+  name: string
+  description: string
+  createdBy: string
+  status: ProjectStatus
+  startDate: string
+  endDate?: string
+  completedAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TaskProgress {
+  id: string
+  projectId: string
+  taskId: string
+  userId: string
+  completedAt: string
+}
+
+export interface ProjectProgressData {
+  project: Project
+  totalTasksCompleted: number
+  memberProgress: Record<string, number> // userId -> taskCount
 }

@@ -17,4 +17,7 @@ public interface GroupRepository extends MongoRepository<Group, String> {
     boolean existsByInviteCode(String code);
 
     List<Group> findByPublicVisibleTrueOrderByCreatedAtDesc();
+
+    @Query(value = "{ 'members': { $elemMatch: { 'userId': ?0, 'role': 'LEADER' } } }", count = true)
+    long countGroupsLedByUserId(String userId);
 }

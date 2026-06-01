@@ -79,6 +79,24 @@ function toInputDate(v?: string) {
   }
 }
 
+function toInstantString(value?: string) {
+  if (!value) return undefined
+
+  const cleanValue = String(value).trim()
+  if (!cleanValue) return undefined
+
+  // input type="date" sẽ trả về dạng YYYY-MM-DD.
+  // Backend dùng java.time.Instant nên phải gửi đủ datetime + timezone.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) {
+    return new Date(`${cleanValue}T23:59:00`).toISOString()
+  }
+
+  const date = new Date(cleanValue)
+  if (Number.isNaN(date.getTime())) return undefined
+
+  return date.toISOString()
+}
+
 function isOverdue(deadline?: string, status?: TaskStatus) {
   if (!deadline || status === 'DONE') return false
   const end = new Date(deadline).getTime()
@@ -218,7 +236,7 @@ export default function TaskDetailPage() {
         status,
         priority,
         assigneeId: assigneeId || undefined,
-        deadline: deadline || undefined,
+        deadline: toInstantString(deadline),
       } as Partial<Task>)
     },
     onSuccess: () => {

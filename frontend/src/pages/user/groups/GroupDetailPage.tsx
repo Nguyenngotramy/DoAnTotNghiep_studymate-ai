@@ -40,6 +40,7 @@ import { dmApi, documentApi, groupApi, groupPostApi, studyDriveApi } from '@/api
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import UserAvatar from '@/components/UserAvatar'
 
 type PostAttachment = {
   name: string
@@ -92,12 +93,6 @@ type GroupPost = {
 
 const BACKEND = 'http://localhost:8080/api'
 
-function resolveAvatarUrl(avatar?: string | null) {
-  if (!avatar) return ''
-  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar
-  return `${BACKEND}${avatar.startsWith('/') ? avatar : `/${avatar}`}`
-}
-
 function resolveMediaUrl(url?: string | null) {
   if (!url) return ''
   if (url.startsWith('http://') || url.startsWith('https://')) return url
@@ -139,46 +134,6 @@ function getAttachmentIcon(type?: string) {
     default:
       return <FolderOpen size={16} />
   }
-}
-
-function Avatar({
-  name,
-  avatar,
-  size = 40,
-}: {
-  name?: string
-  avatar?: string | null
-  size?: number
-}) {
-  const [imgError, setImgError] = useState(false)
-  const url = resolveAvatarUrl(avatar)
-
-  return (
-    <div
-      className="rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
-      style={{
-        width: size,
-        height: size,
-        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-      }}
-    >
-      {url && !imgError ? (
-        <img
-          src={url}
-          alt={name ?? 'avatar'}
-          className="w-full h-full object-cover"
-          onError={() => setImgError(true)}
-        />
-      ) : (
-        <span
-          className="text-white font-semibold"
-          style={{ fontSize: size <= 32 ? '11px' : '13px' }}
-        >
-          {initials(name)}
-        </span>
-      )}
-    </div>
-  )
 }
 
 function timeAgo(input?: string) {
@@ -873,7 +828,7 @@ export default function GroupDetailPage() {
                 style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
               >
                 <div className="flex items-start gap-3">
-                  <Avatar name={user?.fullName} avatar={user?.avatar} size={42} />
+                  <UserAvatar name={user?.fullName} avatar={user?.avatar} size={42} />
 
                   <div className="flex-1 relative">
                     <textarea
@@ -1138,7 +1093,7 @@ export default function GroupDetailPage() {
                       >
                         <div className="p-4">
                           <div className="flex items-start gap-3">
-                            <Avatar name={post.authorName} avatar={post.authorAvatar} size={42} />
+                            <UserAvatar name={post.authorName} avatar={post.authorAvatar} size={42} />
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-2">
@@ -1331,7 +1286,7 @@ export default function GroupDetailPage() {
                         <div className="px-4 pb-4 space-y-3">
                           {(post.comments ?? []).map(comment => (
                             <div key={comment.id} className="flex items-start gap-3">
-                              <Avatar name={comment.authorName} avatar={comment.authorAvatar} size={34} />
+                              <UserAvatar name={comment.authorName} avatar={comment.authorAvatar} size={34} />
                               <div className="flex-1 space-y-2">
                                 <div
                                   className="rounded-2xl px-3 py-2.5"
@@ -1361,7 +1316,7 @@ export default function GroupDetailPage() {
 
                                 {(comment.replies ?? []).map(reply => (
                                   <div key={reply.id} className="flex items-start gap-2 ml-4">
-                                    <Avatar name={reply.authorName} avatar={reply.authorAvatar} size={28} />
+                                    <UserAvatar name={reply.authorName} avatar={reply.authorAvatar} size={28} />
                                     <div
                                       className="rounded-2xl px-3 py-2 flex-1"
                                       style={{ background: 'rgba(255,255,255,.03)' }}
@@ -1425,7 +1380,7 @@ export default function GroupDetailPage() {
                           ))}
 
                           <div className="flex items-start gap-3 pt-1">
-                            <Avatar name={user?.fullName} avatar={user?.avatar} size={34} />
+                            <UserAvatar name={user?.fullName} avatar={user?.avatar} size={34} />
                             <div className="flex-1 flex items-center gap-2">
                               <input
                                 value={commentDrafts[post.id] ?? ''}
@@ -1496,7 +1451,7 @@ export default function GroupDetailPage() {
                       style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
                     >
                       <div className="flex items-start gap-3">
-                        <Avatar name={post.authorName} avatar={post.authorAvatar} size={42} />
+                        <UserAvatar name={post.authorName} avatar={post.authorAvatar} size={42} />
                         <div className="flex-1 min-w-0">
                           <div className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>
                             {post.authorName}
@@ -1625,7 +1580,7 @@ export default function GroupDetailPage() {
                       style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
                     >
                       <div className="flex items-start gap-3">
-                        <Avatar name={post.authorName} avatar={post.authorAvatar} size={42} />
+                        <UserAvatar name={post.authorName} avatar={post.authorAvatar} size={42} />
                         <div className="flex-1 min-w-0">
                           <div className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>
                             {post.authorName}
@@ -1713,7 +1668,7 @@ export default function GroupDetailPage() {
                         className="rounded-2xl border p-3 flex items-center gap-3"
                         style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
                       >
-                        <Avatar name={m.fullName} size={42} />
+                        <UserAvatar name={m.fullName} size={42} />
                         <div className="flex-1 min-w-0">
                           <div className="text-[14px] font-semibold truncate" style={{ color: 'var(--text)' }}>
                             {m.fullName}
@@ -1865,7 +1820,7 @@ export default function GroupDetailPage() {
             <div className="space-y-3">
               {(members ?? []).slice(0, 6).map((m: any) => (
                 <Link key={m.userId} to={`/u/${m.userId}`} className="flex items-center gap-3 hover:opacity-90">
-                  <Avatar name={m.fullName} size={38} />
+                  <UserAvatar name={m.fullName} size={38} />
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-medium truncate" style={{ color: 'var(--text)' }}>
                       {m.fullName}
@@ -1898,12 +1853,12 @@ export default function GroupDetailPage() {
               </Link>
 
               <Link
-                to={`/groups/${groupId}/kanban`}
+                to={`/groups/${groupId}/projects`}
                 className="h-11 rounded-2xl px-4 inline-flex items-center gap-3 w-full"
                 style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
               >
                 <KanbanSquare size={16} />
-                Xem bảng task
+                Dự án & Task
               </Link>
 
               <Link
@@ -2014,7 +1969,7 @@ export default function GroupDetailPage() {
                     style={{ borderColor: 'var(--border)', background: 'var(--bg3)' }}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <Avatar name={conv.user?.fullName} avatar={conv.user?.avatar} size={38} />
+                      <UserAvatar name={conv.user?.fullName} avatar={conv.user?.avatar} size={38} />
                       <div className="min-w-0">
                         <div className="text-[13px] font-medium truncate" style={{ color: 'var(--text)' }}>
                           {conv.user?.fullName ?? 'Người dùng'}

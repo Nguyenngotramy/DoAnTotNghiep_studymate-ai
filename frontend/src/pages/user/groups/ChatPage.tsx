@@ -33,6 +33,7 @@ import { chatApi, groupApi, taskApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import type { ChatAttachment, ChatMessage, ChatReplyPreview, GroupMember, Task, TaskStatus } from '@/types'
+import UserAvatar from '@/components/UserAvatar'
 
 const API_BASE = 'http://localhost:8080/api'
 const COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#22c55e', '#ec4899', '#f97316', '#3b82f6', '#8b5cf6']
@@ -99,45 +100,6 @@ function fmtDate(v?: string) {
 function isOverdue(deadline?: string, status?: TaskStatus) {
   if (!deadline || status === 'DONE') return false
   return new Date(deadline).getTime() < Date.now()
-}
-
-function Avatar({
-  name,
-  avatar,
-  size = 34,
-}: {
-  name?: string
-  avatar?: string | null
-  size?: number
-}) {
-  const [error, setError] = useState(false)
-  const url = resolveUrl(avatar)
-
-  if (url && !error) {
-    return (
-      <img
-        src={url}
-        alt={name ?? 'avatar'}
-        onError={() => setError(true)}
-        className="rounded-full object-cover flex-shrink-0"
-        style={{ width: size, height: size }}
-      />
-    )
-  }
-
-  return (
-    <div
-      className="rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size <= 28 ? 10 : 12,
-        background: name ? nameColor(name) : 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-      }}
-    >
-      {initials(name)}
-    </div>
-  )
 }
 
 function AttachmentCard({ att }: { att: ChatAttachment }) {
@@ -845,7 +807,7 @@ export default function ChatPage() {
                       }}
                     >
                       <div className={clsx(!showMeta && 'invisible')}>
-                        <Avatar name={msg.senderName} avatar={msg.senderAvatar} size={36} />
+                        <UserAvatar name={msg.senderName} avatar={msg.senderAvatar} size={36} />
                       </div>
 
                       <div
@@ -1478,7 +1440,7 @@ export default function ChatPage() {
                         }}
                       >
                         <div className="flex items-center gap-3">
-                          <Avatar
+                          <UserAvatar
                             name={member.fullName}
                             avatar={member.user?.avatar}
                             size={40}

@@ -2,6 +2,7 @@ package com.studymate.security;
 
 import com.studymate.model.User;
 import com.studymate.repository.UserRepository;
+import com.studymate.service.UserAccountLockService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,6 +26,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final UserAccountLockService accountLockService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
@@ -60,10 +62,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         User user = userOpt.get();
+        user = accountLockService.resolveLockState(user);
 
-        if (user.isLocked()) {
+        if (accountLockService.isAccessBlocked(user)) {
             SecurityContextHolder.clearContext();
-            unauthorized(res, "Tài khoản đã bị khoá");
+            unauthorized(res, accountLockService.blockMessage(user));
             return;
         }
 

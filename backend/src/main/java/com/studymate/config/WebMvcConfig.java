@@ -21,8 +21,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         String location = uploadPath.toUri().toString();
 
-        log.info("Serving uploads from: {}", location);
+        log.info("Serving legacy local uploads from: {}", location);
 
+        // Giữ lại để ảnh cũ trong /uploads vẫn đọc được trên máy đang có file.
+        // Ảnh mới sẽ dùng Cloudinary URL nên không còn phụ thuộc local uploads nữa.
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(location)
                 .setCachePeriod(3600);

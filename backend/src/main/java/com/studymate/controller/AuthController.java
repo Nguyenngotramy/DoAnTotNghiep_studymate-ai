@@ -7,6 +7,7 @@ import com.studymate.repository.UserRepository;
 import com.studymate.security.JwtService;
 import com.studymate.service.AuthService;
 import com.studymate.service.EmailService;
+import com.studymate.service.UserAccountLockService;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,6 +34,7 @@ public class AuthController {
     private final EmailService emailService;
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
+    private final UserAccountLockService accountLockService;
 
     @Value("${app.upload.dir:./uploads}")
     private String uploadDir;
@@ -101,9 +103,14 @@ public class AuthController {
         }
 
         User user = userOpt.get();
-        if (user.isLocked()) {
-            return ResponseEntity.status(401).body(ApiResponse.error("Tài khoản đã bị khoá"));
+        user = accountLockService.resolveLockState(user);
+        if (accountLockService.isAccessBlocked(user)) {
+            return ResponseEntity.status(401).body(ApiResponse.error(accountLockService.blockMessage(user)));
         }
+
+        System.out.println("[AUTH/ME] User ID: " + user.getId());
+        System.out.println("[AUTH/ME] Membership Tier: " + user.getMembershipTier());
+        System.out.println("[AUTH/ME] Membership Expires: " + user.getMembershipExpiresAt());
 
         return ResponseEntity.ok(ApiResponse.ok(user));
     }
@@ -250,9 +257,10 @@ public class AuthController {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
-        if (user.isLocked()) {
+        user = accountLockService.resolveLockState(user);
+        if (accountLockService.isAccessBlocked(user)) {
             return ResponseEntity.status(401)
-                    .body(ApiResponse.error("Tài khoản đã bị khoá"));
+                    .body(ApiResponse.error(accountLockService.blockMessage(user)));
         }
 
         return ResponseEntity.ok(ApiResponse.ok(Map.of(

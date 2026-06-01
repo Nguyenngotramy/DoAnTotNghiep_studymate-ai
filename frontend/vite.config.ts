@@ -14,7 +14,7 @@ export default defineConfig({
   },
 
   server: {
-    port: 5173,
+    port: 5174,
     proxy: {
       // REST API → Spring Boot backend
       '/api': {
@@ -48,15 +48,5 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     chunkSizeWarningLimit: 2000,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          react:  ['react', 'react-dom', 'react-router-dom'],
-          query:  ['@tanstack/react-query'],
-          ui:     ['lucide-react', 'clsx', 'react-hot-toast'],
-          stomp:  ['@stomp/stompjs', 'sockjs-client'],
-        },
-      },
-    },
   },
 })

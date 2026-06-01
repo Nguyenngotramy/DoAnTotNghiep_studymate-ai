@@ -21,8 +21,10 @@ public class GroupService {
     private final UserRepository userRepo;
     private final TaskRepository taskRepo;
     private final NotificationService notificationService;
+    private final MembershipQuotaService membershipQuotaService;
 
     public Group create(String userId, GroupRequest req) {
+        membershipQuotaService.assertCanCreateGroup(userId);
         User user = userRepo.findById(userId).orElseThrow();
 
         String code = generateCode();

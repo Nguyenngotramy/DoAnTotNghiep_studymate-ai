@@ -53,6 +53,11 @@ public class Group {
     @Builder.Default
     private List<JoinRequest> joinRequests = new ArrayList<>();
 
+    /**
+     * Reference to the currently active project for this group
+     */
+    private String activeProjectId;
+
     @CreatedDate
     private Instant createdAt;
 

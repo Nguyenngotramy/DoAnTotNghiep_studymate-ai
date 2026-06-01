@@ -21,6 +21,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder encoder;
     private final EmailService emailService;
+    private final UserAccountLockService accountLockService;
 
     public record AuthResponse(User user, String accessToken, String refreshToken) {}
 
@@ -49,8 +50,9 @@ public class AuthService {
         User user = userRepo.findByEmail(req.getEmail())
                 .orElseThrow(() -> new RuntimeException("Email hoặc mật khẩu không đúng"));
 
-        if (user.isLocked()) {
-            throw new RuntimeException("Tài khoản đã bị khoá");
+        user = accountLockService.resolveLockState(user);
+        if (accountLockService.isAccessBlocked(user)) {
+            throw new RuntimeException(accountLockService.blockMessage(user));
         }
 
         if (!encoder.matches(req.getPassword(), user.getPassword())) {
@@ -121,8 +123,9 @@ public class AuthService {
         if (existing.isPresent()) {
             User user = existing.get();
 
-            if (user.isLocked()) {
-                throw new RuntimeException("Tài khoản đã bị khoá");
+            user = accountLockService.resolveLockState(user);
+            if (accountLockService.isAccessBlocked(user)) {
+                throw new RuntimeException(accountLockService.blockMessage(user));
             }
 
             boolean changed = false;
@@ -168,8 +171,9 @@ public class AuthService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
-        if (user.isLocked()) {
-            throw new RuntimeException("Tài khoản đã bị khoá");
+        user = accountLockService.resolveLockState(user);
+        if (accountLockService.isAccessBlocked(user)) {
+            throw new RuntimeException(accountLockService.blockMessage(user));
         }
 
         user = ensureBannerDefaults(user);

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { postApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
+import UserAvatar from '@/components/UserAvatar'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
@@ -52,7 +53,8 @@ const AVATAR_COLORS = [
   '#8b5cf6',
 ]
 
-const BACKEND_URL = 'http://localhost:8080/api'
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/$/, '')
+const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api$/, '')
 
 function initials(n: string) {
   return (n ?? 'U')
@@ -69,33 +71,75 @@ function nameColor(name?: string) {
 
 function toMediaUrl(url?: string) {
   if (!url) return ''
+
+  const cleanUrl = String(url).trim().replaceAll('\\', '/')
+  if (!cleanUrl) return ''
+
   if (
-    url.startsWith('http://') ||
-    url.startsWith('https://') ||
-    url.startsWith('blob:') ||
-    url.startsWith('data:')
+    cleanUrl.startsWith('https://') ||
+    cleanUrl.startsWith('blob:') ||
+    cleanUrl.startsWith('data:')
   ) {
-    return url
+    return cleanUrl
   }
-  if (url.startsWith('/')) {
-    return `${BACKEND_URL}${url}`
+
+  if (cleanUrl.startsWith('http://localhost:8080/api')) {
+    return cleanUrl.replace('http://localhost:8080/api', API_BASE_URL)
   }
-  return `${BACKEND_URL}/uploads/${url}`
+
+  if (cleanUrl.startsWith('http://localhost:8080')) {
+    return cleanUrl.replace('http://localhost:8080', BACKEND_ORIGIN)
+  }
+
+  if (cleanUrl.startsWith('http://')) {
+    return cleanUrl
+  }
+
+  if (cleanUrl.startsWith('/api/')) {
+    return `${BACKEND_ORIGIN}${cleanUrl}`
+  }
+
+  if (cleanUrl.startsWith('/uploads/')) {
+    return `${API_BASE_URL}${cleanUrl}`
+  }
+
+  if (cleanUrl.startsWith('uploads/')) {
+    return `${API_BASE_URL}/${cleanUrl}`
+  }
+
+  return `${API_BASE_URL}/uploads/${cleanUrl}`
 }
 
 function normalizeUploadedUrl(url?: string) {
   if (!url) return ''
+
+  const cleanUrl = String(url).trim().replaceAll('\\', '/')
+  if (!cleanUrl) return ''
+
   if (
-    url.startsWith('http://') ||
-    url.startsWith('https://') ||
-    url.startsWith('data:')
+    cleanUrl.startsWith('https://') ||
+    cleanUrl.startsWith('data:')
   ) {
-    return url
+    return cleanUrl
   }
-  if (url.startsWith('/')) {
-    return url
+
+  if (cleanUrl.startsWith('http://localhost:8080/api')) {
+    return cleanUrl.replace('http://localhost:8080/api', API_BASE_URL)
   }
-  return `/uploads/${url}`
+
+  if (cleanUrl.startsWith('http://localhost:8080')) {
+    return cleanUrl.replace('http://localhost:8080', BACKEND_ORIGIN)
+  }
+
+  if (cleanUrl.startsWith('http://')) {
+    return cleanUrl
+  }
+
+  if (cleanUrl.startsWith('/')) {
+    return cleanUrl
+  }
+
+  return `/uploads/${cleanUrl}`
 }
 
 function extractVideoEmbed(url?: string) {
@@ -179,8 +223,8 @@ export default function CreatePostPage() {
         toast.error('Chỉ hỗ trợ file ảnh')
         continue
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Mỗi ảnh tối đa 5MB')
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Mỗi ảnh tối đa 10MB')
         continue
       }
 
@@ -194,13 +238,10 @@ export default function CreatePostPage() {
         const res = await postApi.uploadImage(file)
         const safeUrl = normalizeUploadedUrl(res.url)
         setImages(prev => prev.map(img => (img.url === tmpId ? { ...img, url: safeUrl } : img)))
-      } catch {
-        const reader = new FileReader()
-        reader.onload = e => {
-          const b64 = e.target?.result as string
-          setImages(prev => prev.map(img => (img.url === tmpId ? { ...img, url: b64 } : img)))
-        }
-        reader.readAsDataURL(file)
+      } catch (e: any) {
+        URL.revokeObjectURL(previewUrl)
+        setImages(prev => prev.filter(img => img.url !== tmpId))
+        toast.error(e?.response?.data?.message ?? 'Upload ảnh thất bại. Vui lòng thử lại.')
       } finally {
         setUploadingImg(false)
       }
@@ -227,19 +268,34 @@ export default function CreatePostPage() {
       return
     }
 
+    if (uploadingImg) {
+      toast.error('Vui lòng chờ ảnh upload xong')
+      return
+    }
+
     setSubmitting(true)
     try {
-      await postApi.create({
+      const imageUrls = images
+        .map(i => i.url)
+        .filter(u => !!u && !u.startsWith('blob:'))
+      const hasMedia = imageUrls.length > 0 || !!videoUrl.trim()
+
+      const created = await postApi.create({
         title: title.trim(),
         content: content.trim(),
+        subject: tags[0] || 'Khác',
         tags,
-        imageUrls: images
-          .map(i => i.url)
-          .filter(u => !!u && !u.startsWith('blob:')),
+        imageUrls,
         videoUrl: videoUrl.trim() || undefined,
       })
 
-      toast.success('Đăng bài thành công')
+      if (created.moderationStatus === 'PENDING_REVIEW' && hasMedia) {
+        toast.success('Bài viết có media cần được kiểm duyệt trước khi hiển thị.')
+      } else if (created.moderationStatus === 'REJECTED' || created.moderationStatus === 'REMOVED') {
+        toast.error(created.moderationReason || 'Bài viết không được duyệt.')
+      } else {
+        toast.success('Đăng bài thành công')
+      }
       navigate('/blog')
     } catch (e: any) {
       toast.error(e?.response?.data?.message ?? 'Lỗi khi đăng bài')
@@ -270,11 +326,11 @@ export default function CreatePostPage() {
 
         <button
           onClick={handleSubmit}
-          disabled={submitting || !canSubmit}
+          disabled={submitting || uploadingImg || !canSubmit}
           className="flex items-center gap-1.5 px-4 h-10 rounded-xl text-[12px] font-semibold bg-indigo-500 hover:bg-indigo-400 text-white transition-colors disabled:opacity-50"
         >
           {submitting ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-          {submitting ? 'Đang đăng...' : 'Đăng bài'}
+          {submitting ? 'Đang đăng...' : uploadingImg ? 'Đang upload ảnh...' : 'Đăng bài'}
         </button>
       </div>
 
@@ -284,12 +340,7 @@ export default function CreatePostPage() {
       >
         <div className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3">
-            <div
-              className="w-11 h-11 rounded-full flex items-center justify-center text-[12px] font-bold text-white"
-              style={{ background: avatarColor }}
-            >
-              {user ? initials(user.fullName) : 'U'}
-            </div>
+            <UserAvatar name={user?.fullName} avatar={user?.avatar} size={44} />
 
             <div>
               <p className="text-[13px] font-semibold" style={{ color: 'var(--text)' }}>
@@ -329,7 +380,14 @@ export default function CreatePostPage() {
                     images.length === 1 ? 'h-80' : 'h-48',
                   )}
                 >
-                  <img src={toMediaUrl(img.preview || img.url)} alt="" className="w-full h-full object-cover" />
+                  <img
+                    src={toMediaUrl(img.preview || img.url)}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onError={e => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
                   <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button
                       onClick={() => removeImage(i)}
@@ -421,7 +479,7 @@ export default function CreatePostPage() {
                   <input
                     value={videoUrl}
                     onChange={e => setVideoUrl(e.target.value)}
-                    placeholder="Dán link video YouTube / Drive / TikTok hoặc /uploads/video.mp4 ..."
+                    placeholder="Dán link video YouTube / Drive / TikTok hoặc Cloudinary video URL..."
                     className="flex-1 h-10 px-3 rounded-xl border text-[12px] outline-none"
                     style={{
                       background: 'var(--bg2)',
