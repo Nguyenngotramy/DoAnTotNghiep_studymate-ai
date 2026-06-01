@@ -1,8 +1,10 @@
 import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   timeout: 30_000,
   headers: { 'Content-Type': 'application/json' },
 })
@@ -39,14 +41,13 @@ const getTokenFromStorage = () => {
 
       if (token) return token
     } catch {
-      // ignore
+      // ignore invalid JSON
     }
   }
 
   return null
 }
 
-// ─── Request: attach access token ───────────────────────
 api.interceptors.request.use((config) => {
   const token = getTokenFromStorage()
 
@@ -57,7 +58,6 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// ─── Response: auto refresh on 401 ─────────────────────
 let isRefreshing = false
 
 let failedQueue: Array<{
@@ -104,7 +104,14 @@ api.interceptors.response.use(
       }
 
       try {
-        const { data } = await axios.post('/api/auth/refresh', { refreshToken })
+        const { data } = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          { refreshToken },
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 30_000,
+          },
+        )
 
         const newAccessToken =
           data?.data?.accessToken ||

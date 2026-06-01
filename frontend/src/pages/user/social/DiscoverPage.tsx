@@ -24,7 +24,7 @@ const SKILL_COLORS: Record<string, string> = {
 }
 
 const TABS = [
-  { id: 'trending', label: '🔥 Đang thịnh hành', icon: TrendingUp },
+  { id: 'trending', label: '🔥 Trending', icon: TrendingUp },
   { id: 'leaderboard', label: '🏆 Bảng xếp hạng', icon: Trophy },
   { id: 'groups', label: '👥 Nhóm công khai', icon: Users },
   { id: 'people', label: '👤 Gợi ý bạn học', icon: UserPlus },
@@ -395,7 +395,7 @@ export default function DiscoverPage() {
           <div className="col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>
-                🔥 Blog học tập đang thịnh hành
+                🔥 Bài viết nổi bật nhất tuần
               </h2>
               <button
                 onClick={() => navigate('/blog')}

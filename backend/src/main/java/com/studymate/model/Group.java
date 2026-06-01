@@ -53,17 +53,16 @@ public class Group {
     @Builder.Default
     private List<JoinRequest> joinRequests = new ArrayList<>();
 
+    /**
+     * Reference to the currently active project for this group
+     */
+    private String activeProjectId;
+
     @CreatedDate
     private Instant createdAt;
 
     @LastModifiedDate
     private Instant updatedAt;
-
-    @Transient
-    private Integer matchScore;
-
-    @Transient
-    private String matchReason;
 
     public int getMemberCount() {
         return members == null ? 0 : members.size();

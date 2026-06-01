@@ -1,33 +1,79 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import UserAvatar from '@/components/UserAvatar'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Users, MessageCircle, UserPlus, UserCheck, Clock,
-  Star, Search, TrendingUp, Loader2, RefreshCw
+  Users,
+  MessageCircle,
+  UserPlus,
+  UserCheck,
+  Clock,
+  Star,
+  Search,
+  TrendingUp,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react'
 import clsx from 'clsx'
 import toast from 'react-hot-toast'
 import { friendApi } from '@/api/services'
 import type { User, Friendship } from '@/types'
 
-const COLORS = ['#6366f1','#14b8a6','#f59e0b','#ec4899','#3b82f6','#22c55e','#f97316','#8b5cf6']
-const SKILL_COLORS: Record<string,string> = {
-  'Toán':'#6366f1','Tiếng Anh':'#ec4899','Lập trình':'#14b8a6','Vật lý':'#3b82f6',
-  'Hóa học':'#22c55e','Sinh học':'#10b981','Ngữ văn':'#f97316','AI/ML':'#8b5cf6','IELTS':'#f59e0b'
+type PendingFriendship = Friendship & {
+  direction?: 'INCOMING' | 'OUTGOING'
+  requester?: User
+  receiver?: User
+  otherUser?: User
+  otherUserId?: string
 }
 
-const BACKEND = 'http://localhost:8080/api'
+const COLORS = [
+  '#6366f1',
+  '#14b8a6',
+  '#f59e0b',
+  '#ec4899',
+  '#3b82f6',
+  '#22c55e',
+  '#f97316',
+  '#8b5cf6',
+]
+
+const SKILL_COLORS: Record<string, string> = {
+  Toán: '#6366f1',
+  'Tiếng Anh': '#ec4899',
+  'Lập trình': '#14b8a6',
+  'Vật lý': '#3b82f6',
+  'Hóa học': '#22c55e',
+  'Sinh học': '#10b981',
+  'Ngữ văn': '#f97316',
+  'AI/ML': '#8b5cf6',
+  IELTS: '#f59e0b',
+}
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+
 const toAbsUrl = (url?: string | null): string => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  return BACKEND + url
+  if (url.startsWith('/api')) return `http://localhost:8080${url}`
+  return `${API_BASE}${url}`
 }
 
-function ini(n: string) {
-  return (n ?? 'U').split(' ').map((w: string) => w[0]).join('').slice(-2).toUpperCase()
+function ini(name?: string) {
+  return (name || 'U')
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .slice(-2)
+    .toUpperCase()
 }
-function nameColor(name: string) {
-  return COLORS[(name?.charCodeAt(0) ?? 0) % COLORS.length]
+
+function nameColor(name?: string) {
+  return COLORS[((name || 'U').charCodeAt(0) || 0) % COLORS.length]
+}
+
+function safeText(value?: string | null, fallback = '') {
+  return value && value.trim() ? value : fallback
 }
 
 function Stars({ level }: { level: number }) {
@@ -53,14 +99,29 @@ function CardSkeleton() {
       style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
     >
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-12 h-12 rounded-full" style={{ background: 'rgba(255,255,255,.06)' }} />
+        <div
+          className="w-12 h-12 rounded-full"
+          style={{ background: 'rgba(255,255,255,.06)' }}
+        />
         <div className="flex-1 space-y-2">
-          <div className="h-3.5 w-32 rounded" style={{ background: 'rgba(255,255,255,.06)' }} />
-          <div className="h-2.5 w-24 rounded" style={{ background: 'rgba(255,255,255,.04)' }} />
+          <div
+            className="h-3.5 w-32 rounded"
+            style={{ background: 'rgba(255,255,255,.06)' }}
+          />
+          <div
+            className="h-2.5 w-24 rounded"
+            style={{ background: 'rgba(255,255,255,.04)' }}
+          />
         </div>
       </div>
-      <div className="h-2 w-full rounded mb-2" style={{ background: 'rgba(255,255,255,.04)' }} />
-      <div className="h-8 w-full rounded-xl" style={{ background: 'rgba(255,255,255,.04)' }} />
+      <div
+        className="h-2 w-full rounded mb-2"
+        style={{ background: 'rgba(255,255,255,.04)' }}
+      />
+      <div
+        className="h-8 w-full rounded-xl"
+        style={{ background: 'rgba(255,255,255,.04)' }}
+      />
     </div>
   )
 }
@@ -68,106 +129,198 @@ function CardSkeleton() {
 export default function FriendsPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
+
   const [tab, setTab] = useState<'suggest' | 'pending' | 'friends'>('suggest')
   const [search, setSearch] = useState('')
   const [added, setAdded] = useState<Set<string>>(new Set())
 
-  const { data: suggestions = [], isLoading: loadSuggest, refetch: refetchSuggest } =
-    useQuery({ queryKey: ['friends-suggestions'], queryFn: friendApi.suggestions, staleTime: 60000 })
+  const {
+    data: suggestions = [],
+    isLoading: loadSuggest,
+    refetch: refetchSuggest,
+  } = useQuery({
+    queryKey: ['friends-suggestions-full'],
+    queryFn: () => friendApi.suggestions('', 10000),
+    staleTime: 60_000,
+  })
 
-  const { data: pending = [], isLoading: loadPending } =
-    useQuery({ queryKey: ['friends-pending'], queryFn: friendApi.pending, staleTime: 30000 })
+  const {
+    data: pending = [],
+    isLoading: loadPending,
+  } = useQuery({
+    queryKey: ['friends-pending-full'],
+    queryFn: () => friendApi.pending(10000),
+    staleTime: 30_000,
+  })
 
-  const { data: friends = [], isLoading: loadFriends } =
-    useQuery({ queryKey: ['friends-list'], queryFn: friendApi.list, staleTime: 60000 })
+  const {
+    data: friends = [],
+    isLoading: loadFriends,
+  } = useQuery({
+    queryKey: ['friends-list-full'],
+    queryFn: () => friendApi.list('', 10000),
+    staleTime: 60_000,
+  })
 
   const sendReq = useMutation({
     mutationFn: (uid: string) => friendApi.send(uid),
     onSuccess: (_, uid) => {
-      setAdded(s => {
-        const n = new Set(s)
-        n.add(uid)
-        return n
+      setAdded(prev => {
+        const next = new Set(prev)
+        next.add(uid)
+        return next
       })
+
       toast.success('Đã gửi lời mời kết bạn!')
+
+      qc.invalidateQueries({ queryKey: ['friends-suggestions-full'] })
+      qc.invalidateQueries({ queryKey: ['friends-pending-full'] })
+      qc.invalidateQueries({ queryKey: ['friends-list-full'] })
     },
-    onError: () => toast.error('Không thể gửi lời mời!'),
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Không thể gửi lời mời!')
+    },
   })
 
   const acceptReq = useMutation({
     mutationFn: (uid: string) => friendApi.accept(uid),
     onSuccess: () => {
       toast.success('Đã chấp nhận!')
-      qc.invalidateQueries({ queryKey: ['friends-pending'] })
-      qc.invalidateQueries({ queryKey: ['friends-list'] })
+      qc.invalidateQueries({ queryKey: ['friends-pending-full'] })
+      qc.invalidateQueries({ queryKey: ['friends-list-full'] })
+      qc.invalidateQueries({ queryKey: ['friends-suggestions-full'] })
     },
-    onError: () => toast.error('Không thể chấp nhận!'),
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Không thể chấp nhận!')
+    },
   })
 
   const rejectReq = useMutation({
     mutationFn: (uid: string) => friendApi.reject(uid),
     onSuccess: () => {
       toast.success('Đã từ chối')
-      qc.invalidateQueries({ queryKey: ['friends-pending'] })
+      qc.invalidateQueries({ queryKey: ['friends-pending-full'] })
+      qc.invalidateQueries({ queryKey: ['friends-suggestions-full'] })
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Không thể từ chối!')
     },
   })
 
   const removeF = useMutation({
     mutationFn: (uid: string) => friendApi.remove(uid),
     onSuccess: () => {
-      toast.success('Đã hủy kết bạn')
-      qc.invalidateQueries({ queryKey: ['friends-list'] })
+      toast.success('Đã hủy kết bạn/lời mời')
+      qc.invalidateQueries({ queryKey: ['friends-list-full'] })
+      qc.invalidateQueries({ queryKey: ['friends-suggestions-full'] })
+      qc.invalidateQueries({ queryKey: ['friends-pending-full'] })
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Không thể hủy kết bạn/lời mời!')
     },
   })
 
-  const allLoadedPeople = [
-    ...(suggestions as User[]),
-    ...(friends as User[]),
-    ...(pending as Friendship[]).map(f => f.requester).filter(Boolean) as User[],
-  ].filter((u, index, arr) => arr.findIndex(x => x.id === u.id) === index)
+  const q = search.trim().toLowerCase()
 
-  const filtSuggest = (search ? allLoadedPeople : suggestions as User[]).filter(
-    u => !search || u.fullName.toLowerCase().includes(search.toLowerCase()),
-  )
-  const filtFriends = (friends as User[]).filter(
-    u => !search || u.fullName.toLowerCase().includes(search.toLowerCase()),
-  )
+  const filtSuggest = useMemo(() => {
+    return (suggestions as User[]).filter(user => {
+      if (!q) return true
+
+      const text = [
+        user.fullName,
+        user.email,
+        user.bio,
+        user.studentCode,
+        user.school,
+        ...(user.interests || []),
+        ...(user.strongSubjects || []),
+        ...(user.weakSubjects || []),
+        ...(user.skills || []).map(skill => skill.subject),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return text.includes(q)
+    })
+  }, [suggestions, q])
+
+  const filtFriends = useMemo(() => {
+    return (friends as User[]).filter(user => {
+      if (!q) return true
+
+      const text = [
+        user.fullName,
+        user.email,
+        user.bio,
+        user.studentCode,
+        user.school,
+        ...(user.interests || []),
+        ...(user.strongSubjects || []),
+        ...(user.weakSubjects || []),
+        ...(user.skills || []).map(skill => skill.subject),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return text.includes(q)
+    })
+  }, [friends, q])
 
   return (
     <div className="max-w-5xl mx-auto space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-[18px] font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
-            <Users size={18} className="text-indigo-400" /> Kết bạn
+          <h1
+            className="text-[18px] font-semibold flex items-center gap-2"
+            style={{ color: 'var(--text)' }}
+          >
+            <Users size={18} className="text-indigo-400" />
+            Kết bạn
           </h1>
           <p className="text-[12px] mt-0.5" style={{ color: 'var(--text3)' }}>
             Tìm bạn học phù hợp · Kết nối cộng đồng
           </p>
         </div>
-        <div className="flex items-center gap-3 text-[11px]" style={{ color: 'var(--text3)' }}>
-          <span className="flex items-center gap-1"><Users size={12} /> {(friends as User[]).length} bạn bè</span>
-          <span className="flex items-center gap-1"><Clock size={12} /> {(pending as Friendship[]).length} lời mời</span>
+
+        <div
+          className="flex items-center gap-3 text-[11px]"
+          style={{ color: 'var(--text3)' }}
+        >
+          <span className="flex items-center gap-1">
+            <Users size={12} />
+            {(friends as User[]).length} bạn bè
+          </span>
+
+          <span className="flex items-center gap-1">
+            <Clock size={12} />
+            {(pending as Friendship[]).length} lời mời
+          </span>
         </div>
       </div>
 
       <div
         className="flex gap-1 p-1 rounded-xl w-fit"
-        style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}
+        style={{
+          background: 'var(--bg3)',
+          border: '1px solid var(--border)',
+        }}
       >
-        {([
+        {[
           ['suggest', `Gợi ý (${(suggestions as User[]).length})`],
           ['pending', `Lời mời (${(pending as Friendship[]).length})`],
           ['friends', `Bạn bè (${(friends as User[]).length})`],
-        ] as const).map(([t, l]) => (
+        ].map(([key, label]) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={key}
+            onClick={() => setTab(key as 'suggest' | 'pending' | 'friends')}
             className={clsx(
               'px-4 py-2 rounded-lg text-[12px] font-medium transition-all',
-              tab === t ? '' : 'hover:text-[var(--text)]',
+              tab === key ? '' : 'hover:text-[var(--text)]',
             )}
             style={
-              tab === t
+              tab === key
                 ? {
                     background: 'var(--bg2)',
                     color: 'var(--text)',
@@ -176,7 +329,7 @@ export default function FriendsPage() {
                 : { color: 'var(--text3)' }
             }
           >
-            {l}
+            {label}
           </button>
         ))}
       </div>
@@ -186,13 +339,21 @@ export default function FriendsPage() {
           <div className="flex gap-3">
             <div
               className="flex items-center gap-2 flex-1 h-9 px-3 rounded-lg border"
-              style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
+              style={{
+                background: 'var(--bg3)',
+                borderColor: 'var(--border)',
+              }}
             >
-              <Search size={13} className="flex-shrink-0" style={{ color: 'var(--text3)' }} />
+              <Search
+                size={13}
+                className="flex-shrink-0"
+                style={{ color: 'var(--text3)' }}
+              />
+
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Tìm theo tên..."
+                placeholder="Tìm theo tên, email, kỹ năng, trường học..."
                 className="flex-1 bg-transparent text-[12px] outline-none"
                 style={{ color: 'var(--text)' }}
               />
@@ -201,23 +362,34 @@ export default function FriendsPage() {
             <button
               onClick={() => refetchSuggest()}
               className="px-3 h-9 rounded-lg border transition-all"
-              style={{ borderColor: 'var(--border)', color: 'var(--text3)' }}
+              style={{
+                borderColor: 'var(--border)',
+                color: 'var(--text3)',
+              }}
             >
               <RefreshCw size={13} />
             </button>
           </div>
 
           {loadSuggest ? (
-            <div className="grid grid-cols-2 gap-4">
-              {[...Array(4)].map((_, i) => <CardSkeleton key={i} />)}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <CardSkeleton key={i} />
+              ))}
             </div>
           ) : filtSuggest.length === 0 ? (
             <div
               className="text-center py-16 border rounded-xl"
-              style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+              style={{
+                background: 'var(--bg2)',
+                borderColor: 'var(--border)',
+              }}
             >
               <p className="text-3xl mb-3">🔍</p>
-              <p className="text-[14px] font-medium" style={{ color: 'var(--text)' }}>
+              <p
+                className="text-[14px] font-medium"
+                style={{ color: 'var(--text)' }}
+              >
                 Không tìm thấy ai phù hợp
               </p>
               <p className="text-[12px] mt-1" style={{ color: 'var(--text3)' }}>
@@ -225,96 +397,91 @@ export default function FriendsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {filtSuggest.map((u: User) => {
-                const color = nameColor(u.fullName)
-                const isAdded = added.has(u.id)
-                const uAvatar = toAbsUrl(u.avatar)
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filtSuggest.map(user => {
+                const isAdded = added.has(user.id)
 
                 return (
                   <div
-                    key={u.id}
+                    key={user.id}
                     className="border rounded-xl p-5 transition-all hover:-translate-y-0.5"
-                    style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+                    style={{
+                      background: 'var(--bg2)',
+                      borderColor: 'var(--border)',
+                    }}
                   >
                     <div className="flex items-start gap-3 mb-3">
-                      <div className="relative flex-shrink-0">
-                        {uAvatar ? (
-                          <img
-                            src={uAvatar}
-                            className="w-12 h-12 rounded-full object-cover cursor-pointer"
-                            onClick={() => navigate(`/u/${u.id}`)}
-                          />
-                        ) : (
-                          <div
-                            className="w-12 h-12 rounded-full flex items-center justify-center text-[14px] font-bold text-white cursor-pointer"
-                            style={{ background: color }}
-                            onClick={() => navigate(`/u/${u.id}`)}
-                          >
-                            {ini(u.fullName)}
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        type="button"
+                        className="relative flex-shrink-0 cursor-pointer"
+                        onClick={() => navigate(`/u/${user.id}`)}
+                      >
+                        <UserAvatar name={user.fullName} avatar={user.avatar} size={48} />
+                      </button>
 
                       <div className="flex-1 min-w-0">
                         <button
-                          onClick={() => navigate(`/u/${u.id}`)}
+                          onClick={() => navigate(`/u/${user.id}`)}
                           className="text-[14px] font-semibold hover:text-indigo-300 transition-colors block truncate text-left"
                           style={{ color: 'var(--text)' }}
                         >
-                          {u.fullName}
+                          {user.fullName}
                         </button>
-                        <p className="text-[11px] truncate" style={{ color: 'var(--text2)' }}>
-                          {u.bio ?? u.studentCode ?? 'Người dùng StudyMate'}
+
+                        <p
+                          className="text-[11px] truncate"
+                          style={{ color: 'var(--text2)' }}
+                        >
+                          {safeText(
+                            user.bio || user.studentCode,
+                            'Người dùng StudyMate',
+                          )}
                         </p>
-                        <div className="flex items-center gap-2 mt-0.5 text-[10px]" style={{ color: 'var(--text3)' }}>
-                          <span>{u.xp?.toLocaleString()} XP</span>
-                          {u.streak > 0 && <span>{u.streak}🔥</span>}
+
+                        <div
+                          className="flex items-center gap-2 mt-0.5 text-[10px]"
+                          style={{ color: 'var(--text3)' }}
+                        >
+                          <span>{(user.xp || 0).toLocaleString()} XP</span>
+                          {(user.streak || 0) > 0 && <span>{user.streak}🔥</span>}
                         </div>
                       </div>
                     </div>
 
-                    {(u.skills ?? []).length > 0 && (
+                    {(user.skills || []).length > 0 && (
                       <div className="flex gap-1.5 flex-wrap mb-3">
-                        {(u.skills ?? []).slice(0, 3).map(s => (
+                        {(user.skills || []).slice(0, 3).map(skill => (
                           <div
-                            key={s.subject}
+                            key={skill.subject}
                             className="flex items-center gap-1 px-2 py-1 rounded-lg"
                             style={{
-                              background: (SKILL_COLORS[s.subject] ?? '#6366f1') + '15',
-                              border: `0.5px solid ${(SKILL_COLORS[s.subject] ?? '#6366f1')}25`,
+                              background:
+                                (SKILL_COLORS[skill.subject] || '#6366f1') +
+                                '15',
+                              border: `0.5px solid ${
+                                (SKILL_COLORS[skill.subject] || '#6366f1') +
+                                '25'
+                              }`,
                             }}
                           >
                             <span
                               className="text-[10px] font-medium"
-                              style={{ color: SKILL_COLORS[s.subject] ?? '#818cf8' }}
+                              style={{
+                                color:
+                                  SKILL_COLORS[skill.subject] || '#818cf8',
+                              }}
                             >
-                              {s.subject}
+                              {skill.subject}
                             </span>
-                            <Stars level={s.level} />
+                            <Stars level={skill.level} />
                           </div>
                         ))}
                       </div>
                     )}
 
-                    {u.matchScore != null && (
-                      <div className="mb-3 rounded-xl border px-3 py-2"
-                        style={{ background: 'rgba(99,102,241,.07)', borderColor: 'rgba(99,102,241,.18)' }}>
-                        <div className="flex items-center justify-between text-[11px] mb-1">
-                          <span className="font-medium text-indigo-300">{u.matchScore}% phù hợp</span>
-                          <span style={{ color: 'var(--text3)' }}>
-                            {(u.commonSubjects ?? []).slice(0, 2).join(', ')}
-                          </span>
-                        </div>
-                        <p className="text-[11px]" style={{ color: 'var(--text2)' }}>
-                          {u.matchReason ?? 'Có điểm chung trong hồ sơ học tập'}
-                        </p>
-                      </div>
-                    )}
-
                     <div className="flex gap-2">
                       <button
-                        onClick={() => sendReq.mutate(u.id)}
+                        onClick={() => sendReq.mutate(user.id)}
                         disabled={isAdded || sendReq.isPending}
                         className={clsx(
                           'flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all flex items-center justify-center gap-1.5',
@@ -325,27 +492,35 @@ export default function FriendsPage() {
                       >
                         {isAdded ? (
                           <>
-                            <UserCheck size={13} /> Đã gửi
+                            <UserCheck size={13} />
+                            Đã gửi
                           </>
                         ) : (
                           <>
-                            <UserPlus size={13} /> Kết bạn
+                            <UserPlus size={13} />
+                            Kết bạn
                           </>
                         )}
                       </button>
 
                       <button
-                        onClick={() => navigate(`/inbox/${u.id}`)}
+                        onClick={() => navigate(`/inbox/${user.id}`)}
                         className="px-4 py-2 rounded-xl text-[12px] border transition-all"
-                        style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
+                        style={{
+                          borderColor: 'var(--border)',
+                          color: 'var(--text2)',
+                        }}
                       >
                         <MessageCircle size={13} />
                       </button>
 
                       <button
-                        onClick={() => navigate(`/u/${u.id}`)}
+                        onClick={() => navigate(`/u/${user.id}`)}
                         className="px-4 py-2 rounded-xl text-[12px] border transition-all"
-                        style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
+                        style={{
+                          borderColor: 'var(--border)',
+                          color: 'var(--text2)',
+                        }}
                       >
                         Trang
                       </button>
@@ -364,10 +539,13 @@ export default function FriendsPage() {
             <div className="flex justify-center py-12">
               <Loader2 size={24} className="animate-spin text-indigo-400" />
             </div>
-          ) : (pending as Friendship[]).length === 0 ? (
+          ) : (pending as PendingFriendship[]).length === 0 ? (
             <div
               className="text-center py-16 border rounded-xl"
-              style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+              style={{
+                background: 'var(--bg2)',
+                borderColor: 'var(--border)',
+              }}
             >
               <p className="text-3xl mb-3">✅</p>
               <p className="text-[14px]" style={{ color: 'var(--text2)' }}>
@@ -377,55 +555,77 @@ export default function FriendsPage() {
           ) : (
             <>
               <p className="text-[13px]" style={{ color: 'var(--text2)' }}>
-                {(pending as Friendship[]).length} người muốn kết bạn với bạn
+                {(pending as PendingFriendship[]).length} lời mời đang chờ
               </p>
 
-              {(pending as Friendship[]).map(f => {
-                const u = f.requester
-                const color = u ? nameColor(u.fullName) : '#6366f1'
-                const uAvatar = toAbsUrl(u?.avatar)
+              {(pending as PendingFriendship[]).map(friendship => {
+                const isIncoming = friendship.direction === 'INCOMING'
+                const targetUser =
+                  friendship.otherUser ||
+                  (isIncoming ? friendship.requester : friendship.receiver)
+
+                const targetUserId =
+                  friendship.otherUserId ||
+                  (isIncoming ? friendship.requesterId : friendship.receiverId)
 
                 return (
                   <div
-                    key={f.id}
+                    key={friendship.id}
                     className="border rounded-xl p-4 flex items-center gap-4"
-                    style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+                    style={{
+                      background: 'var(--bg2)',
+                      borderColor: 'var(--border)',
+                    }}
                   >
-                    {uAvatar ? (
-                      <img src={uAvatar} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
-                    ) : (
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-[14px] font-bold text-white flex-shrink-0"
-                        style={{ background: color }}
-                      >
-                        {ini(u?.fullName ?? '?')}
-                      </div>
-                    )}
+                    <UserAvatar name={targetUser?.fullName} avatar={targetUser?.avatar} size={48} />
 
-                    <div className="flex-1">
-                      <button
-                        onClick={() => navigate(`/u/${f.requesterId}`)}
-                        className="text-[14px] font-semibold hover:text-indigo-300 transition-colors block text-left"
-                        style={{ color: 'var(--text)' }}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => navigate(`/u/${targetUserId}`)}
+                          className="text-[14px] font-semibold hover:text-indigo-300 transition-colors block text-left truncate"
+                          style={{ color: 'var(--text)' }}
+                        >
+                          {targetUser?.fullName || 'Người dùng'}
+                        </button>
+
+                        <span
+                          className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                          style={{
+                            background: isIncoming
+                              ? 'rgba(99,102,241,.12)'
+                              : 'rgba(245,158,11,.12)',
+                            color: isIncoming ? '#6366f1' : '#f59e0b',
+                          }}
+                        >
+                          {isIncoming ? 'Họ gửi cho bạn' : 'Bạn đã gửi'}
+                        </span>
+                      </div>
+
+                      <p
+                        className="text-[11px] truncate mt-0.5"
+                        style={{ color: 'var(--text2)' }}
                       >
-                        {u?.fullName ?? 'Người dùng'}
-                      </button>
-                      <p className="text-[11px]" style={{ color: 'var(--text2)' }}>
-                        {u?.bio ?? ''}
+                        {isIncoming
+                          ? 'Người này đang chờ bạn chấp nhận lời mời.'
+                          : 'Đang chờ người này chấp nhận lời mời của bạn.'}
                       </p>
 
-                      {(u?.skills ?? []).length > 0 && (
-                        <div className="flex gap-1.5 mt-1.5">
-                          {(u!.skills!).slice(0, 3).map(s => (
+                      {(targetUser?.skills || []).length > 0 && (
+                        <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                          {(targetUser?.skills || []).slice(0, 3).map(skill => (
                             <span
-                              key={s.subject}
+                              key={skill.subject}
                               className="text-[10px] px-2 py-0.5 rounded-full font-medium"
                               style={{
-                                background: (SKILL_COLORS[s.subject] ?? '#6366f1') + '15',
-                                color: SKILL_COLORS[s.subject] ?? '#818cf8',
+                                background:
+                                  (SKILL_COLORS[skill.subject] || '#6366f1') +
+                                  '15',
+                                color:
+                                  SKILL_COLORS[skill.subject] || '#818cf8',
                               }}
                             >
-                              {s.subject}
+                              {skill.subject}
                             </span>
                           ))}
                         </div>
@@ -433,22 +633,45 @@ export default function FriendsPage() {
                     </div>
 
                     <div className="flex gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => acceptReq.mutate(f.requesterId)}
-                        disabled={acceptReq.isPending}
-                        className="px-4 py-2 rounded-xl text-[12px] font-semibold bg-indigo-500 hover:bg-indigo-400 text-white transition-all disabled:opacity-60"
-                      >
-                        {acceptReq.isPending ? <Loader2 size={12} className="animate-spin" /> : 'Chấp nhận'}
-                      </button>
+                      {isIncoming ? (
+                        <>
+                          <button
+                            onClick={() => acceptReq.mutate(friendship.requesterId)}
+                            disabled={acceptReq.isPending}
+                            className="px-4 py-2 rounded-xl text-[12px] font-semibold bg-indigo-500 hover:bg-indigo-400 text-white transition-all disabled:opacity-60"
+                          >
+                            {acceptReq.isPending ? (
+                              <Loader2 size={12} className="animate-spin" />
+                            ) : (
+                              'Chấp nhận'
+                            )}
+                          </button>
 
-                      <button
-                        onClick={() => rejectReq.mutate(f.requesterId)}
-                        disabled={rejectReq.isPending}
-                        className="px-4 py-2 rounded-xl text-[12px] border transition-all"
-                        style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
-                      >
-                        Từ chối
-                      </button>
+                          <button
+                            onClick={() => rejectReq.mutate(friendship.requesterId)}
+                            disabled={rejectReq.isPending}
+                            className="px-4 py-2 rounded-xl text-[12px] border transition-all disabled:opacity-60"
+                            style={{
+                              borderColor: 'var(--border)',
+                              color: 'var(--text2)',
+                            }}
+                          >
+                            Từ chối
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => removeF.mutate(friendship.receiverId)}
+                          disabled={removeF.isPending}
+                          className="px-4 py-2 rounded-xl text-[12px] border transition-all disabled:opacity-60"
+                          style={{
+                            borderColor: 'var(--border)',
+                            color: 'var(--text2)',
+                          }}
+                        >
+                          Hủy lời mời
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
@@ -462,9 +685,13 @@ export default function FriendsPage() {
         <div className="space-y-3">
           <div
             className="flex items-center gap-2 h-9 px-3 rounded-lg border max-w-xs"
-            style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
+            style={{
+              background: 'var(--bg3)',
+              borderColor: 'var(--border)',
+            }}
           >
             <Search size={13} style={{ color: 'var(--text3)' }} />
+
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -475,18 +702,24 @@ export default function FriendsPage() {
           </div>
 
           {loadFriends ? (
-            <div className="grid grid-cols-3 gap-4">
-              {[...Array(6)].map((_, i) => <CardSkeleton key={i} />)}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <CardSkeleton key={i} />
+              ))}
             </div>
           ) : filtFriends.length === 0 ? (
             <div
               className="text-center py-16 border rounded-xl"
-              style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+              style={{
+                background: 'var(--bg2)',
+                borderColor: 'var(--border)',
+              }}
             >
               <p className="text-3xl mb-3">👥</p>
               <p className="text-[14px]" style={{ color: 'var(--text2)' }}>
                 {search ? 'Không tìm thấy' : 'Bạn chưa có bạn bè nào'}
               </p>
+
               {!search && (
                 <button
                   onClick={() => setTab('suggest')}
@@ -497,69 +730,79 @@ export default function FriendsPage() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-4">
-              {filtFriends.map((u: User) => {
-                const color = nameColor(u.fullName)
-                const uAvatar = toAbsUrl(u.avatar)
-
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {filtFriends.map(user => {
                 return (
                   <div
-                    key={u.id}
+                    key={user.id}
                     className="border rounded-xl p-4 transition-all hover:-translate-y-0.5"
-                    style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+                    style={{
+                      background: 'var(--bg2)',
+                      borderColor: 'var(--border)',
+                    }}
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      {uAvatar ? (
-                        <img src={uAvatar} className="w-11 h-11 rounded-full object-cover" />
-                      ) : (
-                        <div
-                          className="w-11 h-11 rounded-full flex items-center justify-center text-[13px] font-bold text-white"
-                          style={{ background: color }}
-                        >
-                          {ini(u.fullName)}
-                        </div>
-                      )}
+                      <button
+                        type="button"
+                        className="cursor-pointer"
+                        onClick={() => navigate(`/u/${user.id}`)}
+                      >
+                        <UserAvatar name={user.fullName} avatar={user.avatar} size={44} />
+                      </button>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--text)' }}>
-                          {u.fullName}
-                        </p>
-                        <p className="text-[10px] truncate" style={{ color: 'var(--text3)' }}>
-                          {u.bio ?? u.studentCode ?? ''}
+                        <button
+                          onClick={() => navigate(`/u/${user.id}`)}
+                          className="text-[13px] font-semibold truncate block text-left"
+                          style={{ color: 'var(--text)' }}
+                        >
+                          {user.fullName}
+                        </button>
+
+                        <p
+                          className="text-[10px] truncate"
+                          style={{ color: 'var(--text3)' }}
+                        >
+                          {user.bio || user.studentCode || ''}
                         </p>
                       </div>
                     </div>
 
-                    {(u.skills ?? []).length > 0 && (
+                    {(user.skills || []).length > 0 && (
                       <div className="flex gap-1 flex-wrap mb-3">
-                        {(u.skills ?? []).slice(0, 2).map(s => (
+                        {(user.skills || []).slice(0, 2).map(skill => (
                           <span
-                            key={s.subject}
+                            key={skill.subject}
                             className="text-[10px] px-2 py-0.5 rounded-full"
                             style={{
-                              background: (SKILL_COLORS[s.subject] ?? '#6366f1') + '15',
-                              color: SKILL_COLORS[s.subject] ?? '#818cf8',
+                              background:
+                                (SKILL_COLORS[skill.subject] || '#6366f1') +
+                                '15',
+                              color: SKILL_COLORS[skill.subject] || '#818cf8',
                             }}
                           >
-                            {s.subject}
+                            {skill.subject}
                           </span>
                         ))}
                       </div>
                     )}
 
-                    <div className="flex gap-1.5 text-[10px] mb-3" style={{ color: 'var(--text3)' }}>
-                      <span>{u.xp?.toLocaleString()} XP</span>
-                      {u.streak > 0 && (
+                    <div
+                      className="flex gap-1.5 text-[10px] mb-3"
+                      style={{ color: 'var(--text3)' }}
+                    >
+                      <span>{(user.xp || 0).toLocaleString()} XP</span>
+                      {(user.streak || 0) > 0 && (
                         <>
                           <span>·</span>
-                          <span>{u.streak}🔥</span>
+                          <span>{user.streak}🔥</span>
                         </>
                       )}
                     </div>
 
                     <div className="flex gap-2">
                       <button
-                        onClick={() => navigate(`/inbox/${u.id}`)}
+                        onClick={() => navigate(`/inbox/${user.id}`)}
                         className="flex-1 py-2 rounded-xl border text-[11px] transition-all flex items-center justify-center gap-1.5"
                         style={{
                           background: 'var(--bg3)',
@@ -567,11 +810,12 @@ export default function FriendsPage() {
                           color: 'var(--text2)',
                         }}
                       >
-                        <MessageCircle size={12} /> Nhắn tin
+                        <MessageCircle size={12} />
+                        Nhắn tin
                       </button>
 
                       <button
-                        onClick={() => navigate(`/u/${u.id}`)}
+                        onClick={() => navigate(`/u/${user.id}`)}
                         className="flex-1 py-2 rounded-xl border text-[11px] transition-all flex items-center justify-center gap-1.5"
                         style={{
                           background: 'var(--bg3)',
@@ -579,14 +823,15 @@ export default function FriendsPage() {
                           color: 'var(--text2)',
                         }}
                       >
-                        <TrendingUp size={12} /> Hồ sơ
+                        <TrendingUp size={12} />
+                        Hồ sơ
                       </button>
                     </div>
 
                     <button
-                      onClick={() => removeF.mutate(u.id)}
+                      onClick={() => removeF.mutate(user.id)}
                       disabled={removeF.isPending}
-                      className="w-full mt-2 py-1.5 rounded-xl text-[10px] transition-all"
+                      className="w-full mt-2 py-1.5 rounded-xl text-[10px] transition-all disabled:opacity-60"
                       style={{ color: 'var(--text3)' }}
                     >
                       Hủy kết bạn

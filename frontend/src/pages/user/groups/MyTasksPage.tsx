@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import toast from 'react-hot-toast'
-import { taskApi, authApi } from '@/api/services'
+import { taskApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import type { Task, TaskPriority, TaskStatus } from '@/types'
 
@@ -373,9 +373,6 @@ export default function MyTasksPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-tasks'] })
       qc.invalidateQueries({ queryKey: ['my-task-progress'] })
-      authApi.me().then(latestUser => {
-        useAuthStore.getState().updateUser(latestUser)
-      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: (e: any) => {
       toast.error(e?.response?.data?.message ?? 'Không thể cập nhật trạng thái task')

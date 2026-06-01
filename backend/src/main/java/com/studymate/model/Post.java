@@ -23,6 +23,33 @@ public class Post {
     private String title;
     private String content;
     private String summary;
+    private String subject; // Môn học chính (Toán, Lý, Hóa...)
+
+    // AI Summary
+    private String aiSummary;
+    private String aiSummaryStatus; // PENDING | DONE | FAILED
+    private Instant aiSummaryUpdatedAt;
+
+    // AI Moderation
+    private String moderationStatus; // APPROVED | PENDING_REVIEW | NEEDS_REVISION | REJECTED | REMOVED
+    private String moderationReason;
+    private String removedReason;
+    private String aiDetectedSubject;
+    private double aiTagConfidence;
+    private String aiSafetyStatus; // SAFE | WARNING | VIOLATION
+    private String aiSafetyReason;
+    private List<String> aiTagSuggestion;
+
+    // AI media moderation (images / video)
+    private String mediaSafetyStatus; // SAFE | WARNING | VIOLATION | UNKNOWN
+    private String mediaSafetyReason;
+    @Builder.Default
+    private List<String> flaggedImageUrls = new ArrayList<>();
+    private Instant mediaModeratedAt;
+    private String reviewedByAdminId;
+    private Instant reviewedAt;
+    private String revisionMessage;
+    private boolean authorRevisionRequired;
 
     @Builder.Default
     private List<String> tags = new ArrayList<>();
@@ -44,9 +71,6 @@ public class Post {
 
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();
-
-    @Builder.Default
-    private List<PostReport> reports = new ArrayList<>();
 
     @Builder.Default
     private boolean published = true;
@@ -76,16 +100,10 @@ public class Post {
         private String authorAvatar;
         private String content;
         private Instant createdAt;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PostReport {
-        private String id;
-        private String userId;
-        private String reason;
-        private Instant createdAt;
+        private Instant updatedAt;
+        private String parentId;
+        private boolean deleted;
+        private String deletedBy;
+        private Instant deletedAt;
     }
 }

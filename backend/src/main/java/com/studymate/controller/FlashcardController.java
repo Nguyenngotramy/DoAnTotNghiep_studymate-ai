@@ -37,51 +37,6 @@ public class FlashcardController {
         ));
     }
 
-    @GetMapping("/flashcards/{deckId}/study-summary")
-    public ResponseEntity<?> getStudySummary(@PathVariable String deckId, Authentication auth) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                flashcardService.getStudySummary(auth.getName(), deckId)
-        ));
-    }
-
-    @PostMapping("/flashcards/{deckId}/cards/{cardId}/review")
-    public ResponseEntity<?> recordReview(
-            @PathVariable String deckId,
-            @PathVariable String cardId,
-            Authentication auth,
-            @RequestBody Map<String, String> body
-    ) {
-        String rating = body.get("rating");
-        if (rating == null || rating.isBlank()) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Thiếu mức đánh giá (rating)"));
-        }
-        return ResponseEntity.ok(ApiResponse.ok(
-                flashcardService.recordReview(auth.getName(), deckId, cardId, rating),
-                "Đã lưu tiến độ ôn thẻ"
-        ));
-    }
-
-    @PostMapping("/flashcards/{deckId}/study-session-complete")
-    public ResponseEntity<?> studySessionComplete(
-            @PathVariable String deckId,
-            Authentication auth,
-            @RequestBody Map<String, Object> body
-    ) {
-        int needReviewCount = 0;
-        Object raw = body.get("needReviewCount");
-        if (raw instanceof Number number) {
-            needReviewCount = number.intValue();
-        } else if (raw != null) {
-            try {
-                needReviewCount = Integer.parseInt(raw.toString());
-            } catch (NumberFormatException ignored) {
-                needReviewCount = 0;
-            }
-        }
-        flashcardService.notifyStudySessionComplete(auth.getName(), deckId, needReviewCount);
-        return ResponseEntity.ok(ApiResponse.ok(null, "Đã gửi nhắc ôn"));
-    }
-
     @DeleteMapping("/flashcards/{deckId}")
     public ResponseEntity<?> deleteDeck(@PathVariable String deckId, Authentication auth) {
         flashcardService.deleteDeck(auth.getName(), deckId);

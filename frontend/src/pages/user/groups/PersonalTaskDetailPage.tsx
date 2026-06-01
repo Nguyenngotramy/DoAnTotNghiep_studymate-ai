@@ -16,8 +16,7 @@ import {
   BarChart3,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { taskApi, authApi } from '@/api/services'
-import { useAuthStore } from '@/store/authStore'
+import { taskApi } from '@/api/services'
 import type { Task, TaskAttachment, TaskPriority, TaskStatus } from '@/types'
 
 const STATUS_META: Record<TaskStatus, { label: string; color: string; bg: string; icon: any }> = {
@@ -119,9 +118,6 @@ export default function PersonalTaskDetailPage() {
       qc.invalidateQueries({ queryKey: ['my-tasks'] })
       qc.invalidateQueries({ queryKey: ['my-task-progress'] })
       syncFromTask(data)
-      authApi.me().then(latestUser => {
-        useAuthStore.getState().updateUser(latestUser)
-      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: (e: any) => {
       toast.error(e?.response?.data?.message ?? 'Không thể cập nhật trạng thái')
@@ -141,9 +137,6 @@ export default function PersonalTaskDetailPage() {
       qc.invalidateQueries({ queryKey: ['my-tasks'] })
       qc.invalidateQueries({ queryKey: ['my-task-progress'] })
       syncFromTask(data)
-      authApi.me().then(latestUser => {
-        useAuthStore.getState().updateUser(latestUser)
-      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: (e: any) => {
       toast.error(e?.response?.data?.message ?? 'Không thể nộp bài')

@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
-import { groupApi, taskApi, authApi } from '@/api/services'
+import { groupApi, taskApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import type {
   GroupMember,
@@ -77,6 +77,24 @@ function toInputDate(v?: string) {
   } catch {
     return ''
   }
+}
+
+function toInstantString(value?: string) {
+  if (!value) return undefined
+
+  const cleanValue = String(value).trim()
+  if (!cleanValue) return undefined
+
+  // input type="date" sẽ trả về dạng YYYY-MM-DD.
+  // Backend dùng java.time.Instant nên phải gửi đủ datetime + timezone.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) {
+    return new Date(`${cleanValue}T23:59:00`).toISOString()
+  }
+
+  const date = new Date(cleanValue)
+  if (Number.isNaN(date.getTime())) return undefined
+
+  return date.toISOString()
 }
 
 function isOverdue(deadline?: string, status?: TaskStatus) {
@@ -218,7 +236,7 @@ export default function TaskDetailPage() {
         status,
         priority,
         assigneeId: assigneeId || undefined,
-        deadline: deadline || undefined,
+        deadline: toInstantString(deadline),
       } as Partial<Task>)
     },
     onSuccess: () => {
@@ -242,9 +260,6 @@ export default function TaskDetailPage() {
       qc.invalidateQueries({ queryKey: ['group-tasks', groupId] })
       qc.invalidateQueries({ queryKey: ['my-tasks'] })
       toast.success('Đã cập nhật trạng thái')
-      authApi.me().then(latestUser => {
-        useAuthStore.getState().updateUser(latestUser)
-      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: () => {
       toast.error('Không thể cập nhật trạng thái')
@@ -334,9 +349,6 @@ export default function TaskDetailPage() {
       setPickedFiles([])
       setPickedImages([])
       toast.success('Đã nộp task')
-      authApi.me().then(latestUser => {
-        useAuthStore.getState().updateUser(latestUser)
-      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: (e: any) => {
       toast.error(e?.response?.data?.message ?? 'Không thể nộp task')

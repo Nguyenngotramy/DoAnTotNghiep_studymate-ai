@@ -17,4 +17,6 @@ public interface UserRepository extends MongoRepository<User, String> {
 
     @Query("{ 'locked': false, 'role': { '$ne': 'ADMIN' }, '_id': { '$ne': ?0 } }")
     List<User> findSuggestions(String currentUserId);
+
+    List<User> findByRole(User.Role role);
 }

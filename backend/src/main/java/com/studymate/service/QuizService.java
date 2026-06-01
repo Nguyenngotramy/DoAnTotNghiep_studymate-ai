@@ -2,20 +2,17 @@ package com.studymate.service;
 
 import com.studymate.model.Group;
 import com.studymate.model.QuizFolder;
-import com.studymate.model.QuizQuestionMistake;
 import com.studymate.model.QuizSet;
 import com.studymate.model.StudyDocument;
 import com.studymate.model.User;
 import com.studymate.repository.GroupRepository;
 import com.studymate.repository.QuizFolderRepository;
-import com.studymate.repository.QuizQuestionMistakeRepository;
 import com.studymate.repository.QuizSetRepository;
 import com.studymate.repository.StudyDocumentRepository;
 import com.studymate.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,7 +22,6 @@ public class QuizService {
 
     private final QuizSetRepository quizSetRepo;
     private final QuizFolderRepository quizFolderRepo;
-    private final QuizQuestionMistakeRepository mistakeRepo;
     private final StudyDocumentRepository docRepo;
     private final GroupRepository groupRepo;
     private final UserRepository userRepo;
@@ -188,52 +184,7 @@ public class QuizService {
     public void deleteQuizSet(String userId, String quizId) {
         QuizSet quizSet = quizSetRepo.findByIdAndCreatedById(quizId, userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bộ quiz"));
-        mistakeRepo.deleteByUserIdAndQuizId(userId, quizId);
         quizSetRepo.delete(quizSet);
-    }
-
-    public void recordAttempt(String userId, String quizId, String questionId, boolean correct) {
-        QuizSet quizSet = getOne(userId, quizId);
-
-        boolean questionExists = quizSet.getQuestions()
-                .stream()
-                .anyMatch(q -> Objects.equals(q.getId(), questionId));
-
-        if (!questionExists) {
-            throw new RuntimeException("Câu hỏi không thuộc bộ quiz này");
-        }
-
-        QuizQuestionMistake mistake = mistakeRepo
-                .findByUserIdAndQuizIdAndQuestionId(userId, quizId, questionId)
-                .orElseGet(() -> QuizQuestionMistake.builder()
-                        .userId(userId)
-                        .quizId(quizId)
-                        .questionId(questionId)
-                        .build());
-
-        if (correct) {
-            mistake.setCorrectCount(mistake.getCorrectCount() + 1);
-            if (mistake.getWrongCount() > 0) {
-                mistake.setWrongCount(mistake.getWrongCount() - 1);
-            }
-        } else {
-            mistake.setWrongCount(mistake.getWrongCount() + 1);
-            mistake.setLastWrongAt(Instant.now());
-        }
-
-        mistakeRepo.save(mistake);
-    }
-
-    public List<String> getWeakQuestionIds(String userId, String quizId) {
-        getOne(userId, quizId);
-        return mistakeRepo.findByUserIdAndQuizIdAndWrongCountGreaterThan(userId, quizId, 0)
-                .stream()
-                .map(QuizQuestionMistake::getQuestionId)
-                .collect(Collectors.toList());
-    }
-
-    public int getWeakQuestionCount(String userId, String quizId) {
-        return getWeakQuestionIds(userId, quizId).size();
     }
 
     private void validateFolderOwner(String userId, String folderId) {

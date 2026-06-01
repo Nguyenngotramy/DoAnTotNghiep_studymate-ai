@@ -39,13 +39,27 @@ public class User {
     @Builder.Default
     private boolean locked = false;
 
+    /** Khóa tạm thời — hết hạn thì tự mở (trừ khóa vĩnh viễn). */
+    private Instant lockedUntil;
+
+    @Builder.Default
+    private boolean permanentlyBanned = false;
+
+    /** Đã từng bị khóa tạm do đủ ngưỡng cảnh cáo mức tương ứng — lần sau → vĩnh viễn. */
+    @Builder.Default
+    private boolean reminderDisciplineApplied = false;
+
+    @Builder.Default
+    private boolean warningDisciplineApplied = false;
+
+    @Builder.Default
+    private boolean severeDisciplineApplied = false;
+
     @Builder.Default
     private int xp = 0;
 
     @Builder.Default
     private int streak = 0;
-
-    private Instant lastStreakAt;
 
     @Builder.Default
     private List<UserSkill> skills = new ArrayList<>();
@@ -56,10 +70,6 @@ public class User {
 
     private String userType; // STUDENT | HIGHSCHOOL | TEACHER | OTHER
     private String goal;
-    private String major;
-
-    @Builder.Default
-    private List<String> interestedFields = new ArrayList<>();
 
     @Builder.Default
     private List<String> strongSubjects = new ArrayList<>();
@@ -85,15 +95,16 @@ public class User {
     @Builder.Default
     private List<String> hiddenPostIds = new ArrayList<>();
 
-    @Transient
-    private Integer matchScore;
-
-    @Transient
+    // ── Gói thành viên ───────────────────────────────────────────
     @Builder.Default
-    private List<String> commonSubjects = new ArrayList<>();
+    private MembershipTier membershipTier = MembershipTier.MEMBER;
 
-    @Transient
-    private String matchReason;
+    /** Hết hạn gói SILVER/GOLD */
+    private Instant membershipExpiresAt;
+
+    // ── Balance (số dư tài khoản) ────────────────────────────────
+    @Builder.Default
+    private long balance = 0;
 
     // ── Settings (notification prefs, theme...) ──────────────────
     private Object settings;

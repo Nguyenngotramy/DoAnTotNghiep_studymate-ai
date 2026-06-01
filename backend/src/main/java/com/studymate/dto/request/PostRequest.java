@@ -20,4 +20,5 @@ public class PostRequest {
     private String videoUrl;
     private String coverImage;
     private String summary;
+    private String subject; // Môn học chính (Toán, Vật lý, Hóa học...)
 }

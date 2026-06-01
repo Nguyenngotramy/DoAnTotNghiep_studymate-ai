@@ -24,6 +24,12 @@ public class Task {
      */
     private String groupId;
 
+    /**
+     * null = task chung của group (không thuộc project cụ thể)
+     * có giá trị = task thuộc project cụ thể
+     */
+    private String projectId;
+
     @Builder.Default
     private boolean personal = false;
 

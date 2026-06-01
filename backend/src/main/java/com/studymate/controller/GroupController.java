@@ -25,9 +25,8 @@ public class GroupController {
     }
 
     @GetMapping("/public")
-    public ResponseEntity<?> publicGroups(Authentication auth) {
-        String userId = auth != null ? auth.getName() : null;
-        return ResponseEntity.ok(ApiResponse.ok(groupService.getPublicGroups(userId)));
+    public ResponseEntity<?> publicGroups() {
+        return ResponseEntity.ok(ApiResponse.ok(groupService.getPublicGroups()));
     }
 
     @PostMapping
