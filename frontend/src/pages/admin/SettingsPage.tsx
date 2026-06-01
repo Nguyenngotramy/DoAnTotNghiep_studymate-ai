@@ -298,7 +298,6 @@ export default function AdminSettings() {
     </div>
   )
 }
-<<<<<<< HEAD
 
 function SettingInput({
   label,
@@ -366,5 +365,3 @@ function SettingToggle({
     </label>
   )
 }
-=======
->>>>>>> 8511add (Initial clean upload)
