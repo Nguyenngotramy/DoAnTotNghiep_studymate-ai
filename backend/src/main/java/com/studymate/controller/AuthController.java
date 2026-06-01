@@ -123,7 +123,17 @@ public class AuthController {
 
         if (body.containsKey("userType")) user.setUserType((String) body.get("userType"));
         if (body.containsKey("goal")) user.setGoal((String) body.get("goal"));
+        if (body.containsKey("major")) user.setMajor((String) body.get("major"));
         if (body.containsKey("onboardingDone")) user.setOnboardingDone((Boolean) body.get("onboardingDone"));
+
+        if (body.containsKey("interestedFields")) {
+            try {
+                @SuppressWarnings("unchecked")
+                List<String> fields = (List<String>) body.get("interestedFields");
+                user.setInterestedFields(normalizeTags(fields));
+                syncInterestsFromSubjects(user);
+            } catch (Exception ignored) {}
+        }
 
         if (body.containsKey("availableSchedule")) {
             try {
@@ -165,6 +175,7 @@ public class AuthController {
                 @SuppressWarnings("unchecked")
                 List<String> strongSubjects = (List<String>) body.get("strongSubjects");
                 user.setStrongSubjects(strongSubjects != null ? strongSubjects : new ArrayList<>());
+                syncInterestsFromSubjects(user);
             } catch (Exception ignored) {}
         }
 
@@ -173,6 +184,16 @@ public class AuthController {
                 @SuppressWarnings("unchecked")
                 List<String> weakSubjects = (List<String>) body.get("weakSubjects");
                 user.setWeakSubjects(weakSubjects != null ? weakSubjects : new ArrayList<>());
+                syncInterestsFromSubjects(user);
+            } catch (Exception ignored) {}
+        }
+
+        if (body.containsKey("interests")) {
+            try {
+                @SuppressWarnings("unchecked")
+                List<String> interests = (List<String>) body.get("interests");
+                user.setInterests(normalizeTags(interests));
+                syncInterestsFromSubjects(user);
             } catch (Exception ignored) {}
         }
 
@@ -335,6 +356,30 @@ public class AuthController {
         return userRepo.findById(subject)
                 .or(() -> userRepo.findByEmail(subject))
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+    }
+
+    private void syncInterestsFromSubjects(User user) {
+        LinkedHashMap<String, String> merged = new LinkedHashMap<>();
+        addTags(merged, user.getInterests());
+        addTags(merged, user.getMajor() == null ? null : List.of(user.getMajor()));
+        addTags(merged, user.getInterestedFields());
+        addTags(merged, user.getStrongSubjects());
+        addTags(merged, user.getWeakSubjects());
+        user.setInterests(new ArrayList<>(merged.values()));
+    }
+
+    private void addTags(LinkedHashMap<String, String> merged, List<String> tags) {
+        if (tags == null) return;
+        for (String tag : tags) {
+            if (tag == null || tag.isBlank()) continue;
+            merged.putIfAbsent(tag.toLowerCase().trim(), tag.trim());
+        }
+    }
+
+    private List<String> normalizeTags(List<String> tags) {
+        LinkedHashMap<String, String> merged = new LinkedHashMap<>();
+        addTags(merged, tags);
+        return new ArrayList<>(merged.values());
     }
 
     private String getCookie(HttpServletRequest request, String name) {

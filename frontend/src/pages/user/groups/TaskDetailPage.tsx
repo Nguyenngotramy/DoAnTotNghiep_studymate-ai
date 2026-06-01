@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
-import { groupApi, taskApi } from '@/api/services'
+import { groupApi, taskApi, authApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import type {
   GroupMember,
@@ -242,6 +242,9 @@ export default function TaskDetailPage() {
       qc.invalidateQueries({ queryKey: ['group-tasks', groupId] })
       qc.invalidateQueries({ queryKey: ['my-tasks'] })
       toast.success('Đã cập nhật trạng thái')
+      authApi.me().then(latestUser => {
+        useAuthStore.getState().updateUser(latestUser)
+      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: () => {
       toast.error('Không thể cập nhật trạng thái')
@@ -331,6 +334,9 @@ export default function TaskDetailPage() {
       setPickedFiles([])
       setPickedImages([])
       toast.success('Đã nộp task')
+      authApi.me().then(latestUser => {
+        useAuthStore.getState().updateUser(latestUser)
+      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: (e: any) => {
       toast.error(e?.response?.data?.message ?? 'Không thể nộp task')

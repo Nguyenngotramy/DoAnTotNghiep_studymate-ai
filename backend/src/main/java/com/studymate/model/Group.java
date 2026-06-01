@@ -59,6 +59,12 @@ public class Group {
     @LastModifiedDate
     private Instant updatedAt;
 
+    @Transient
+    private Integer matchScore;
+
+    @Transient
+    private String matchReason;
+
     public int getMemberCount() {
         return members == null ? 0 : members.size();
     }

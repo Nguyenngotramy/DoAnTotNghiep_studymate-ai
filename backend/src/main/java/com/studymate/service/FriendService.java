@@ -17,6 +17,7 @@ public class FriendService {
     private final NotificationService notificationService;
 
     public List<User> suggestions(String userId) {
+        User current = userRepo.findById(userId).orElseThrow();
         Set<String> excludeIds = getFriendIds(userId);
         excludeIds.add(userId);
 
@@ -28,6 +29,13 @@ public class FriendService {
 
         return userRepo.findAll().stream()
                 .filter(u -> !excludeIds.contains(u.getId()))
+                .filter(u -> !u.isLocked() && u.getRole() != User.Role.ADMIN)
+                .peek(u -> enrichMatch(current, u))
+                .sorted(Comparator
+                        .comparing((User u) -> Optional.ofNullable(u.getMatchScore()).orElse(0))
+                        .reversed()
+                        .thenComparing(User::getXp, Comparator.reverseOrder())
+                        .thenComparing(User::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(20)
                 .collect(Collectors.toList());
     }
@@ -139,5 +147,91 @@ public class FriendService {
         return friendRepo.findFriends(userId).stream()
                 .map(f -> f.getRequesterId().equals(userId) ? f.getReceiverId() : f.getRequesterId())
                 .collect(Collectors.toSet());
+    }
+
+    private void enrichMatch(User current, User candidate) {
+        Set<String> mySubjects = subjectSet(current);
+        Set<String> candidateSubjects = subjectSet(candidate);
+
+        List<String> common = candidateSubjects.stream()
+                .filter(mySubjects::contains)
+                .sorted()
+                .collect(Collectors.toList());
+
+        Set<String> myWeak = normalizedSet(current.getWeakSubjects());
+        Set<String> candidateStrong = normalizedSet(candidate.getStrongSubjects());
+        long helpMatches = myWeak.stream().filter(candidateStrong::contains).count();
+
+        int score = 50;
+        score += common.size() * 10;
+        score += helpMatches * 15;
+
+        if (sameText(current.getSchool(), candidate.getSchool())) score += 8;
+        if (sameText(current.getUserType(), candidate.getUserType())) score += 5;
+        if (candidate.getAvailableSchedule() != null && current.getAvailableSchedule() != null) {
+            score += Math.min(10, sharedScheduleDays(current, candidate) * 3);
+        }
+
+        score = Math.max(0, Math.min(99, score));
+        candidate.setMatchScore(score);
+        candidate.setCommonSubjects(common);
+        candidate.setMatchReason(buildMatchReason(common, helpMatches, current, candidate));
+    }
+
+    private Set<String> subjectSet(User user) {
+        Set<String> result = new HashSet<>();
+        if (user == null) return result;
+        result.addAll(normalizedSet(user.getInterests()));
+        result.addAll(normalizedSet(user.getStrongSubjects()));
+        result.addAll(normalizedSet(user.getWeakSubjects()));
+        if (user.getSkills() != null) {
+            user.getSkills().stream()
+                    .map(User.UserSkill::getSubject)
+                    .map(this::normalize)
+                    .filter(s -> !s.isBlank())
+                    .forEach(result::add);
+        }
+        return result;
+    }
+
+    private Set<String> normalizedSet(List<String> values) {
+        if (values == null) return new HashSet<>();
+        return values.stream()
+                .map(this::normalize)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toSet());
+    }
+
+    private int sharedScheduleDays(User current, User candidate) {
+        Set<String> myDays = current.getAvailableSchedule().stream()
+                .map(User.AvailableSlot::getDayOfWeek)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return (int) candidate.getAvailableSchedule().stream()
+                .map(User.AvailableSlot::getDayOfWeek)
+                .filter(myDays::contains)
+                .count();
+    }
+
+    private String buildMatchReason(List<String> common, long helpMatches, User current, User candidate) {
+        if (helpMatches > 0) {
+            return "Bạn cần cải thiện môn mà người này học tốt";
+        }
+        if (!common.isEmpty()) {
+            return "Có điểm chung về " + String.join(", ", common);
+        }
+        if (sameText(current.getSchool(), candidate.getSchool())) {
+            return "Cùng trường hoặc tổ chức học tập";
+        }
+        return "Có hồ sơ học tập phù hợp để kết nối";
+    }
+
+    private boolean sameText(String a, String b) {
+        return !normalize(a).isBlank() && normalize(a).equals(normalize(b));
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.toLowerCase().trim();
     }
 }

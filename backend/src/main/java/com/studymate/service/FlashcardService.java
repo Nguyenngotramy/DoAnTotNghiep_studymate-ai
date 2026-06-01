@@ -1,18 +1,24 @@
 package com.studymate.service;
 
+import com.studymate.dto.response.FlashcardCardProgressView;
+import com.studymate.dto.response.FlashcardStudySummaryResponse;
+import com.studymate.model.FlashcardCardProgress;
 import com.studymate.model.FlashcardDeck;
 import com.studymate.model.FlashcardFolder;
 import com.studymate.model.Group;
 import com.studymate.model.StudyDocument;
 import com.studymate.model.User;
+import com.studymate.repository.FlashcardCardProgressRepository;
 import com.studymate.repository.FlashcardDeckRepository;
 import com.studymate.repository.FlashcardFolderRepository;
 import com.studymate.repository.GroupRepository;
 import com.studymate.repository.StudyDocumentRepository;
 import com.studymate.repository.UserRepository;
+import com.studymate.util.Sm2Scheduler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,6 +28,8 @@ public class FlashcardService {
 
     private final FlashcardDeckRepository deckRepo;
     private final FlashcardFolderRepository folderRepo;
+    private final FlashcardCardProgressRepository progressRepo;
+    private final NotificationService notificationService;
     private final StudyDocumentRepository docRepo;
     private final GroupRepository groupRepo;
     private final UserRepository userRepo;
@@ -184,7 +192,138 @@ public class FlashcardService {
     public void deleteDeck(String userId, String deckId) {
         FlashcardDeck deck = deckRepo.findByIdAndCreatedById(deckId, userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bộ flashcard"));
+        progressRepo.deleteByUserIdAndDeckId(userId, deckId);
         deckRepo.delete(deck);
+    }
+
+    public FlashcardStudySummaryResponse getStudySummary(String userId, String deckId) {
+        FlashcardDeck deck = getOne(userId, deckId);
+        Instant now = Instant.now();
+
+        Map<String, FlashcardCardProgress> progressByCard = progressRepo.findByUserIdAndDeckId(userId, deckId)
+                .stream()
+                .collect(Collectors.toMap(FlashcardCardProgress::getCardId, p -> p, (a, b) -> a));
+
+        List<FlashcardCardProgressView> views = new ArrayList<>();
+        int dueCount = 0;
+        int newCount = 0;
+
+        for (FlashcardDeck.Card card : deck.getCards()) {
+            FlashcardCardProgress progress = progressByCard.get(card.getId());
+            boolean isNew = progress == null;
+            boolean due = isNew || Sm2Scheduler.isDue(progress, now);
+
+            if (isNew) {
+                newCount++;
+            }
+            if (due) {
+                dueCount++;
+            }
+
+            if (progress != null) {
+                views.add(FlashcardCardProgressView.builder()
+                        .cardId(card.getId())
+                        .easeFactor(progress.getEaseFactor())
+                        .intervalDays(progress.getIntervalDays())
+                        .repetitions(progress.getRepetitions())
+                        .nextReviewAt(progress.getNextReviewAt())
+                        .lastReviewedAt(progress.getLastReviewedAt())
+                        .due(due)
+                        .isNew(false)
+                        .build());
+            } else {
+                views.add(FlashcardCardProgressView.builder()
+                        .cardId(card.getId())
+                        .easeFactor(2.5)
+                        .intervalDays(0)
+                        .repetitions(0)
+                        .due(true)
+                        .isNew(true)
+                        .build());
+            }
+        }
+
+        return FlashcardStudySummaryResponse.builder()
+                .deckId(deckId)
+                .totalCards(deck.getCards().size())
+                .dueCount(dueCount)
+                .newCount(newCount)
+                .cards(views)
+                .build();
+    }
+
+    public FlashcardCardProgressView recordReview(
+            String userId,
+            String deckId,
+            String cardId,
+            String ratingRaw
+    ) {
+        FlashcardDeck deck = getOne(userId, deckId);
+
+        boolean cardExists = deck.getCards().stream().anyMatch(c -> Objects.equals(c.getId(), cardId));
+        if (!cardExists) {
+            throw new RuntimeException("Thẻ không thuộc bộ flashcard này");
+        }
+
+        FlashcardCardProgress.Rating rating;
+        try {
+            rating = FlashcardCardProgress.Rating.valueOf(ratingRaw.trim().toUpperCase());
+        } catch (Exception e) {
+            throw new RuntimeException("Mức đánh giá không hợp lệ (AGAIN, HARD, GOOD, EASY)");
+        }
+
+        FlashcardCardProgress progress = progressRepo
+                .findByUserIdAndDeckIdAndCardId(userId, deckId, cardId)
+                .orElseGet(() -> FlashcardCardProgress.builder()
+                        .userId(userId)
+                        .deckId(deckId)
+                        .cardId(cardId)
+                        .build());
+
+        Sm2Scheduler.applyReview(progress, rating);
+        progress = progressRepo.save(progress);
+
+        if (rating == FlashcardCardProgress.Rating.AGAIN) {
+            notificationService.send(
+                    userId,
+                    "Cần ôn lại flashcard",
+                    "Một thẻ trong \"" + deck.getTitle() + "\" cần ôn lại sớm. Tiếp tục trong phiên hoặc mở Flashcard.",
+                    "FLASHCARD_REVIEW",
+                    "/flashcard"
+            );
+        }
+
+        Instant now = Instant.now();
+        boolean due = Sm2Scheduler.isDue(progress, now);
+
+        return FlashcardCardProgressView.builder()
+                .cardId(cardId)
+                .easeFactor(progress.getEaseFactor())
+                .intervalDays(progress.getIntervalDays())
+                .repetitions(progress.getRepetitions())
+                .nextReviewAt(progress.getNextReviewAt())
+                .lastReviewedAt(progress.getLastReviewedAt())
+                .due(due)
+                .isNew(false)
+                .build();
+    }
+
+    public void notifyStudySessionComplete(String userId, String deckId, int needReviewCount) {
+        if (needReviewCount <= 0) {
+            return;
+        }
+        FlashcardDeck deck = getOne(userId, deckId);
+        notificationService.send(
+                userId,
+                "Có thẻ cần ôn lại",
+                String.format(
+                        "Phiên \"%s\": %d thẻ cần ôn lại. Hãy quay lại ôn trong ngày.",
+                        deck.getTitle(),
+                        needReviewCount
+                ),
+                "FLASHCARD_REVIEW",
+                "/flashcard"
+        );
     }
 
     private void validateFolderOwner(String userId, String folderId) {

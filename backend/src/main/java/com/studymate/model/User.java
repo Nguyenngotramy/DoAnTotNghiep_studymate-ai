@@ -45,6 +45,8 @@ public class User {
     @Builder.Default
     private int streak = 0;
 
+    private Instant lastStreakAt;
+
     @Builder.Default
     private List<UserSkill> skills = new ArrayList<>();
 
@@ -54,6 +56,10 @@ public class User {
 
     private String userType; // STUDENT | HIGHSCHOOL | TEACHER | OTHER
     private String goal;
+    private String major;
+
+    @Builder.Default
+    private List<String> interestedFields = new ArrayList<>();
 
     @Builder.Default
     private List<String> strongSubjects = new ArrayList<>();
@@ -78,6 +84,16 @@ public class User {
     // Danh sách bài viết user đã ẩn khỏi feed cá nhân
     @Builder.Default
     private List<String> hiddenPostIds = new ArrayList<>();
+
+    @Transient
+    private Integer matchScore;
+
+    @Transient
+    @Builder.Default
+    private List<String> commonSubjects = new ArrayList<>();
+
+    @Transient
+    private String matchReason;
 
     // ── Settings (notification prefs, theme...) ──────────────────
     private Object settings;

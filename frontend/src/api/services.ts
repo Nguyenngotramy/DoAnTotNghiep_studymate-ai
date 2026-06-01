@@ -4,10 +4,16 @@ import type {
   ChatMessage, Document, Flashcard, QuizQuestion, PredictInput,
   Post, DirectMessage, Conversation, Notification, Friendship,
   PageResponse, ApiResponse, TaskAttachment,
-  FlashcardDeck, FlashcardFolder,
+  FlashcardDeck, FlashcardFolder, FlashcardRating, FlashcardStudySummary, FlashcardCardProgressView,
   QuizSet, QuizFolder,
+  SavedSummary,
+  VocabularyItem,
+  VocabularyPayload,
+  VocabularySet,
   StudyProfile, StudyTermRecord, StudySubjectRecord, StudyPrediction
 } from '@/types'
+
+const AI_AGENT_URL = 'http://localhost:3000'
 
 const d = <T>(r: { data: ApiResponse<T> }) => r.data.data
 
@@ -40,6 +46,8 @@ export const userApi = {
     coverImage?: string
     userType?: string
     goal?: string
+    major?: string
+    interestedFields?: string[]
     onboardingDone?: boolean
     strongSubjects?: string[]
     weakSubjects?: string[]
@@ -77,6 +85,17 @@ export const userApi = {
       })
       .then(r => d<{ url: string }>(r))
   },
+
+  onboardingOptions: (params?: { userType?: string; major?: string; q?: string }) =>
+    api.get('/users/onboarding-options', { params }).then(r => d<{
+      schools: string[]
+      subjects: string[]
+      majors: string[]
+      interestFields: string[]
+      interestTags: string[]
+      goals: string[]
+      timeSlots: { start: string; end: string; label: string }[]
+    }>(r)),
 }
 
 export const authApi = {
@@ -90,8 +109,16 @@ export const authApi = {
     studentCode?: string
     userType?: string
     school?: string
+    major?: string
+    interestedFields?: string[]
     strongSubjects?: string[]
     weakSubjects?: string[]
+    interests?: string[]
+    availableSchedule?: {
+      dayOfWeek: string
+      startTime: string
+      endTime: string
+    }[]
     goal?: string
   }) => api.post('/auth/register', body).then(r => r.data),
 
@@ -169,6 +196,14 @@ export const postApi = {
 
   save: (id: string) =>
     api.post(`/posts/${id}/save`).then(r => d<Post>(r)),
+
+  report: (id: string, reason?: string) =>
+    api.post(`/posts/${id}/report`, {
+      reason: reason || 'Nội dung cần được xem xét',
+    }).then(r => d<Post>(r)),
+
+  share: (id: string, body?: { friendIds?: string[]; groupIds?: string[] }) =>
+    api.post(`/posts/${id}/share`, body || {}).then(r => d<Post>(r)),
 
   addComment: (id: string, content: string) =>
     api.post(`/posts/${id}/comments`, { content }).then(r => d(r)),
@@ -628,6 +663,15 @@ export const flashcardApi = {
     cards: { question: string; answer: string }[]
   }) =>
     api.post('/flashcards/from-document', body).then(r => d<FlashcardDeck>(r)),
+
+  getStudySummary: (deckId: string) =>
+    api.get(`/flashcards/${deckId}/study-summary`).then(r => d<FlashcardStudySummary>(r)),
+
+  recordReview: (deckId: string, cardId: string, rating: FlashcardRating) =>
+    api.post(`/flashcards/${deckId}/cards/${cardId}/review`, { rating }).then(r => d<FlashcardCardProgressView>(r)),
+
+  completeStudySession: (deckId: string, needReviewCount: number) =>
+    api.post(`/flashcards/${deckId}/study-session-complete`, { needReviewCount }),
 }
 
 export const predictApi = {
@@ -917,6 +961,125 @@ export const quizApi = {
     }[]
   }) =>
     api.post('/quizzes/from-document', body).then(r => d<QuizSet>(r)),
+
+  getWeakQuestionIds: (quizId: string) =>
+    api.get(`/quizzes/${quizId}/weak-questions`).then(r => d<string[]>(r)),
+
+  recordAttempt: (quizId: string, body: { questionId: string; correct: boolean }) =>
+    api.post(`/quizzes/${quizId}/attempts`, body),
+}
+
+export const summaryApi = {
+  list: (search?: string) =>
+    api.get('/summaries', { params: search ? { search } : {} }).then(r => d<SavedSummary[]>(r)),
+
+  get: (summaryId: string) =>
+    api.get(`/summaries/${summaryId}`).then(r => d<SavedSummary>(r)),
+
+  saveFromDocument: (body: {
+    docId: string
+    title: string
+    content: string
+    style?: string
+    length?: string
+    blogAppendix?: string
+    relatedBlogTitles?: string[]
+  }) =>
+    api.post('/summaries/from-document', body).then(r => d<SavedSummary>(r)),
+
+  savePersonal: (body: {
+    title: string
+    content: string
+    style?: string
+    length?: string
+  }) =>
+    api.post('/summaries', body).then(r => d<SavedSummary>(r)),
+
+  delete: (summaryId: string) =>
+    api.delete(`/summaries/${summaryId}`),
+}
+
+export const vocabularyApi = {
+  parsePaste: (text: string) =>
+    fetch(`${AI_AGENT_URL}/vocabulary/parse-paste`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    }).then(async res => {
+      if (!res.ok) throw new Error(await res.text())
+      return res.json() as Promise<{ count: number; vocabulary: VocabularyPayload }>
+    }),
+
+  importFile: async (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch(`${AI_AGENT_URL}/vocabulary/import`, { method: 'POST', body: fd })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json() as Promise<{ count: number; vocabulary: VocabularyPayload }>
+  },
+
+  extract: (body: { topic?: string; file_url?: string; text?: string; max_items?: number }) =>
+    fetch(`${AI_AGENT_URL}/vocabulary/extract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(async res => {
+      if (!res.ok) throw new Error(await res.text())
+      return res.json() as Promise<{ count: number; vocabulary: VocabularyPayload }>
+    }),
+
+  toFlashcards: (vocabulary: VocabularyItem[], num_cards = 10) =>
+    fetch(`${AI_AGENT_URL}/vocabulary/to-flashcards`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vocabulary, num_cards }),
+    }).then(async res => {
+      if (!res.ok) throw new Error(await res.text())
+      return res.json() as Promise<{ flashcards: { question: string; answer: string }[]; vocabulary: VocabularyPayload }>
+    }),
+
+  toQuiz: (vocabulary: VocabularyItem[], num_questions = 10) =>
+    fetch(`${AI_AGENT_URL}/vocabulary/to-quiz`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vocabulary, num_questions }),
+    }).then(async res => {
+      if (!res.ok) throw new Error(await res.text())
+      return res.json() as Promise<{
+        questions: QuizQuestion[]
+        vocabulary: VocabularyPayload
+      }>
+    }),
+}
+
+export const vocabularySetApi = {
+  list: (search?: string) =>
+    api.get('/vocabulary-sets', { params: search ? { search } : {} }).then(r => d<VocabularySet[]>(r)),
+
+  get: (id: string) =>
+    api.get(`/vocabulary-sets/${id}`).then(r => d<VocabularySet>(r)),
+
+  save: (body: {
+    title: string
+    description?: string
+    folderId?: string
+    sourceType?: 'IMPORT' | 'AI' | 'MANUAL'
+    entries: { tu_vung: string; nghia: string; vi_du?: string; phat_am?: string }[]
+  }) =>
+    api.post('/vocabulary-sets', {
+      title: body.title,
+      description: body.description,
+      folderId: body.folderId,
+      sourceType: body.sourceType ?? 'MANUAL',
+      entries: body.entries.map(e => ({
+        tuVung: e.tu_vung,
+        nghia: e.nghia,
+        viDu: e.vi_du,
+        phatAm: e.phat_am,
+      })),
+    }).then(r => d<VocabularySet>(r)),
+
+  delete: (id: string) => api.delete(`/vocabulary-sets/${id}`),
 }
 
 export const studyDriveApi = {

@@ -27,6 +27,9 @@ export interface User {
   streak: number
   skills?: UserSkill[]
   interests?: string[]
+  matchScore?: number
+  commonSubjects?: string[]
+  matchReason?: string
   postCount?: number
   friendCount?: number
   locked?: boolean
@@ -35,6 +38,8 @@ export interface User {
   lastActiveAt?: string
   onboardingDone?: boolean
   userType?: UserType
+  major?: string
+  interestedFields?: string[]
   strongSubjects?: string[]
   weakSubjects?: string[]
   goal?: string
@@ -171,6 +176,8 @@ export interface Group {
   publicVisible?: boolean
   requireApproval?: boolean
   requirePostApproval?: boolean
+  matchScore?: number
+  matchReason?: string
   createdAt?: string
 }
 
@@ -299,6 +306,27 @@ export interface Flashcard {
   answer: string
   docId?: string
   postId?: string
+}
+
+export type FlashcardRating = 'AGAIN' | 'HARD' | 'GOOD' | 'EASY'
+
+export interface FlashcardCardProgressView {
+  cardId: string
+  easeFactor: number
+  intervalDays: number
+  repetitions: number
+  nextReviewAt?: string
+  lastReviewedAt?: string
+  due: boolean
+  isNew: boolean
+}
+
+export interface FlashcardStudySummary {
+  deckId: string
+  totalCards: number
+  dueCount: number
+  newCount: number
+  cards: FlashcardCardProgressView[]
 }
 
 export interface QuizQuestion {
@@ -447,6 +475,57 @@ export interface QuizSet {
   sourceDocumentId?: string
   sourceDocumentName?: string
   questions: QuizSetItem[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface VocabularyItem {
+  tu_vung: string
+  nghia: string
+  vi_du?: string
+  phat_am?: string
+}
+
+export interface VocabularyPayload {
+  vocabulary: VocabularyItem[]
+}
+
+export interface VocabularySetEntry {
+  tuVung: string
+  nghia: string
+  viDu?: string
+  phatAm?: string
+  orderIndex?: number
+}
+
+export interface VocabularySet {
+  id: string
+  title: string
+  description?: string
+  folderId?: string
+  createdById: string
+  createdByName?: string
+  sourceType: 'IMPORT' | 'AI' | 'MANUAL'
+  entries: VocabularySetEntry[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface SavedSummary {
+  id: string
+  title: string
+  content: string
+  style?: string
+  length?: string
+  createdById: string
+  createdByName?: string
+  aiGenerated: boolean
+  sourceDocumentId?: string
+  sourceDocumentName?: string
+  sourceGroupId?: string
+  sourceGroupName?: string
+  relatedBlogTitles?: string[]
+  blogAppendix?: string
   createdAt?: string
   updatedAt?: string
 }
