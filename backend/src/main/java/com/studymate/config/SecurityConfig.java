@@ -65,7 +65,8 @@ public class SecurityConfig {
                                 "/auth/forgot-password",
                                 "/auth/verify-otp",
                                 "/auth/reset-password",
-                                "/auth/oauth2/token"
+                                "/auth/oauth2/token",
+                                "/users/onboarding-options"
                         ).permitAll()
 
                         // OAuth2 endpoints

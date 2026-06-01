@@ -36,7 +36,7 @@ import {
   Pencil,
   Save,
 } from 'lucide-react'
-import { dmApi, documentApi, groupApi, groupPostApi, studyDriveApi } from '@/api/services'
+import { dmApi, documentApi, groupApi, groupPostApi, studyDriveApi, authApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -393,6 +393,9 @@ export default function GroupDetailPage() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['group-posts', groupId] })
       setCommentDrafts(prev => ({ ...prev, [vars.postId]: '' }))
+      authApi.me().then(latestUser => {
+        useAuthStore.getState().updateUser(latestUser)
+      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: (e: any) => {
       toast.error(e?.response?.data?.message ?? 'Không thể bình luận')
@@ -413,6 +416,9 @@ export default function GroupDetailPage() {
       qc.invalidateQueries({ queryKey: ['group-posts', groupId] })
       setReplyDrafts(prev => ({ ...prev, [vars.commentId]: '' }))
       setOpenReplyBox(prev => ({ ...prev, [vars.commentId]: false }))
+      authApi.me().then(latestUser => {
+        useAuthStore.getState().updateUser(latestUser)
+      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: (e: any) => {
       toast.error(e?.response?.data?.message ?? 'Không thể trả lời bình luận')
@@ -1325,6 +1331,16 @@ export default function GroupDetailPage() {
                             title="Chia sẻ qua tin nhắn"
                           >
                             <Share2 size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => handleReportPost(post.id)}
+                            className="h-11 px-4 rounded-2xl inline-flex items-center justify-center gap-2 text-sm font-medium"
+                            style={{ color: 'var(--text2)' }}
+                            title="Report bài đăng"
+                          >
+                            <Flag size={16} />
+                            Report
                           </button>
                         </div>
 

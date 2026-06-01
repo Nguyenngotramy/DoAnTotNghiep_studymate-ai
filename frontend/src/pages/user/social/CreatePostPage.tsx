@@ -11,7 +11,7 @@ import {
   Hash,
   PlayCircle,
 } from 'lucide-react'
-import { postApi } from '@/api/services'
+import { postApi, authApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -240,6 +240,12 @@ export default function CreatePostPage() {
       })
 
       toast.success('Đăng bài thành công')
+      try {
+        const latestUser = await authApi.me()
+        useAuthStore.getState().updateUser(latestUser)
+      } catch (e) {
+        console.error('Lỗi cập nhật XP:', e)
+      }
       navigate('/blog')
     } catch (e: any) {
       toast.error(e?.response?.data?.message ?? 'Lỗi khi đăng bài')

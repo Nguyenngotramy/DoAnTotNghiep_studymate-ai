@@ -12,6 +12,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.List;
+import java.util.Collections;
 
 @RestController
 @RequestMapping("/posts")
@@ -38,8 +40,9 @@ public class PostController {
     }
 
     @GetMapping("/trending")
-    public ResponseEntity<?> trending() {
-        return ResponseEntity.ok(ApiResponse.ok(postService.trending()));
+    public ResponseEntity<?> trending(Authentication auth) {
+        String userId = auth != null ? auth.getName() : null;
+        return ResponseEntity.ok(ApiResponse.ok(postService.trending(userId)));
     }
 
     @GetMapping("/trending-tags")
@@ -93,6 +96,28 @@ public class PostController {
     @PostMapping("/{id}/save")
     public ResponseEntity<?> save(@PathVariable String id, Authentication auth) {
         return ResponseEntity.ok(ApiResponse.ok(postService.save(id, auth.getName())));
+    }
+
+    @PostMapping("/{id}/report")
+    public ResponseEntity<?> report(@PathVariable String id, Authentication auth,
+                                    @RequestBody(required = false) Map<String, String> body) {
+        String reason = body == null ? "" : body.getOrDefault("reason", "");
+        return ResponseEntity.ok(ApiResponse.ok(postService.report(id, auth.getName(), reason), "Đã báo cáo bài viết"));
+    }
+
+    @PostMapping("/{id}/share")
+    public ResponseEntity<?> share(
+            @PathVariable String id,
+            Authentication auth,
+            @RequestBody(required = false) Map<String, List<String>> body
+    ) {
+        List<String> friendIds = body != null ? body.get("friendIds") : null;
+        List<String> groupIds = body != null ? body.get("groupIds") : null;
+        if (friendIds == null) friendIds = Collections.emptyList();
+        if (groupIds == null) groupIds = Collections.emptyList();
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                postService.share(id, auth.getName(), friendIds, groupIds), "Đã chia sẻ thành công!"));
     }
 
     @PostMapping("/{id}/hide")

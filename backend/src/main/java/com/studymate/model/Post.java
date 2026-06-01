@@ -46,6 +46,9 @@ public class Post {
     private List<Comment> comments = new ArrayList<>();
 
     @Builder.Default
+    private List<PostReport> reports = new ArrayList<>();
+
+    @Builder.Default
     private boolean published = true;
 
     @CreatedDate
@@ -72,6 +75,17 @@ public class Post {
         private String authorName;
         private String authorAvatar;
         private String content;
+        private Instant createdAt;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PostReport {
+        private String id;
+        private String userId;
+        private String reason;
         private Instant createdAt;
     }
 }

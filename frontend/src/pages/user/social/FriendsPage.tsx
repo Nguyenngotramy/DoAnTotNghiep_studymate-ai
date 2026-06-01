@@ -120,7 +120,13 @@ export default function FriendsPage() {
     },
   })
 
-  const filtSuggest = (suggestions as User[]).filter(
+  const allLoadedPeople = [
+    ...(suggestions as User[]),
+    ...(friends as User[]),
+    ...(pending as Friendship[]).map(f => f.requester).filter(Boolean) as User[],
+  ].filter((u, index, arr) => arr.findIndex(x => x.id === u.id) === index)
+
+  const filtSuggest = (search ? allLoadedPeople : suggestions as User[]).filter(
     u => !search || u.fullName.toLowerCase().includes(search.toLowerCase()),
   )
   const filtFriends = (friends as User[]).filter(
@@ -288,6 +294,21 @@ export default function FriendsPage() {
                             <Stars level={s.level} />
                           </div>
                         ))}
+                      </div>
+                    )}
+
+                    {u.matchScore != null && (
+                      <div className="mb-3 rounded-xl border px-3 py-2"
+                        style={{ background: 'rgba(99,102,241,.07)', borderColor: 'rgba(99,102,241,.18)' }}>
+                        <div className="flex items-center justify-between text-[11px] mb-1">
+                          <span className="font-medium text-indigo-300">{u.matchScore}% phù hợp</span>
+                          <span style={{ color: 'var(--text3)' }}>
+                            {(u.commonSubjects ?? []).slice(0, 2).join(', ')}
+                          </span>
+                        </div>
+                        <p className="text-[11px]" style={{ color: 'var(--text2)' }}>
+                          {u.matchReason ?? 'Có điểm chung trong hồ sơ học tập'}
+                        </p>
                       </div>
                     )}
 

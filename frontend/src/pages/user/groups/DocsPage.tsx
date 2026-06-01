@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { documentApi, flashcardApi } from '@/api/services'
-import type { Document, Flashcard, QuizQuestion, FlashcardFolder } from '@/types'
+import { documentApi, flashcardApi, quizApi, summaryApi, postApi } from '@/api/services'
+import type { Document, Flashcard, QuizQuestion, FlashcardFolder, QuizFolder, Post } from '@/types'
 import {
   Upload,
   Trash2,
@@ -63,20 +63,42 @@ const resolveDocUrl = (fileUrl?: string) => {
 // Không còn dùng extractMarkdown() ở frontend nữa.
 // ─────────────────────────────────────────
 
-async function backendSummary(doc: Document, style: string, length: string): Promise<string> {
+async function backendSummary(
+  doc: Document,
+  style: string,
+  length: string,
+  blogContext?: string,
+): Promise<string> {
   const res = await fetch(`${BACKEND_URL}/summary`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       topic:    doc.name,
-      file_url: doc.fileUrl,   // ← backend sẽ fetch nội dung file thực từ URL này
+      file_url: doc.fileUrl,
       style,
       length,
+      blog_context: blogContext || undefined,
     }),
   })
   if (!res.ok) throw new Error(await res.text())
   const data = await res.json()
   return data.summary as string
+}
+
+async function fetchBlogContext(tag?: string): Promise<{ text: string; titles: string[] }> {
+  try {
+    const page = await postApi.feed(0, tag?.trim() || undefined)
+    const posts: Post[] = page.content?.slice(0, 5) ?? []
+    if (!posts.length) return { text: '', titles: [] }
+    const titles = posts.map(p => p.title).filter(Boolean)
+    const text = posts.map(p => {
+      const body = (p.summary || p.content || '').slice(0, 1200)
+      return `### ${p.title}\n${body}`
+    }).join('\n\n---\n\n')
+    return { text, titles }
+  } catch {
+    return { text: '', titles: [] }
+  }
 }
 
 async function backendFlashcard(
@@ -97,7 +119,9 @@ async function backendFlashcard(
   })
   if (!res.ok) throw new Error(await res.text())
   const data = await res.json()
-  // Backend trả [{question, answer}] → map sang Flashcard shape
+  if (data.pipeline === 'vocabulary_json' && data.vocabulary?.vocabulary?.length) {
+    toast.success(`Đã trích ${data.vocabulary.vocabulary.length} từ → tạo ${data.num_cards} flashcard`)
+  }
   return (data.flashcards as { question: string; answer: string }[]).map((c, i) => ({
     id: String(i),
     question: c.question,
@@ -122,22 +146,49 @@ async function backendQuiz(
   })
   if (!res.ok) throw new Error(await res.text())
   const data = await res.json()
+  if (data.pipeline === 'vocabulary_json' && data.vocabulary?.vocabulary?.length) {
+    toast.success(`Quiz từ ${data.vocabulary.vocabulary.length} từ vựng JSON`)
+  }
   return data.questions as QuizQuestion[]
 }
 
-async function backendChat(doc: Document, question: string): Promise<string> {
-  // Chat vẫn dùng file_url thay vì extractMarkdown ở frontend
+type ChatApiResult = {
+  response: string
+  session_id?: string
+  agent?: string
+  structured?: { type: 'quiz' | 'flashcard'; items: Record<string, unknown>[] }
+}
+
+async function backendChat(
+  doc: Document,
+  question: string,
+  sessionId?: string,
+): Promise<ChatApiResult> {
   const res = await fetch(`${BACKEND_URL}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      text: `Tài liệu: ${doc.name}\nFile URL: ${doc.fileUrl ?? ''}\n\nCâu hỏi: ${question}`,
+      text: `[Tài liệu: ${doc.name}]\nFile URL: ${doc.fileUrl ?? ''}\n\nCâu hỏi: ${question}`,
+      session_id: sessionId,
     }),
   })
   if (!res.ok) throw new Error(await res.text())
-  const data = await res.json()
-  return data.response as string
+  return res.json()
 }
+
+type DocChatMessage = {
+  role: 'user' | 'assistant'
+  text: string
+  agent?: string
+  structured?: ChatApiResult['structured']
+}
+
+const DOC_CHAT_PROMPTS = [
+  { label: 'Giải thích', text: 'Giải thích nội dung chính của tài liệu này' },
+  { label: 'Phân tích KT', text: 'Phân tích vấn đề trong tài liệu theo Kepner-Tregoe (IS/IS NOT)' },
+  { label: 'Tạo quiz', text: 'Tạo 5 câu quiz trắc nghiệm từ tài liệu mức understand' },
+  { label: 'Flashcard', text: 'Tạo 6 flashcard từ khái niệm trong tài liệu' },
+]
 
 // ─────────────────────────────────────────
 // AI OPTIONS MODAL
@@ -162,9 +213,11 @@ function AiOptionsModal({
   const [numCards,  setNumCards]  = useState(6)
   const [bloom,     setBloom]     = useState('understand')
   const [numQ,      setNumQ]      = useState(5)
+  const [includeBlogs, setIncludeBlogs] = useState(false)
+  const [blogTag,   setBlogTag]   = useState('')
 
   const handleSubmit = () => {
-    if (type === 'summarize') onSubmit({ style, length })
+    if (type === 'summarize') onSubmit({ style, length, include_blogs: includeBlogs ? 1 : 0, blog_tag: blogTag })
     if (type === 'flashcard') onSubmit({ card_type: cardType, num_cards: numCards })
     if (type === 'quiz')      onSubmit({ bloom_level: bloom, num_questions: numQ })
   }
@@ -229,6 +282,26 @@ function AiOptionsModal({
                   <option value="long">Chi tiết (300+ từ)</option>
                 </select>
               </div>
+              <label className="flex items-center gap-2 text-[13px]" style={{ color: 'var(--text2)' }}>
+                <input
+                  type="checkbox"
+                  checked={includeBlogs}
+                  onChange={e => setIncludeBlogs(e.target.checked)}
+                />
+                Nối thêm kiến thức từ bài blog
+              </label>
+              {includeBlogs && (
+                <div>
+                  <p className="text-[12px] mb-1.5" style={{ color: 'var(--text3)' }}>Tag blog (tuỳ chọn)</p>
+                  <input
+                    value={blogTag}
+                    onChange={e => setBlogTag(e.target.value)}
+                    placeholder="VD: toán, tiếng anh, lập trình..."
+                    className="w-full h-10 rounded-xl px-3 outline-none text-[13px]"
+                    style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                  />
+                </div>
+              )}
             </>
           )}
 
@@ -256,7 +329,7 @@ function AiOptionsModal({
                   className="w-full h-10 rounded-xl px-3 outline-none text-[13px]"
                   style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
                 >
-                  {[4, 6, 8, 10].map(n => (
+                  {[4, 6, 8, 10, 12, 15].map(n => (
                     <option key={n} value={n}>{n} thẻ</option>
                   ))}
                 </select>
@@ -288,7 +361,7 @@ function AiOptionsModal({
                   className="w-full h-10 rounded-xl px-3 outline-none text-[13px]"
                   style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
                 >
-                  {[3, 5, 7, 10].map(n => (
+                  {[3, 5, 7, 10, 12, 15].map(n => (
                     <option key={n} value={n}>{n} câu</option>
                   ))}
                 </select>
@@ -328,10 +401,14 @@ function SummaryModal({
   docName,
   summary,
   onClose,
+  onSave,
+  saving,
 }: {
   docName: string
   summary: string
   onClose: () => void
+  onSave?: () => void
+  saving?: boolean
 }) {
   return (
     <div className="fixed inset-0 bg-black/65 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -354,10 +431,30 @@ function SummaryModal({
           </button>
         </div>
         <div
-          className="rounded-2xl border p-4 max-h-[65vh] overflow-y-auto whitespace-pre-wrap leading-7 text-[14px]"
+          className="rounded-2xl border p-4 max-h-[55vh] overflow-y-auto whitespace-pre-wrap leading-7 text-[14px]"
           style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }}
         >
           {summary}
+        </div>
+        <div className="flex gap-2 mt-4">
+          {onSave && (
+            <button
+              onClick={onSave}
+              disabled={saving}
+              className="flex-1 h-10 rounded-xl text-[13px] font-medium flex items-center justify-center gap-2 disabled:opacity-60"
+              style={{ background: '#6366f1', color: '#fff' }}
+            >
+              <Save size={14} />
+              {saving ? 'Đang lưu...' : 'Lưu bản tóm tắt'}
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="flex-1 h-10 rounded-xl border text-[13px] font-medium"
+            style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
+          >
+            Đóng
+          </button>
         </div>
       </div>
     </div>
@@ -555,11 +652,120 @@ function FlashcardModal({
   )
 }
 
+function SaveQuizModal({
+  doc,
+  questions,
+  folders,
+  loading,
+  onClose,
+  onSubmit,
+}: {
+  doc: Document
+  questions: QuizQuestion[]
+  folders: QuizFolder[]
+  loading: boolean
+  onClose: () => void
+  onSubmit: (payload: { title: string; folderId?: string }) => void
+}) {
+  const [title,    setTitle]    = useState(`Quiz - ${doc.name}`)
+  const [folderId, setFolderId] = useState('')
+
+  return (
+    <div className="fixed inset-0 bg-black/65 flex items-center justify-center z-[60] p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-xl rounded-3xl border p-5"
+        style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <div className="text-[12px]" style={{ color: 'var(--text3)' }}>Lưu để luyện lại sau</div>
+            <div className="text-[16px] font-semibold truncate" style={{ color: 'var(--text)' }}>{doc.name}</div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="grid gap-3">
+          <div>
+            <p className="text-[12px] mb-2" style={{ color: 'var(--text3)' }}>Tên bộ quiz</p>
+            <input
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="w-full h-11 rounded-xl px-4 outline-none"
+              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              placeholder="Nhập tên bộ quiz"
+            />
+          </div>
+          <div>
+            <p className="text-[12px] mb-2" style={{ color: 'var(--text3)' }}>Folder</p>
+            <select
+              value={folderId}
+              onChange={e => setFolderId(e.target.value)}
+              className="w-full h-11 rounded-xl px-4 outline-none"
+              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+            >
+              <option value="">Không chọn folder</option>
+              {folders.map(folder => (
+                <option key={folder.id} value={folder.id}>{folder.name}</option>
+              ))}
+            </select>
+          </div>
+          <div
+            className="rounded-2xl border p-4 text-[13px]"
+            style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <HelpCircle size={14} className="text-indigo-400" />
+              <span>Số câu sẽ lưu: <strong style={{ color: 'var(--text)' }}>{questions.length}</strong></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Folder size={14} style={{ color: 'var(--text3)' }} />
+              <span>Ôn lại tại mục Quiz trên menu</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={onClose}
+            className="flex-1 h-11 rounded-xl border text-[13px] font-medium"
+            style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
+          >
+            Huỷ
+          </button>
+          <button
+            onClick={() => onSubmit({ title, folderId: folderId || undefined })}
+            disabled={loading || !title.trim()}
+            className="flex-1 h-11 rounded-xl text-[13px] font-medium disabled:opacity-60"
+            style={{ background: '#6366f1', color: '#fff' }}
+          >
+            {loading ? 'Đang lưu...' : 'Lưu bộ quiz'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─────────────────────────────────────────
 // QUIZ MODAL
 // ─────────────────────────────────────────
 
-function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose: () => void }) {
+function QuizModal({
+  questions,
+  onClose,
+  onSave,
+}: {
+  questions: QuizQuestion[]
+  onClose: () => void
+  onSave?: () => void
+}) {
   const [idx,      setIdx]      = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
   const [score,    setScore]    = useState(0)
@@ -611,13 +817,25 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
                 ? 'Xuất sắc! Bạn trả lời đúng tất cả!'
                 : `Bạn trả lời đúng ${score} câu`}
             </p>
-            <button
-              onClick={onClose}
-              className="mt-5 px-5 h-10 rounded-xl text-[13px] font-medium"
-              style={{ background: '#6366f1', color: '#fff' }}
-            >
-              Đóng
-            </button>
+            <div className="flex flex-col gap-2 mt-5">
+              {onSave && (
+                <button
+                  onClick={onSave}
+                  className="w-full h-10 rounded-xl text-[13px] font-medium flex items-center justify-center gap-2"
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                >
+                  <Save size={14} />
+                  Lưu để luyện lại
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="w-full px-5 h-10 rounded-xl text-[13px] font-medium"
+                style={{ background: '#6366f1', color: '#fff' }}
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -659,6 +877,16 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
                 {idx < questions.length - 1 ? 'Câu tiếp theo →' : 'Xem kết quả'}
               </button>
             )}
+            {onSave && (
+              <button
+                onClick={onSave}
+                className="w-full h-10 rounded-xl text-[13px] font-medium mt-3 flex items-center justify-center gap-2"
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)' }}
+              >
+                <Save size={14} />
+                Lưu bộ quiz
+              </button>
+            )}
           </>
         )}
       </div>
@@ -672,31 +900,33 @@ function QuizModal({ questions, onClose }: { questions: QuizQuestion[]; onClose:
 
 function ChatDocModal({
   doc,
+  messages,
   input,
-  answer,
   loading,
   onChangeInput,
   onSend,
   onClose,
+  onSaveStructured,
 }: {
   doc: Document
+  messages: DocChatMessage[]
   input: string
-  answer: string
   loading: boolean
   onChangeInput: (v: string) => void
   onSend: () => void
   onClose: () => void
+  onSaveStructured: (msg: DocChatMessage) => void
 }) {
   return (
     <div className="fixed inset-0 bg-black/65 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-2xl rounded-3xl border p-5"
+        className="w-full max-w-2xl rounded-3xl border p-5 max-h-[88vh] flex flex-col"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4 gap-3">
+        <div className="flex items-center justify-between mb-3 gap-3 flex-shrink-0">
           <div className="min-w-0">
-            <p className="text-[12px]" style={{ color: 'var(--text3)' }}>Hỏi đáp với tài liệu</p>
+            <p className="text-[12px]" style={{ color: 'var(--text3)' }}>Hỏi đáp AI · đa lượt</p>
             <p className="text-[15px] font-medium truncate" style={{ color: 'var(--text)' }}>{doc.name}</p>
           </div>
           <button
@@ -707,35 +937,77 @@ function ChatDocModal({
             <X size={16} />
           </button>
         </div>
+
+        <div className="flex flex-wrap gap-1.5 mb-3 flex-shrink-0">
+          {DOC_CHAT_PROMPTS.map(p => (
+            <button
+              key={p.label}
+              onClick={() => onChangeInput(p.text)}
+              className="px-2.5 py-1 rounded-lg text-[11px] border"
+              style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-3 mb-3 min-h-[120px]">
+          {messages.length === 0 && (
+            <p className="text-[13px]" style={{ color: 'var(--text3)' }}>
+              Hỏi về nội dung, phân tích KT, hoặc yêu cầu tạo quiz/flashcard từ tài liệu.
+            </p>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>
+              {m.agent && m.role === 'assistant' && (
+                <span className="text-[10px] mr-2" style={{ color: '#818cf8' }}>{m.agent}</span>
+              )}
+              <div
+                className="inline-block max-w-[92%] text-left rounded-2xl px-3 py-2 text-[13px] leading-6 whitespace-pre-wrap"
+                style={{
+                  background: m.role === 'user' ? 'rgba(99,102,241,0.15)' : 'var(--bg3)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                }}
+              >
+                {m.text}
+              </div>
+              {m.structured && (
+                <button
+                  onClick={() => onSaveStructured(m)}
+                  className="block mt-1.5 text-[11px] px-2 py-1 rounded-lg"
+                  style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}
+                >
+                  💾 Lưu {m.structured.type === 'quiz' ? 'quiz' : 'flashcard'}
+                </button>
+              )}
+            </div>
+          ))}
+          {loading && (
+            <div className="text-[12px] flex items-center gap-2" style={{ color: 'var(--text3)' }}>
+              <Loader2 size={13} className="animate-spin" /> AI đang trả lời...
+            </div>
+          )}
+        </div>
+
         <textarea
           value={input}
           onChange={e => onChangeInput(e.target.value)}
-          placeholder="Nhập câu hỏi về tài liệu..."
-          className="w-full min-h-[96px] px-4 py-3 rounded-2xl outline-none text-[14px] resize-none"
+          placeholder="Nhập câu hỏi..."
+          className="w-full min-h-[72px] px-4 py-3 rounded-2xl outline-none text-[14px] resize-none flex-shrink-0"
           style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
           onKeyDown={e => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) onSend()
           }}
         />
-        <p className="text-[11px] mt-1 mb-2" style={{ color: 'var(--text3)' }}>
-          Ctrl+Enter để gửi
-        </p>
         <button
           onClick={onSend}
           disabled={loading || !input.trim()}
-          className="w-full h-10 rounded-xl text-[13px] font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+          className="w-full h-10 rounded-xl text-[13px] font-medium disabled:opacity-60 flex items-center justify-center gap-2 mt-2 flex-shrink-0"
           style={{ background: '#6366f1', color: '#fff' }}
         >
-          {loading ? <><Loader2 size={13} className="animate-spin" />AI đang trả lời...</> : 'Gửi câu hỏi'}
+          Gửi (Ctrl+Enter)
         </button>
-        {answer && (
-          <div
-            className="rounded-2xl border p-4 mt-4 text-[14px] leading-7 whitespace-pre-wrap"
-            style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }}
-          >
-            {answer}
-          </div>
-        )}
       </div>
     </div>
   )
@@ -857,14 +1129,21 @@ export default function DocsPage() {
   const [flashcardDoc,      setFlashcardDoc]      = useState<Document | null>(null)
   const [showSaveFlashcard, setShowSaveFlashcard] = useState(false)
   const [quiz,              setQuiz]              = useState<QuizQuestion[] | null>(null)
+  const [quizDoc,           setQuizDoc]           = useState<Document | null>(null)
+  const [showSaveQuiz,      setShowSaveQuiz]      = useState(false)
   const [summaryDocName,    setSummaryDocName]    = useState('')
   const [summaryText,       setSummaryText]       = useState('')
+  const [summarySourceDoc, setSummarySourceDoc]   = useState<Document | null>(null)
+  const [summaryStyle,     setSummaryStyle]      = useState('bullet')
+  const [summaryLength,    setSummaryLength]     = useState('medium')
+  const [summaryBlogMeta,  setSummaryBlogMeta]   = useState<{ titles: string[]; appendix: string }>({ titles: [], appendix: '' })
   const [aiLoading,         setAiLoading]         = useState<string | null>(null)
 
   // Chat state
-  const [chatDoc,    setChatDoc]    = useState<Document | null>(null)
-  const [chatInput,  setChatInput]  = useState('')
-  const [chatAnswer, setChatAnswer] = useState('')
+  const [chatDoc,       setChatDoc]       = useState<Document | null>(null)
+  const [chatInput,     setChatInput]     = useState('')
+  const [chatMessages,  setChatMessages]  = useState<DocChatMessage[]>([])
+  const [chatSessionId, setChatSessionId] = useState<string | undefined>()
 
   // Filter state
   const [search,       setSearch]       = useState('')
@@ -885,6 +1164,11 @@ export default function DocsPage() {
   const { data: folders = [] } = useQuery({
     queryKey: ['flashcard-folders'],
     queryFn:  () => flashcardApi.listFolders(),
+  })
+
+  const { data: quizFolders = [] } = useQuery({
+    queryKey: ['quiz-folders'],
+    queryFn:  () => quizApi.listFolders(),
   })
 
   const filteredDocs = useMemo(() => {
@@ -935,6 +1219,37 @@ export default function DocsPage() {
     onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Không thể lưu flashcard'),
   })
 
+  const saveQuizMut = useMutation({
+    mutationFn: (payload: {
+      docId: string
+      title: string
+      folderId?: string
+      questions: {
+        question: string
+        options: string[]
+        correctIndex: number
+        explanation: string
+      }[]
+    }) => quizApi.saveFromDocument(payload),
+    onSuccess: () => {
+      toast.success('Đã lưu bộ quiz — mở mục Quiz để luyện lại')
+      qc.invalidateQueries({ queryKey: ['quiz-sets'] })
+      setShowSaveQuiz(false)
+      setQuiz(null)
+      setQuizDoc(null)
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Không thể lưu quiz'),
+  })
+
+  const saveSummaryMut = useMutation({
+    mutationFn: summaryApi.saveFromDocument,
+    onSuccess: () => {
+      toast.success('Đã lưu bản tóm tắt')
+      qc.invalidateQueries({ queryKey: ['saved-summaries'] })
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Không thể lưu tóm tắt'),
+  })
+
   // ── Handlers ─────────────────────────────────────────────────
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -947,8 +1262,9 @@ export default function DocsPage() {
   const handleAction = (type: string, doc: Document) => {
     if (type === 'chat') {
       setChatDoc(doc)
-      setChatAnswer('')
       setChatInput('')
+      setChatMessages([])
+      setChatSessionId(undefined)
       return
     }
     setAiOptionsDoc(doc)
@@ -962,9 +1278,20 @@ export default function DocsPage() {
     setAiLoading(`${aiOptionsType}-${doc.id}`)
     try {
       if (aiOptionsType === 'summarize') {
-        const summary = await backendSummary(doc, String(opts.style), String(opts.length))
+        let blogCtx = ''
+        let blogMeta = { titles: [] as string[], appendix: '' }
+        if (Number(opts.include_blogs)) {
+          const tag = String(opts.blog_tag || doc.name.split('.')[0] || '')
+          blogMeta = await fetchBlogContext(tag)
+          blogCtx = blogMeta.text
+        }
+        const summary = await backendSummary(doc, String(opts.style), String(opts.length), blogCtx || undefined)
         setSummaryDocName(doc.name)
         setSummaryText(summary)
+        setSummarySourceDoc(doc)
+        setSummaryStyle(String(opts.style))
+        setSummaryLength(String(opts.length))
+        setSummaryBlogMeta({ titles: blogMeta.titles, appendix: blogCtx })
         setAiOptionsDoc(null)
         setAiOptionsType(null)
 
@@ -978,6 +1305,7 @@ export default function DocsPage() {
       } else if (aiOptionsType === 'quiz') {
         const questions = await backendQuiz(doc, String(opts.bloom_level), Number(opts.num_questions))
         setQuiz(questions)
+        setQuizDoc(doc)
         setAiOptionsDoc(null)
         setAiOptionsType(null)
       }
@@ -990,14 +1318,50 @@ export default function DocsPage() {
 
   const sendChatQuestion = async () => {
     if (!chatDoc || !chatInput.trim()) return
+    const question = chatInput.trim()
+    setChatInput('')
+    setChatMessages(prev => [...prev, { role: 'user', text: question }])
     setAiLoading('chat')
     try {
-      const answer = await backendChat(chatDoc, chatInput)
-      setChatAnswer(answer)
+      const data = await backendChat(chatDoc, question, chatSessionId)
+      if (data.session_id) setChatSessionId(data.session_id)
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        text: data.response,
+        agent: data.agent,
+        structured: data.structured,
+      }])
     } catch (e: any) {
       toast.error(e?.message ?? 'Lỗi kết nối AI')
     } finally {
       setAiLoading(null)
+    }
+  }
+
+  const saveChatStructured = (msg: DocChatMessage) => {
+    if (!chatDoc || !msg.structured) return
+    if (msg.structured.type === 'quiz') {
+      const questions = msg.structured.items.map((item: Record<string, unknown>) => ({
+        question: String(item.question ?? ''),
+        options: (item.options as string[]) ?? [],
+        correctIndex: Number(item.correct_index ?? item.correctIndex ?? 0),
+        explanation: String(item.explanation ?? ''),
+      }))
+      saveQuizMut.mutate({
+        docId: chatDoc.id,
+        title: `Quiz chat - ${chatDoc.name}`,
+        questions,
+      })
+    } else if (msg.structured.type === 'flashcard') {
+      const cards = msg.structured.items.map((item: Record<string, unknown>) => ({
+        question: String(item.front ?? item.question ?? ''),
+        answer: String(item.back ?? item.answer ?? ''),
+      }))
+      saveFlashcardMut.mutate({
+        docId: chatDoc.id,
+        title: `Flashcard chat - ${chatDoc.name}`,
+        cards,
+      })
     }
   }
 
@@ -1171,12 +1535,13 @@ export default function DocsPage() {
       {chatDoc && (
         <ChatDocModal
           doc={chatDoc}
+          messages={chatMessages}
           input={chatInput}
-          answer={chatAnswer}
           loading={aiLoading === 'chat'}
           onChangeInput={setChatInput}
           onSend={sendChatQuestion}
-          onClose={() => { setChatDoc(null); setChatAnswer(''); setChatInput('') }}
+          onClose={() => { setChatDoc(null); setChatMessages([]); setChatInput('') }}
+          onSaveStructured={saveChatStructured}
         />
       )}
 
@@ -1185,7 +1550,23 @@ export default function DocsPage() {
         <SummaryModal
           docName={summaryDocName}
           summary={summaryText}
-          onClose={() => { setSummaryDocName(''); setSummaryText('') }}
+          saving={saveSummaryMut.isPending}
+          onSave={summarySourceDoc ? () =>
+            saveSummaryMut.mutate({
+              docId: summarySourceDoc.id,
+              title: `Tóm tắt - ${summarySourceDoc.name}`,
+              content: summaryText,
+              style: summaryStyle,
+              length: summaryLength,
+              blogAppendix: summaryBlogMeta.appendix,
+              relatedBlogTitles: summaryBlogMeta.titles,
+            })
+          : undefined}
+          onClose={() => {
+            setSummaryDocName('')
+            setSummaryText('')
+            setSummarySourceDoc(null)
+          }}
         />
       )}
 
@@ -1218,7 +1599,36 @@ export default function DocsPage() {
       )}
 
       {/* ── Quiz Modal ── */}
-      {quiz && <QuizModal questions={quiz} onClose={() => setQuiz(null)} />}
+      {quiz && (
+        <QuizModal
+          questions={quiz}
+          onClose={() => { setQuiz(null); setQuizDoc(null) }}
+          onSave={quizDoc ? () => setShowSaveQuiz(true) : undefined}
+        />
+      )}
+
+      {showSaveQuiz && quiz && quizDoc && (
+        <SaveQuizModal
+          doc={quizDoc}
+          questions={quiz}
+          folders={quizFolders}
+          loading={saveQuizMut.isPending}
+          onClose={() => setShowSaveQuiz(false)}
+          onSubmit={({ title, folderId }) =>
+            saveQuizMut.mutate({
+              docId: quizDoc.id,
+              title,
+              folderId,
+              questions: quiz.map(q => ({
+                question: q.question,
+                options: q.options,
+                correctIndex: q.correctIndex,
+                explanation: q.explanation ?? '',
+              })),
+            })
+          }
+        />
+      )}
     </div>
   )
 }

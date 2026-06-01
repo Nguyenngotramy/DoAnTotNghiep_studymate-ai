@@ -15,8 +15,9 @@ import {
   PlayCircle,
   TrendingUp,
   Sparkles,
+  Share2,
 } from 'lucide-react'
-import { postApi, userApi } from '@/api/services'
+import { postApi, userApi, friendApi, groupApi, authApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -136,6 +137,12 @@ function CommentModal({
       await postApi.addComment(post._id, input.trim())
       toast.success('Đã bình luận')
       setInput('')
+      try {
+        const latestUser = await authApi.me()
+        useAuthStore.getState().updateUser(latestUser)
+      } catch (e) {
+        console.error('Lỗi cập nhật XP:', e)
+      }
       onDone()
     } catch {
       toast.error('Lỗi khi bình luận')
@@ -251,6 +258,213 @@ function CommentModal({
   )
 }
 
+function ShareModal({
+  post,
+  onClose,
+  onDone,
+}: {
+  post: any
+  onClose: () => void
+  onDone: () => void
+}) {
+  const [friends, setFriends] = useState<any[]>([])
+  const [groups, setGroups] = useState<any[]>([])
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([])
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [friendList, groupList] = await Promise.all([
+          friendApi.list(),
+          groupApi.list(),
+        ])
+        setFriends(friendList || [])
+        setGroups(groupList || [])
+      } catch (e) {
+        console.error('Lỗi khi tải danh sách chia sẻ:', e)
+      } finally {
+        setFetching(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const handleShare = async () => {
+    setLoading(true)
+    try {
+      await postApi.share(post._id, {
+        friendIds: selectedFriends,
+        groupIds: selectedGroups,
+      })
+
+      const url = `${window.location.origin}/blog/${post._id}`
+      await navigator.clipboard.writeText(url)
+
+      toast.success('Đã chia sẻ thành công và sao chép liên kết!')
+      
+      const latestUser = await authApi.me()
+      useAuthStore.getState().updateUser(latestUser)
+
+      onDone()
+      onClose()
+    } catch {
+      toast.error('Lỗi khi chia sẻ')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const toggleFriend = (id: string) => {
+    setSelectedFriends(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
+  const toggleGroup = (id: string) => {
+    setSelectedGroups(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl border flex flex-col max-h-[90vh]"
+        style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+          <span className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>
+            Chia sẻ bài viết
+          </span>
+          <button onClick={onClose} style={{ color: 'var(--text3)' }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div>
+            <p className="text-[11px] font-semibold text-[#8b8b9e] uppercase tracking-wider mb-2">
+              Chia sẻ ra bên ngoài
+            </p>
+            <button
+              onClick={async () => {
+                const url = `${window.location.origin}/blog/${post._id}`
+                await navigator.clipboard.writeText(url)
+                toast.success('Đã sao chép liên kết vào bộ nhớ tạm!')
+                try {
+                  await postApi.share(post._id)
+                  const latestUser = await authApi.me()
+                  useAuthStore.getState().updateUser(latestUser)
+                } catch {}
+                onDone()
+                onClose()
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border text-[12px] hover:bg-white/[.03] transition-colors"
+              style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+            >
+              <Share2 size={14} />
+              Sao chép liên kết (Nhận +15 XP)
+            </button>
+          </div>
+
+          {fetching ? (
+            <div className="flex justify-center py-6">
+              <Loader2 size={18} className="animate-spin text-indigo-400" />
+            </div>
+          ) : (
+            <>
+              {friends.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold text-[#8b8b9e] uppercase tracking-wider mb-2">
+                    Gửi tới bạn bè
+                  </p>
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                    {friends.map(f => (
+                      <div
+                        key={f.id}
+                        onClick={() => toggleFriend(f.id)}
+                        className="flex items-center justify-between p-2 rounded-xl hover:bg-white/[.03] cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">
+                            {f.fullName.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="text-[12px]" style={{ color: 'var(--text2)' }}>
+                            {f.fullName}
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={selectedFriends.includes(f.id)}
+                          onChange={() => {}}
+                          className="rounded border-gray-600 bg-transparent text-indigo-500 focus:ring-indigo-500"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {groups.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold text-[#8b8b9e] uppercase tracking-wider mb-2">
+                    Chia sẻ vào nhóm
+                  </p>
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                    {groups.map(g => (
+                      <div
+                        key={g.id}
+                        onClick={() => toggleGroup(g.id)}
+                        className="flex items-center justify-between p-2 rounded-xl hover:bg-white/[.03] cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ background: g.coverColor || '#6366f1' }} />
+                          <span className="text-[12px] truncate max-w-[200px]" style={{ color: 'var(--text2)' }}>
+                            {g.name}
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={selectedGroups.includes(g.id)}
+                          onChange={() => {}}
+                          className="rounded border-gray-600 bg-transparent text-indigo-500 focus:ring-indigo-500"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="px-5 py-4 border-t flex justify-end gap-2" style={{ borderColor: 'var(--border)' }}>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl border text-[12px] hover:bg-white/[.02] transition-colors"
+            style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleShare}
+            disabled={loading || fetching || (selectedFriends.length === 0 && selectedGroups.length === 0)}
+            className="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 text-white text-[12px] font-medium transition-colors flex items-center gap-1.5"
+          >
+            {loading ? <Loader2 size={13} className="animate-spin" /> : null}
+            Chia sẻ trong app
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PostMenu({
   mine,
   onDelete,
@@ -321,6 +535,7 @@ function PostCard({
   onLike,
   onSave,
   onComment,
+  onShare,
   onDelete,
   onHide,
 }: {
@@ -328,6 +543,7 @@ function PostCard({
   onLike: (id: string) => void
   onSave: (id: string) => void
   onComment: (p: any) => void
+  onShare: (p: any) => void
   onDelete: (id: string) => void
   onHide: (id: string) => void
 }) {
@@ -495,7 +711,7 @@ function PostCard({
           <span>{cmts} bình luận</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
           <button
             onClick={() => postId && onLike(postId)}
             className={clsx(
@@ -528,6 +744,15 @@ function PostCard({
             <Bookmark size={14} fill={isSaved ? 'currentColor' : 'none'} />
             {isSaved ? 'Đã lưu' : 'Lưu'}
           </button>
+
+          <button
+            onClick={() => onShare(post)}
+            className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-medium hover:bg-white/[.04] transition-all"
+            style={{ color: 'var(--text2)' }}
+          >
+            <Share2 size={14} />
+            Chia sẻ
+          </button>
         </div>
       </div>
     </div>
@@ -551,7 +776,7 @@ function TrendingSidebar({
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp size={15} className="text-indigo-400" />
         <p className="text-[13px] font-semibold" style={{ color: 'var(--text)' }}>
-          Đang thịnh hành
+          Blog học tập đang thịnh hành
         </p>
       </div>
 
@@ -602,9 +827,10 @@ export default function BlogPage() {
   const [trending, setTrending] = useState<any[]>([])
   const [activeTag, setActiveTag] = useState('Tất cả')
   const [dynamicTags, setDynamicTags] = useState<string[]>(DEFAULT_TAGS)
-  const [activeTab, setActiveTab] = useState<'feed' | 'latest' | 'saved'>('feed')
+  const [activeTab, setActiveTab] = useState<'feed' | 'latest' | 'trending' | 'saved'>('feed')
   const [loading, setLoading] = useState(true)
   const [commentPost, setCommentPost] = useState<any>(null)
+  const [sharePost, setSharePost] = useState<any>(null)
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [loadMore, setLoadMore] = useState(false)
@@ -637,6 +863,15 @@ export default function BlogPage() {
         const res = await postApi.list(p, tag === 'Tất cả' ? undefined : tag)
         items = (res.content ?? []).map(normalizePost)
         totalPages = res.totalPages ?? 1
+      } else if (activeTab === 'trending') {
+        const res = await postApi.trending()
+        const rawItems = (res ?? []).map(normalizePost)
+        items = tag === 'Tất cả'
+          ? rawItems
+          : rawItems.filter((item: any) =>
+              item.tags?.some((t: string) => t.toLowerCase() === tag.toLowerCase())
+            )
+        totalPages = 1
       } else {
         const res = user
           ? await postApi.feed(p, tag === 'Tất cả' ? undefined : tag)
@@ -765,6 +1000,14 @@ export default function BlogPage() {
         />
       )}
 
+      {sharePost?._id && (
+        <ShareModal
+          post={sharePost}
+          onClose={() => setSharePost(null)}
+          onDone={() => refreshPost(sharePost._id)}
+        />
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
         <div className="min-w-0">
           <div className="space-y-4">
@@ -813,6 +1056,7 @@ export default function BlogPage() {
               {([
                 ['feed', 'Dành cho bạn'],
                 ['latest', 'Mới nhất'],
+                ['trending', 'Thịnh hành'],
                 ['saved', 'Đã lưu'],
               ] as const).map(([id, label]) => (
                 <button
@@ -887,6 +1131,7 @@ export default function BlogPage() {
                       onLike={handleLike}
                       onSave={handleSave}
                       onComment={setCommentPost}
+                      onShare={setSharePost}
                       onDelete={handleDelete}
                       onHide={handleHide}
                     />

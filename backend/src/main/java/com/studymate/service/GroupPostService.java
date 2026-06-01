@@ -22,6 +22,7 @@ public class GroupPostService {
     private final GroupRepository groupRepo;
     private final UserRepository userRepo;
     private final NotificationService notificationService;
+    private final XPService xpService;
 
     public List<GroupPost> getByGroup(String groupId, String userId) {
         Group group = findGroup(groupId);
@@ -319,6 +320,9 @@ public class GroupPostService {
 
         GroupPost saved = groupPostRepo.save(post);
 
+        // +20 XP: bình luận bài viết nhóm
+        xpService.award(userId, XPService.Action.COMMENT_OR_REPLY);
+
         if (post.getAuthorId() != null && !post.getAuthorId().equals(userId)) {
             notificationService.send(
                     post.getAuthorId(),
@@ -372,6 +376,9 @@ public class GroupPostService {
         );
 
         GroupPost saved = groupPostRepo.save(post);
+
+        // +20 XP: trả lời thảo luận/bình luận nhóm
+        xpService.award(userId, XPService.Action.COMMENT_OR_REPLY);
 
         if (comment.getAuthorId() != null && !comment.getAuthorId().equals(userId)) {
             notificationService.send(

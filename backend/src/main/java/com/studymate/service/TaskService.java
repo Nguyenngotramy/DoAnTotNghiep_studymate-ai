@@ -20,6 +20,7 @@ public class TaskService {
     private final UserRepository userRepo;
     private final NotificationService notifService;
     private final GroupService groupService;
+    private final XPService xpService;
 
     public List<Task> getByGroup(String groupId) {
         return taskRepo.findByGroupIdOrderByCreatedAtDesc(groupId);
@@ -68,12 +69,14 @@ public class TaskService {
 
     public Task update(String groupId, String taskId, String userId, TaskRequest req) {
         Task task = getOne(groupId, taskId);
+        Task.Status oldStatus = task.getStatus();
+        Task.Status newStatus = defaultStatus(req.getStatus());
 
         String assigneeId = blankToNull(req.getAssigneeId());
 
         task.setTitle(req.getTitle());
         task.setDescription(req.getDescription());
-        task.setStatus(defaultStatus(req.getStatus()));
+        task.setStatus(newStatus);
         task.setPriority(defaultPriority(req.getPriority()));
         task.setLabel(req.getLabel());
         task.setLabelColor(defaultLabelColor(req.getLabelColor()));
@@ -82,6 +85,10 @@ public class TaskService {
         task.setDeadline(req.getDeadline());
 
         Task saved = taskRepo.save(task);
+
+        if (newStatus == Task.Status.DONE && oldStatus != Task.Status.DONE && assigneeId != null) {
+            xpService.award(assigneeId, XPService.Action.TASK_COMPLETED);
+        }
 
         if (assigneeId != null && !assigneeId.equals(userId)) {
             notifService.send(
@@ -98,8 +105,15 @@ public class TaskService {
 
     public Task updateStatus(String groupId, String taskId, Task.Status status) {
         Task task = getOne(groupId, taskId);
+        Task.Status oldStatus = task.getStatus();
         task.setStatus(status);
-        return taskRepo.save(task);
+        Task saved = taskRepo.save(task);
+
+        if (status == Task.Status.DONE && oldStatus != Task.Status.DONE && saved.getAssigneeId() != null) {
+            xpService.award(saved.getAssigneeId(), XPService.Action.TASK_COMPLETED);
+        }
+
+        return saved;
     }
 
     public void delete(String groupId, String taskId) {
@@ -156,15 +170,24 @@ public class TaskService {
             throw new RuntimeException("Bạn không có quyền sửa task cá nhân này");
         }
 
+        Task.Status oldStatus = task.getStatus();
+        Task.Status newStatus = defaultStatus(req.getStatus());
+
         task.setTitle(req.getTitle());
         task.setDescription(req.getDescription());
-        task.setStatus(defaultStatus(req.getStatus()));
+        task.setStatus(newStatus);
         task.setPriority(defaultPriority(req.getPriority()));
         task.setLabel(req.getLabel());
         task.setLabelColor(defaultLabelColor(req.getLabelColor()));
         task.setDeadline(req.getDeadline());
 
-        return taskRepo.save(task);
+        Task saved = taskRepo.save(task);
+
+        if (newStatus == Task.Status.DONE && oldStatus != Task.Status.DONE) {
+            xpService.award(userId, XPService.Action.TASK_COMPLETED);
+        }
+
+        return saved;
     }
 
     public Task updatePersonalStatus(String taskId, String userId, Task.Status status) {
@@ -175,8 +198,15 @@ public class TaskService {
             throw new RuntimeException("Bạn không có quyền cập nhật task này");
         }
 
+        Task.Status oldStatus = task.getStatus();
         task.setStatus(status);
-        return taskRepo.save(task);
+        Task saved = taskRepo.save(task);
+
+        if (status == Task.Status.DONE && oldStatus != Task.Status.DONE) {
+            xpService.award(userId, XPService.Action.TASK_COMPLETED);
+        }
+
+        return saved;
     }
 
     public void deletePersonal(String taskId, String userId) {

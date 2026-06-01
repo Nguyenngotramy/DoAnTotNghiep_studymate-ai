@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { taskApi, groupApi } from '@/api/services'
+import { taskApi, groupApi, authApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import type { Task, TaskStatus } from '@/types'
 import {
@@ -460,6 +460,9 @@ export default function KanbanPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks', groupId] })
       qc.invalidateQueries({ queryKey: ['my-tasks'] })
+      authApi.me().then(latestUser => {
+        useAuthStore.getState().updateUser(latestUser)
+      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: () => {
       toast.error('Không thể cập nhật trạng thái task')

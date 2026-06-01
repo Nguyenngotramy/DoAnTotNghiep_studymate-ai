@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
+import { quizApi, flashcardApi } from "@/api/services";
 
 const API_URL = "http://localhost:3000";
+const SESSION_KEY = "studymind_chat_session";
 
 const AGENT_MAP = {
   Orchestrator: "Orchestrator",
@@ -9,10 +12,12 @@ const AGENT_MAP = {
   GroupAgent: "Group",
   SummaryAgent: "Summary",
   FlashcardAgent: "Flashcard",
+  KepnerTregoeAgent: "KT Analysis",
 };
 
 const QUICK_PROMPTS = [
   { icon: "📐", label: "Giải thích tích phân", text: "Giải thích tích phân cho tôi" },
+  { icon: "🔍", label: "Phân tích KT", text: "Phân tích nguyên nhân bài toán khó theo Kepner-Tregoe (IS/IS NOT)" },
   { icon: "📝", label: "Quiz đạo hàm", text: "Tạo 3 câu quiz về đạo hàm mức apply" },
   { icon: "📋", label: "Tóm tắt giới hạn", text: "Tóm tắt chương giới hạn theo dạng outline" },
   { icon: "🃏", label: "Flashcard đạo hàm", text: "Tạo 5 flashcard về đạo hàm dạng công thức" },
@@ -79,7 +84,7 @@ function ThinkingBubble() {
   );
 }
 
-function Message({ msg }) {
+function Message({ msg, onSaveStructured }) {
   const isUser = msg.role === "user";
   return (
     <div style={{
@@ -116,6 +121,18 @@ function Message({ msg }) {
         }}
         dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}
       />
+      {msg.structured && onSaveStructured && (
+        <button
+          onClick={() => onSaveStructured(msg)}
+          style={{
+            marginTop: 6, fontSize: 11, padding: "4px 10px", borderRadius: 6,
+            background: "rgba(124,58,237,0.15)", color: "#a78bfa",
+            border: "1px solid rgba(124,58,237,0.3)", cursor: "pointer",
+          }}
+        >
+          💾 Lưu {msg.structured.type === "quiz" ? "quiz" : "flashcard"}
+        </button>
+      )}
     </div>
   );
 }
@@ -128,6 +145,8 @@ export default function FloatingAgent() {
   const [activeAgent, setActiveAgent] = useState(null);
   const [unread, setUnread] = useState(0);
   const [showQuick, setShowQuick] = useState(true);
+
+  const [sessionId, setSessionId] = useState(() => localStorage.getItem(SESSION_KEY) || "");
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -161,9 +180,13 @@ export default function FloatingAgent() {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: msg }),
+        body: JSON.stringify({ text: msg, session_id: sessionId || undefined }),
       });
       const data = await res.json();
+      if (data.session_id) {
+        setSessionId(data.session_id);
+        localStorage.setItem(SESSION_KEY, data.session_id);
+      }
 
       setMessages((prev) => [
         ...prev,
@@ -172,6 +195,7 @@ export default function FloatingAgent() {
           role: "ai",
           text: data.response ?? "Không có phản hồi.",
           badge: data.agent ? AGENT_MAP[data.agent] ?? data.agent : null,
+          structured: data.structured ?? null,
           time: timeNow(),
         },
       ]);
@@ -193,10 +217,43 @@ export default function FloatingAgent() {
 
     setLoading(false);
     setTimeout(() => setActiveAgent(null), 2000);
-  }, [input, loading, open]);
+  }, [input, loading, open, sessionId]);
+
+  const saveStructured = async (msg) => {
+    if (!msg.structured) return;
+    try {
+      if (msg.structured.type === "quiz") {
+        const questions = msg.structured.items.map((item) => ({
+          question: item.question ?? "",
+          options: item.options ?? [],
+          correctIndex: item.correct_index ?? item.correctIndex ?? 0,
+          explanation: item.explanation ?? "",
+        }));
+        await quizApi.createPersonalQuizSet({
+          title: `Quiz chat ${new Date().toLocaleDateString("vi")}`,
+          questions,
+        });
+        toast.success("Đã lưu quiz — xem tại mục Quiz");
+      } else if (msg.structured.type === "flashcard") {
+        const cards = msg.structured.items.map((item) => ({
+          question: item.front ?? item.question ?? "",
+          answer: item.back ?? item.answer ?? "",
+        }));
+        await flashcardApi.createPersonalDeck({
+          title: `Flashcard chat ${new Date().toLocaleDateString("vi")}`,
+          cards,
+        });
+        toast.success("Đã lưu flashcard");
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.message ?? "Không thể lưu — cần đăng nhập");
+    }
+  };
 
   const clearHistory = async () => {
     try { await fetch(`${API_URL}/history`, { method: "DELETE" }); } catch {}
+    localStorage.removeItem(SESSION_KEY);
+    setSessionId("");
     setMessages([]);
     setShowQuick(true);
     setActiveAgent(null);
@@ -420,11 +477,11 @@ export default function FloatingAgent() {
                   Chào mừng đến StudyMind
                 </div>
                 <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>
-                  Tutor · Quiz · Group · Summary · Flashcard
+                  Tutor · KT · Quiz · Summary · Flashcard
                 </div>
               </div>
             ) : (
-              messages.map((msg) => <Message key={msg.id} msg={msg} />)
+              messages.map((msg) => <Message key={msg.id} msg={msg} onSaveStructured={saveStructured} />)
             )}
             {loading && <ThinkingBubble />}
             <div ref={messagesEndRef} />
