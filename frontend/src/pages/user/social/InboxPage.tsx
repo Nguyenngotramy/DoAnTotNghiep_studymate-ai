@@ -46,15 +46,12 @@ type InboxTab = 'dm' | 'group'
 type DmSideTab = 'pinned' | 'files' | 'media'
 type GroupSideTab = 'pinned' | 'files' | 'media'
 
-<<<<<<< HEAD
 type DmTargetState = {
   userId: string
   fullName?: string
   avatar?: string | null
 }
 
-=======
->>>>>>> 8511add (Initial clean upload)
 const toAbsUrl = (url?: string | null): string => {
   if (!url) return ''
   if (url.startsWith('http')) return url
@@ -322,10 +319,7 @@ function GroupReplyPreviewBox({
 
 export default function InboxPage() {
   const { userId: paramUserId } = useParams<{ userId: string }>()
-<<<<<<< HEAD
   const location = useLocation()
-=======
->>>>>>> 8511add (Initial clean upload)
   const { user: me } = useAuthStore()
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -345,15 +339,10 @@ export default function InboxPage() {
   const lastMarkedDmRef = useRef('')
   const lastMarkedGroupRef = useRef('')
 
-<<<<<<< HEAD
   const dmTargetState = (location.state as { dmTarget?: DmTargetState } | null)?.dmTarget
 
   const [activeTab, setActiveTab] = useState<InboxTab>('dm')
   const [activeId, setActiveId] = useState<string>(paramUserId ?? dmTargetState?.userId ?? '')
-=======
-  const [activeTab, setActiveTab] = useState<InboxTab>('dm')
-  const [activeId, setActiveId] = useState<string>(paramUserId ?? '')
->>>>>>> 8511add (Initial clean upload)
   const [selectedThread, setSelectedThread] = useState<Conversation | null>(null)
 
   const [input, setInput] = useState('')
@@ -407,7 +396,6 @@ export default function InboxPage() {
   )
 
   useEffect(() => {
-<<<<<<< HEAD
     const nextTargetId = paramUserId ?? dmTargetState?.userId
     if (!nextTargetId) return
     if (activeTab !== 'dm') return
@@ -431,28 +419,6 @@ export default function InboxPage() {
           }
         } else if (selectedThread?.threadType === 'DM' && rid(selectedThread?.userId) !== rid(targetDmId)) {
           setSelectedThread(null)
-=======
-    if (!paramUserId) return
-    if (activeTab !== 'dm') return
-
-    if (rid(paramUserId) !== rid(activeId)) {
-      setActiveId(paramUserId)
-    }
-  }, [paramUserId, activeId, activeTab])
-
-  useEffect(() => {
-    if (activeTab === 'dm') {
-      if (paramUserId) {
-        const dm = dmThreads.find(c => rid(c.userId) === rid(paramUserId)) ?? null
-        if (
-          dm &&
-          (
-            selectedThread?.threadType !== 'DM' ||
-            rid(selectedThread?.userId) !== rid(dm.userId)
-          )
-        ) {
-          setSelectedThread(dm)
->>>>>>> 8511add (Initial clean upload)
         }
         return
       }
@@ -504,7 +470,6 @@ export default function InboxPage() {
 
   const selectedDmThread = useMemo(() => {
     if (selectedThread?.threadType === 'DM') return selectedThread
-<<<<<<< HEAD
 
     const existingDm = dmThreads.find(c => rid(c.userId) === activeId) ?? null
     if (existingDm) return existingDm
@@ -524,21 +489,13 @@ export default function InboxPage() {
       unreadCount: 0,
     } as Conversation
   }, [selectedThread, dmThreads, activeId, dmTargetState])
-=======
-    return dmThreads.find(c => rid(c.userId) === activeId) ?? null
-  }, [selectedThread, dmThreads, activeId])
->>>>>>> 8511add (Initial clean upload)
 
   const selectedGroupThread = useMemo(() => {
     if (selectedThread?.threadType === 'GROUP') return selectedThread
     return null
   }, [selectedThread])
 
-<<<<<<< HEAD
   const isSelectedDm = activeTab === 'dm' && !!activeId
-=======
-  const isSelectedDm = activeTab === 'dm' && !!selectedDmThread
->>>>>>> 8511add (Initial clean upload)
   const isSelectedGroup = activeTab === 'group' && !!selectedGroupThread
   const selectedGroupId = isSelectedGroup ? rid(selectedGroupThread?.groupId) : ''
 
@@ -701,7 +658,6 @@ export default function InboxPage() {
   const activeName =
     selectedDmThread?.title ??
     selectedDmThread?.user?.fullName ??
-<<<<<<< HEAD
     dmTargetState?.fullName ??
     'Người dùng'
 
@@ -711,11 +667,6 @@ export default function InboxPage() {
     dmTargetState?.avatar ??
     null,
   )
-=======
-    'Chưa chọn cuộc trò chuyện'
-
-  const activeAvatar = toAbsUrl(selectedDmThread?.avatar ?? selectedDmThread?.user?.avatar)
->>>>>>> 8511add (Initial clean upload)
   const activeColor = nameColor(activeName)
 
   function isMyMsg(msg: DirectMessage): boolean {
@@ -1373,11 +1324,7 @@ export default function InboxPage() {
         </div>
       </div>
 
-<<<<<<< HEAD
       {(!selectedThread && !isSelectedDm) ? (
-=======
-      {!selectedThread ? (
->>>>>>> 8511add (Initial clean upload)
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <MessageCircle size={48} style={{ color: 'var(--bg4)' }} className="mx-auto mb-4" />
