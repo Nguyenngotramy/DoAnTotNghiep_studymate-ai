@@ -20,3 +20,8 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+backend/src/main/resources/application.yml
+backend/src/main/resources/application.local.backup.yml
+backend/src/main/resources/application-local.yml
+ai_agent/__pycache__/
+backend/.env.example
