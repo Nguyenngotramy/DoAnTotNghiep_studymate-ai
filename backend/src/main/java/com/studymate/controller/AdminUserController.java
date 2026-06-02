@@ -1,6 +1,6 @@
 package com.studymate.controller;
 
-import com.studymate.model.MembershipTier;
+import com.studymate.model.User.MembershipTier;
 import com.studymate.model.User;
 import com.studymate.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

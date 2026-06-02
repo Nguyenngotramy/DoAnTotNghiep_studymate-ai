@@ -4,13 +4,12 @@ import {
   BookOpen, Users, BarChart2, MessageCircle, UserPlus, UserCheck,
   Flame, Zap, Star, MapPin, Calendar, Edit2, Loader2,
   Heart, TrendingUp, Clock, Camera, AlertCircle, GraduationCap,
-  School, Target, X, ChevronDown, ChevronUp, Crown
+  School, Target, X, ChevronDown, ChevronUp
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { friendApi, postApi, groupApi, userApi } from '@/api/services'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
-import { resolveUserAvatar } from '@/utils/avatar'
 
 const COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#ec4899', '#3b82f6', '#22c55e', '#f97316', '#8b5cf6']
 const SKILL_COLORS: Record<string, string> = {
@@ -328,7 +327,7 @@ export default function UserProfilePage() {
     : 'Không rõ'
   const achievements = calcAchievements(displayUser, posts, groups)
 
-  const avatarUrl = resolveUserAvatar(displayUser.avatar)
+  const avatarUrl = toAbsUrl(displayUser.avatar)
   const coverUrl = toAbsUrl(displayUser.coverImage)
 
   return (
@@ -467,12 +466,24 @@ export default function UserProfilePage() {
           <div className="px-6 pb-5">
             <div className="flex items-center gap-4 -mt-8 mb-4">
               <div className="relative flex-shrink-0 group/av">
-                <img
-                  src={avatarUrl}
-                  alt={displayUser.fullName}
-                  className="w-16 h-16 rounded-2xl object-cover ring-4"
-                  style={{ boxShadow: `0 0 0 4px var(--bg2)` }}
-                />
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayUser.fullName}
+                    className="w-16 h-16 rounded-2xl object-cover ring-4"
+                    style={{ boxShadow: `0 0 0 4px var(--bg2)` }}
+                  />
+                ) : (
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-[20px] font-bold text-white ring-4"
+                    style={{
+                      background: `linear-gradient(135deg,${color},${COLORS[(COLORS.indexOf(color) + 1) % COLORS.length]})`,
+                      boxShadow: `0 0 0 4px var(--bg2)`,
+                    }}
+                  >
+                    {ini(displayUser.fullName)}
+                  </div>
+                )}
 
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2" style={{ borderColor: 'var(--bg2)' }} />
 
@@ -492,34 +503,13 @@ export default function UserProfilePage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h1 className="text-[19px] font-bold truncate" style={{ color: 'var(--text)' }}>{displayUser.fullName}</h1>
-                    {(displayUser as any)?.membershipTier === 'GOLD' && (
-                      <div
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                      >
-                        <Crown size={10} />
-                        Hội viên vàng
-                      </div>
-                    )}
-                    {(displayUser as any)?.membershipTier === 'SILVER' && (
-                      <div
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-400/10 text-gray-300 border border-gray-400/20"
-                      >
-                        <Crown size={10} />
-                        Hội viên bạc
-                      </div>
-                    )}
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
                       {formatUserType(displayUser.userType)}
                     </span>
                   </div>
 
                   <p className="text-[12px] mt-1" style={{ color: 'var(--text2)' }}>
-                    {displayUser.bio || (() => {
-                      const tier = (displayUser as any)?.membershipTier
-                      if (tier === 'GOLD') return 'Hội viên vàng của StudyMate AI'
-                      if (tier === 'SILVER') return 'Hội viên bạc của StudyMate AI'
-                      return 'Thành viên StudyMate AI'
-                    })()}
+                    {displayUser.bio || 'Thành viên StudyMate AI'}
                   </p>
                 </div>
 
@@ -862,10 +852,10 @@ export default function UserProfilePage() {
                         const shouldCollapse = contentText.length > 180 || contentText.includes('\n')
 
                         return (
-                          <div
+                          <button
                             key={postId}
                             onClick={() => navigate(`/blog/${postId}`)}
-                            className="w-full p-4 rounded-xl border hover:bg-white/[.03] transition-all text-left cursor-pointer"
+                            className="w-full p-4 rounded-xl border hover:bg-white/[.03] transition-all text-left"
                             style={{ borderColor: 'var(--border)' }}
                           >
                             <div className="flex gap-1.5 mb-2 flex-wrap">
@@ -899,10 +889,7 @@ export default function UserProfilePage() {
 
                             {shouldCollapse && (
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  togglePostExpand(postId, e)
-                                }}
+                                onClick={(e) => togglePostExpand(postId, e)}
                                 className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
                               >
                                 {expanded ? (
@@ -934,7 +921,7 @@ export default function UserProfilePage() {
                               </span>
                               <span className="ml-auto">{p.createdAt ? ago(p.createdAt) : ''}</span>
                             </div>
-                          </div>
+                          </button>
                         )
                       })
                     )}

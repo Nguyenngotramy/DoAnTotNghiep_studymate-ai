@@ -61,4 +61,6 @@ public interface TaskRepository extends MongoRepository<Task, String> {
     Long countOverdueByProjectId(String projectId, Instant now);
 
     List<Task> findByProjectIdAndAssigneeIdOrderByCreatedAtDesc(String projectId, String assigneeId);
+
+    Optional<Task> findByIdAndProjectId(String id, String projectId);
 }

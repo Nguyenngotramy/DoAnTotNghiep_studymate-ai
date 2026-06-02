@@ -1,36 +1,63 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import api from '@/api/axios'
 import toast from 'react-hot-toast'
-import { ArrowRight, ArrowLeft, GraduationCap, BookOpen, School, Users2, Check, Loader2 } from 'lucide-react'
+import { ArrowRight, ArrowLeft, GraduationCap, BookOpen, School, Users2, Check, Loader2, type LucideIcon } from 'lucide-react'
 import clsx from 'clsx'
 
-const SUBJECTS = [
+type UserTypeId = 'STUDENT' | 'HIGHSCHOOL' | 'TEACHER' | 'OTHER'
+type SchedulePreset = 'EVENING' | 'WEEKEND' | 'MORNING'
+
+interface UserTypeOption {
+  id: UserTypeId
+  icon: LucideIcon
+  label: string
+  color: string
+}
+
+interface DayOption {
+  key: string
+  label: string
+}
+
+interface TimeSlot {
+  start: string
+  end: string
+  label: string
+}
+
+interface ScheduleSlot {
+  day: string
+  start: string
+  end: string
+}
+
+const SUBJECTS: string[] = [
   'Toán','Tiếng Anh','Lập trình','Vật lý','Hóa học',
   'Sinh học','Ngữ văn','Lịch sử','Địa lý','IELTS','AI/ML'
 ]
-const GOALS = [
+const GOALS: string[] = [
   'Cải thiện GPA học kỳ này',
   'Đạt chứng chỉ tiếng Anh (IELTS/TOEIC)',
   'Chuẩn bị thi đại học',
   'Học thêm kỹ năng mới',
   'Ôn thi tốt nghiệp',
 ]
-const USER_TYPES = [
+const USER_TYPES: UserTypeOption[] = [
   { id:'STUDENT',    icon: GraduationCap, label:'Sinh viên ĐH', color:'#6366f1' },
   { id:'HIGHSCHOOL', icon: School,        label:'Học sinh THPT', color:'#14b8a6' },
   { id:'TEACHER',    icon: BookOpen,      label:'Giáo viên',     color:'#f59e0b' },
   { id:'OTHER',      icon: Users2,        label:'Khác',          color:'#8b5cf6' },
 ]
 
-const DAYS = [
+const DAYS: DayOption[] = [
   { key: 'MON', label: 'T2' }, { key: 'TUE', label: 'T3' },
   { key: 'WED', label: 'T4' }, { key: 'THU', label: 'T5' },
   { key: 'FRI', label: 'T6' }, { key: 'SAT', label: 'T7' },
   { key: 'SUN', label: 'CN' },
 ]
-const TIME_SLOTS = [
+const TIME_SLOTS: TimeSlot[] = [
   { start: '06:00', end: '08:00', label: '6h-8h' },
   { start: '08:00', end: '10:00', label: '8h-10h' },
   { start: '10:00', end: '12:00', label: '10h-12h' },
@@ -68,10 +95,33 @@ export default function GoogleOnboardingPage() {
   const [loading,  setLoading] = useState(false)
   const [userType, setUserType]= useState('')
   const [school,   setSchool]  = useState('')
+  const [major,    setMajor]   = useState('')
   const [strong,   setStrong]  = useState<string[]>([])
   const [weak,     setWeak]    = useState<string[]>([])
+  const [interests, setInterests] = useState<string[]>([])
+  const [customInterest, setCustomInterest] = useState('')
   const [goal,     setGoal]    = useState('')
   const [schedule, setSchedule]= useState<{day:string,start:string,end:string}[]>([])
+  const [schoolOptions, setSchoolOptions] = useState<string[]>([])
+  const [majorOptions, setMajorOptions] = useState<string[]>([])
+  const [fieldOptions, setFieldOptions] = useState<string[]>([])
+  const [subjectOptions, setSubjectOptions] = useState<string[]>(SUBJECTS)
+  const [goalOptions, setGoalOptions] = useState<string[]>(GOALS)
+  const [timeSlots, setTimeSlots] = useState(TIME_SLOTS)
+
+  useEffect(() => {
+    api.get('/users/onboarding-options', { params: { userType: userType || undefined, major: major || undefined, q: school || undefined } })
+      .then(res => {
+        const data = res.data?.data
+        if (data?.schools) setSchoolOptions(data.schools)
+        if (data?.majors) setMajorOptions(data.majors)
+        if (data?.interestFields) setFieldOptions(data.interestFields)
+        if (data?.subjects?.length) setSubjectOptions(data.subjects)
+        if (data?.goals?.length) setGoalOptions(data.goals)
+        if (data?.timeSlots?.length) setTimeSlots(data.timeSlots)
+      })
+      .catch(() => {})
+  }, [userType, major, school])
 
   const toggleSlot = (day: string, start: string, end: string) => {
     const exists = schedule.find(s => s.day === day && s.start === start)
@@ -87,6 +137,31 @@ export default function GoogleOnboardingPage() {
     else toast('Chọn tối đa 4 môn!')
   }
 
+  const toggleInterest = (tag: string) => {
+    setInterests(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
+  }
+
+  const addCustomInterest = () => {
+    const value = customInterest.trim()
+    if (!value) return
+    setInterests(prev => prev.includes(value) ? prev : [...prev, value])
+    setCustomInterest('')
+  }
+
+  const applySchedulePreset = (preset: 'EVENING' | 'WEEKEND' | 'MORNING') => {
+    const next =
+      preset === 'EVENING'
+        ? ['MON', 'WED', 'FRI'].map(day => ({ day, start: '19:00', end: '21:00' }))
+        : preset === 'WEEKEND'
+          ? [
+              { day: 'SAT', start: '08:00', end: '10:00' },
+              { day: 'SUN', start: '08:00', end: '10:00' },
+              { day: 'SAT', start: '15:00', end: '17:00' },
+            ]
+          : ['TUE', 'THU', 'SAT'].map(day => ({ day, start: '06:00', end: '08:00' }))
+    setSchedule(next)
+  }
+
   const onFinish = async () => {
     setLoading(true)
     try {
@@ -97,12 +172,13 @@ export default function GoogleOnboardingPage() {
       }))
 
       const res = await api.put('/auth/me', {
-        userType, school,
+        userType, school, major,
+        interestedFields: interests,
         strongSubjects: strong,
         weakSubjects:   weak,
         goal,
         availableSchedule,
-        interests: [...strong, ...weak.filter(s => !strong.includes(s))],
+        interests: [...new Set([major, ...strong, ...weak, ...interests].filter(Boolean))],
         onboardingDone: true,
       })
       if (strong.length > 0 || weak.length > 0) {
@@ -123,7 +199,7 @@ export default function GoogleOnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative" style={{ background: '#0a0a0f' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden" style={{ background: '#0a0a0f' }}>
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-[.06]"
@@ -172,7 +248,7 @@ export default function GoogleOnboardingPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl p-6" style={{ background: '#14141c', border: '0.5px solid rgba(255,255,255,.08)' }}>
+        <div className="rounded-2xl p-6 max-h-[calc(100vh-190px)] overflow-y-auto overscroll-contain pr-5" style={{ background: '#14141c', border: '0.5px solid rgba(255,255,255,.08)' }}>
 
           {/* ── STEP 1: User type ── */}
           {step === 1 && (
@@ -201,10 +277,26 @@ export default function GoogleOnboardingPage() {
                 <label className="block text-[12px] font-medium text-[#8b8b9e] mb-1.5">
                   Trường học <span className="text-[#5a5a6e]">(tuỳ chọn)</span>
                 </label>
-                <input value={school} onChange={e => setSchool(e.target.value)}
+                <input value={school} onChange={e => setSchool(e.target.value)} list="google-school-options"
                   placeholder="VD: ĐH Bách Khoa HCM..."
                   className="w-full h-11 px-4 rounded-xl text-[13px] text-[#f0f0f5] placeholder-[#5a5a6e] outline-none bg-[#1e1e2e] border border-white/[.08] focus:border-indigo-500/60 transition-all"/>
+                <datalist id="google-school-options">
+                  {schoolOptions.map(s => <option key={s} value={s} />)}
+                </datalist>
               </div>
+              {userType === 'STUDENT' && (
+                <div className="mb-4">
+                  <label className="block text-[12px] font-medium text-[#8b8b9e] mb-1.5">
+                    Chuyên ngành đang học
+                  </label>
+                  <input value={major} onChange={e => setMajor(e.target.value)} list="google-major-options"
+                    placeholder="VD: Công nghệ thông tin, Marketing..."
+                    className="w-full h-11 px-4 rounded-xl text-[13px] text-[#f0f0f5] placeholder-[#5a5a6e] outline-none bg-[#1e1e2e] border border-white/[.08] focus:border-indigo-500/60 transition-all"/>
+                  <datalist id="google-major-options">
+                    {majorOptions.map(s => <option key={s} value={s} />)}
+                  </datalist>
+                </div>
+              )}
               <button onClick={() => userType ? setStep(2) : toast('Hãy chọn loại người dùng!')}
                 className="w-full h-11 rounded-xl text-[13px] font-semibold text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5"
                 style={{background:'linear-gradient(135deg,#6366f1,#8b5cf6)'}}>
@@ -216,14 +308,16 @@ export default function GoogleOnboardingPage() {
           {/* ── STEP 2: Subjects & Goal ── */}
           {step === 2 && (
             <div>
-              <h2 className="text-[18px] font-bold text-[#f0f0f5] mb-4">Môn học & Mục tiêu 🎯</h2>
+              <h2 className="text-[18px] font-bold text-[#f0f0f5] mb-4">
+                {userType === 'STUDENT' ? 'Chuyên ngành, môn học & mục tiêu' : 'Môn học & Mục tiêu 🎯'}
+              </h2>
 
               <div className="mb-4">
                 <p className="text-[12px] font-semibold text-[#f0f0f5] mb-1">
-                  Bạn giỏi môn gì? <span className="text-[#5a5a6e]">({strong.length}/4)</span>
+                  {userType === 'STUDENT' ? 'Môn/kỹ năng trong chuyên ngành bạn học tốt?' : 'Bạn giỏi môn gì?'} <span className="text-[#5a5a6e]">({strong.length}/4)</span>
                 </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {SUBJECTS.map(s => (
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                  {subjectOptions.map(s => (
                     <button key={s} onClick={() => toggleSubject(s,strong,setStrong)}
                       className={clsx('text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-all',
                         strong.includes(s)
@@ -237,10 +331,10 @@ export default function GoogleOnboardingPage() {
 
               <div className="mb-4">
                 <p className="text-[12px] font-semibold text-[#f0f0f5] mb-1">
-                  Cần cải thiện môn gì? <span className="text-[#5a5a6e]">({weak.length}/4)</span>
+                  {userType === 'STUDENT' ? 'Môn/kỹ năng bạn muốn học hoặc cần cải thiện?' : 'Cần cải thiện môn gì?'} <span className="text-[#5a5a6e]">({weak.length}/4)</span>
                 </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {SUBJECTS.filter(s=>!strong.includes(s)).map(s => (
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                  {subjectOptions.filter(s=>!strong.includes(s)).map(s => (
                     <button key={s} onClick={() => toggleSubject(s,weak,setWeak)}
                       className={clsx('text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-all',
                         weak.includes(s)
@@ -252,10 +346,44 @@ export default function GoogleOnboardingPage() {
                 </div>
               </div>
 
+              <div className="mb-4">
+                <p className="text-[12px] font-semibold text-[#f0f0f5] mb-1">
+                  {userType === 'STUDENT' ? 'Ngành/mảng quan tâm khác' : 'Tag quan tâm khác'}
+                </p>
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                  {(fieldOptions.length ? fieldOptions : subjectOptions).filter(s => !strong.includes(s) && !weak.includes(s)).slice(0, 16).map(s => (
+                    <button key={s} onClick={() => toggleInterest(s)}
+                      className={clsx('text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-all',
+                        interests.includes(s)
+                          ? 'border-indigo-500/50 bg-indigo-500/15 text-indigo-300'
+                          : 'border-white/[.08] text-[#8b8b9e] hover:border-white/[.2] bg-[#1e1e2e]')}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    value={customInterest}
+                    onChange={e => setCustomInterest(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addCustomInterest()
+                      }
+                    }}
+                    placeholder="Thêm ngành/môn quan tâm riêng"
+                    className="flex-1 h-9 px-3 rounded-lg text-[12px] outline-none bg-[#1e1e2e] border border-white/[.08] text-[#f0f0f5]"
+                  />
+                  <button type="button" onClick={addCustomInterest} className="h-9 px-3 rounded-lg text-[12px] font-medium bg-indigo-500/15 text-indigo-300">
+                    Thêm
+                  </button>
+                </div>
+              </div>
+
               <div className="mb-5">
                 <p className="text-[12px] font-semibold text-[#f0f0f5] mb-2">Mục tiêu học tập?</p>
-                <div className="space-y-1.5">
-                  {GOALS.map(g => (
+                <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                  {goalOptions.map(g => (
                     <button key={g} onClick={() => setGoal(g)}
                       className={clsx('w-full text-left px-3 py-2.5 rounded-xl border text-[12px] transition-all',
                         goal===g
@@ -291,11 +419,22 @@ export default function GoogleOnboardingPage() {
           {/* ── STEP 3: Lịch rảnh ── */}
           {step === 3 && (
             <div>
-              <h2 className="text-[18px] font-bold text-[#f0f0f5] mb-1">Lịch rảnh 📅</h2>
+              <h2 className="text-[18px] font-bold text-[#f0f0f5] mb-1">Gợi ý thời khóa biểu học tập</h2>
               <p className="text-[12px] text-[#8b8b9e] mb-4">
-                Chọn khung giờ bạn thường rảnh — dùng để tìm bạn học phù hợp
+                Chọn khung giờ bạn muốn học. Hệ thống dùng lịch này để gợi ý bạn học trùng thời gian.
               </p>
-              <div className="overflow-x-auto -mx-2 px-2">
+              <div className="mb-3 flex flex-wrap gap-2">
+                <button type="button" onClick={() => applySchedulePreset('EVENING')} className="px-2.5 py-1.5 rounded-lg text-[11px] border border-white/[.08] text-[#8b8b9e]">
+                  Tối T2-T4-T6
+                </button>
+                <button type="button" onClick={() => applySchedulePreset('WEEKEND')} className="px-2.5 py-1.5 rounded-lg text-[11px] border border-white/[.08] text-[#8b8b9e]">
+                  Cuối tuần
+                </button>
+                <button type="button" onClick={() => applySchedulePreset('MORNING')} className="px-2.5 py-1.5 rounded-lg text-[11px] border border-white/[.08] text-[#8b8b9e]">
+                  Sáng sớm
+                </button>
+              </div>
+              <div className="overflow-auto max-h-72 -mx-2 px-2">
                 <table className="w-full text-[11px] min-w-[340px]">
                   <thead>
                     <tr>
@@ -306,7 +445,7 @@ export default function GoogleOnboardingPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {TIME_SLOTS.map(slot => (
+                    {timeSlots.map(slot => (
                       <tr key={slot.start}>
                         <td className="text-[#5a5a6e] py-1 pr-2 whitespace-nowrap">{slot.label}</td>
                         {DAYS.map(d => (

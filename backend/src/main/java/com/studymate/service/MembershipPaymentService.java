@@ -2,6 +2,7 @@ package com.studymate.service;
 
 import com.studymate.model.*;
 import com.studymate.model.MembershipPayment.PaymentStatus;
+import com.studymate.model.User.MembershipTier;
 import com.studymate.repository.AdminSettingRepository;
 import com.studymate.repository.MembershipPaymentRepository;
 import com.studymate.repository.RevenueTransactionRepository;

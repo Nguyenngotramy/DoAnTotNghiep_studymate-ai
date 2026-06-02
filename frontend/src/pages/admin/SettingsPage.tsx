@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { adminApi } from '@/api/services'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 import {
   Settings,
@@ -12,87 +11,49 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 
-const defaultSettings = {
-  weakGpaThreshold: 5.5,
-  criticalGpaThreshold: 4.5,
-  infoGpaThreshold: 6.5,
-
-  enableAdminAlerts: true,
-  alertOnWeakLearner: true,
-  alertOnReportedPost: true,
-  alertOnReportedDocument: true,
-  alertOnOverdueTask: true,
-
-  defaultRequirePostApproval: false,
-
-  autoReviewReportedDocument: true,
-  documentReportLimit: 3,
-  blockRejectedDocument: true,
-
-  supportReminderTitle: 'Hỗ trợ học tập từ StudyMate AI',
-  supportReminderMessage:
-    'Kết quả gần đây cho thấy bạn có thể cần thêm hỗ trợ học tập. Hãy xem lại tài liệu, quiz và nhóm học phù hợp để cải thiện dần nhé.',
-
-  infoLabel: 'Cần theo dõi thêm',
-  warningLabel: 'Nguy cơ học lực giảm',
-  criticalLabel: 'Cần can thiệp sớm',
-
-  mlServiceUrl: 'http://localhost:8000',
-  mlHealthEndpoint: '/health',
-
-  maxFileUploadMb: 25,
-  allowedFileTypes: 'PDF,DOC,DOCX,PPT,PPTX,TXT,PNG,JPG,JPEG,ZIP',
-}
-
-type AdminSettingsState = typeof defaultSettings
-
 export default function AdminSettings() {
-  const [settings, setSettings] = useState<AdminSettingsState>(defaultSettings)
-  const [loading, setLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [settings, setSettings] = useState({
+    weakGpaThreshold: 5.5,
+    criticalGpaThreshold: 4.5,
+    infoGpaThreshold: 6.5,
 
-  const fetchSettings = async () => {
-    try {
-      setLoading(true)
-      const data = await adminApi.getAdminSettings()
+    enableAdminAlerts: true,
+    alertOnWeakLearner: true,
+    alertOnReportedPost: true,
+    alertOnReportedDocument: true,
+    alertOnOverdueTask: true,
 
-      if (data) {
-        setSettings(prev => ({
-          ...prev,
-          ...data,
-        }))
-      }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Không thể tải cài đặt hệ thống')
-    } finally {
-      setLoading(false)
-    }
-  }
+    defaultRequirePostApproval: false,
 
-  useEffect(() => {
-    fetchSettings()
-  }, [])
+    autoReviewReportedDocument: true,
+    documentReportLimit: 3,
+    blockRejectedDocument: true,
 
-  const updateField = <K extends keyof AdminSettingsState>(
-    key: K,
-    value: AdminSettingsState[K]
-  ) => {
+    supportReminderTitle: 'Hỗ trợ học tập từ StudyMate AI',
+    supportReminderMessage:
+      'Kết quả gần đây cho thấy bạn có thể cần thêm hỗ trợ học tập. Hãy xem lại tài liệu, quiz và nhóm học phù hợp để cải thiện dần nhé.',
+
+    infoLabel: 'Cần theo dõi thêm',
+    warningLabel: 'Nguy cơ học lực giảm',
+    criticalLabel: 'Cần can thiệp sớm',
+
+    mlServiceUrl: 'http://localhost:8000',
+    mlHealthEndpoint: '/health',
+
+    maxFileUploadMb: 25,
+    allowedFileTypes: 'PDF,DOC,DOCX,PPT,PPTX,TXT,PNG,JPG,JPEG,ZIP',
+  })
+
+  const updateField = (key: keyof typeof settings, value: any) => {
     setSettings(prev => ({
       ...prev,
       [key]: value,
     }))
   }
 
-  const handleSave = async () => {
-    try {
-      setSaving(true)
-      await adminApi.saveAdminSettings(settings)
-      toast.success('Đã lưu cài đặt hệ thống')
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Không thể lưu cài đặt hệ thống')
-    } finally {
-      setSaving(false)
-    }
+  const handleSave = () => {
+    toast.success('Đã lưu cài đặt hệ thống')
+    console.log('Admin settings:', settings)
   }
 
   return (
@@ -110,19 +71,12 @@ export default function AdminSettings() {
 
         <button
           onClick={handleSave}
-          disabled={saving || loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-[13px] font-medium"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[13px] font-medium"
         >
           <Save size={15} />
-          {saving ? 'Đang lưu...' : 'Lưu cài đặt'}
+          Lưu cài đặt
         </button>
       </div>
-
-      {loading && (
-        <div className="mb-5 rounded-2xl border border-white/[.08] bg-[#12121a] p-4 text-[13px] text-[#8b8b9e]">
-          Đang tải cài đặt từ hệ thống...
-        </div>
-      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         <section className="rounded-2xl border border-white/[.08] bg-[#12121a] p-5">
@@ -310,51 +264,37 @@ export default function AdminSettings() {
 
         <section className="xl:col-span-2 rounded-2xl border border-white/[.08] bg-[#12121a] p-5">
           <h2 className="text-[16px] font-semibold flex items-center gap-2 mb-4">
-            <Upload size={18} className="text-orange-400" />
-            Upload & file policy
+            <Upload size={18} className="text-blue-400" />
+            Giới hạn file upload
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SettingNumber
-              label="Max file upload MB"
-              desc="Dung lượng file tối đa cho mỗi lần upload."
+              label="Dung lượng tối đa mỗi file MB"
+              desc="Áp dụng cho tài liệu học tập và file chat."
               value={settings.maxFileUploadMb}
               onChange={v => updateField('maxFileUploadMb', v)}
             />
 
             <SettingInput
-              label="Allowed file types"
+              label="Loại file cho phép"
               value={settings.allowedFileTypes}
               onChange={v => updateField('allowedFileTypes', v)}
             />
           </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {settings.allowedFileTypes.split(',').map(type => (
+              <span
+                key={type}
+                className="px-3 py-1 rounded-full bg-white/[.04] border border-white/[.08] text-[12px] text-[#d8d8e2]"
+              >
+                {type.trim()}
+              </span>
+            ))}
+          </div>
         </section>
       </div>
-    </div>
-  )
-}
-
-function SettingNumber({
-  label,
-  desc,
-  value,
-  onChange,
-}: {
-  label: string
-  desc?: string
-  value: number
-  onChange: (value: number) => void
-}) {
-  return (
-    <div>
-      <label className="text-[12px] text-[#8b8b9e]">{label}</label>
-      {desc && <p className="text-[11px] text-[#6b6b7c] mt-1">{desc}</p>}
-      <input
-        type="number"
-        value={value}
-        onChange={e => onChange(Number(e.target.value))}
-        className="mt-2 w-full bg-[#0a0a0f] border border-white/[.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-red-500/50"
-      />
     </div>
   )
 }
@@ -380,6 +320,31 @@ function SettingInput({
   )
 }
 
+function SettingNumber({
+  label,
+  desc,
+  value,
+  onChange,
+}: {
+  label: string
+  desc?: string
+  value: number
+  onChange: (value: number) => void
+}) {
+  return (
+    <div>
+      <label className="text-[12px] text-[#8b8b9e]">{label}</label>
+      <input
+        type="number"
+        value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        className="mt-1 w-full bg-[#0a0a0f] border border-white/[.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-red-500/50"
+      />
+      {desc && <p className="text-[11px] text-[#6b6b7c] mt-1">{desc}</p>}
+    </div>
+  )
+}
+
 function SettingToggle({
   label,
   checked,
@@ -390,13 +355,12 @@ function SettingToggle({
   onChange: (value: boolean) => void
 }) {
   return (
-    <label className="flex items-center justify-between gap-4 rounded-xl border border-white/[.08] bg-[#0a0a0f] px-3 py-3 cursor-pointer">
+    <label className="flex items-center justify-between gap-3 rounded-xl border border-white/[.08] bg-[#0a0a0f] px-3 py-2 cursor-pointer">
       <span className="text-[13px] text-[#d8d8e2]">{label}</span>
       <input
         type="checkbox"
         checked={checked}
         onChange={e => onChange(e.target.checked)}
-        className="accent-red-600"
       />
     </label>
   )

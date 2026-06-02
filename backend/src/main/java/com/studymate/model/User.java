@@ -61,6 +61,8 @@ public class User {
     @Builder.Default
     private int streak = 0;
 
+    private Instant lastStreakAt;
+
     @Builder.Default
     private List<UserSkill> skills = new ArrayList<>();
 
@@ -70,6 +72,10 @@ public class User {
 
     private String userType; // STUDENT | HIGHSCHOOL | TEACHER | OTHER
     private String goal;
+    private String major;
+
+    @Builder.Default
+    private List<String> interestedFields = new ArrayList<>();
 
     @Builder.Default
     private List<String> strongSubjects = new ArrayList<>();
@@ -106,6 +112,16 @@ public class User {
     @Builder.Default
     private long balance = 0;
 
+    @Transient
+    private Integer matchScore;
+
+    @Transient
+    @Builder.Default
+    private List<String> commonSubjects = new ArrayList<>();
+
+    @Transient
+    private String matchReason;
+
     // ── Settings (notification prefs, theme...) ──────────────────
     private Object settings;
 
@@ -118,6 +134,10 @@ public class User {
     // ── Enums & nested classes ────────────────────────────────────
     public enum Role {
         USER, ADMIN
+    }
+
+    public enum MembershipTier {
+        MEMBER, SILVER, GOLD
     }
 
     @Data

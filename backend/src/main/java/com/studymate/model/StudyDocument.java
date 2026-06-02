@@ -75,4 +75,3 @@ public class StudyDocument {
         private Instant createdAt;
     }
 }
-

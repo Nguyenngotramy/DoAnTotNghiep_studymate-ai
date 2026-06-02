@@ -1,6 +1,6 @@
 package com.studymate.service;
 
-import com.studymate.model.MembershipTier;
+import com.studymate.model.User.MembershipTier;
 import com.studymate.model.MembershipUsage;
 import com.studymate.model.SavedStudyItem;
 import com.studymate.model.User;

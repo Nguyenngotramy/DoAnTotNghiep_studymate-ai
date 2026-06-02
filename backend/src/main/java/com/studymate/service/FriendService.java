@@ -20,25 +20,30 @@ public class FriendService {
 
     public List<User> suggestions(String userId, String search, int size) {
         int safeSize = normalizeSize(size);
+        User current = userRepo.findById(userId).orElseThrow();
 
         Set<String> excludeIds = getFriendIds(userId);
         excludeIds.add(userId);
 
         friendRepo.findByRequesterIdOrReceiverId(userId, userId)
-                .forEach(friendship -> {
-                    excludeIds.add(friendship.getRequesterId());
-                    excludeIds.add(friendship.getReceiverId());
+                .forEach(f -> {
+                    excludeIds.add(f.getRequesterId());
+                    excludeIds.add(f.getReceiverId());
                 });
 
         String q = normalizeSearch(search);
 
-        return userRepo.findAll()
-                .stream()
-                .filter(user -> user.getId() != null)
-                .filter(user -> !excludeIds.contains(user.getId()))
-                .filter(user -> !user.isLocked())
-                .filter(user -> user.getRole() != User.Role.ADMIN)
-                .filter(user -> matchesSearch(user, q))
+        return userRepo.findAll().stream()
+                .filter(u -> u.getId() != null)
+                .filter(u -> !excludeIds.contains(u.getId()))
+                .filter(u -> !u.isLocked() && u.getRole() != User.Role.ADMIN)
+                .filter(u -> matchesSearch(u, q))
+                .peek(u -> enrichMatch(current, u))
+                .sorted(Comparator
+                        .comparing((User u) -> Optional.ofNullable(u.getMatchScore()).orElse(0))
+                        .reversed()
+                        .thenComparing(User::getXp, Comparator.reverseOrder())
+                        .thenComparing(User::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .limit(safeSize)
                 .collect(Collectors.toList());
     }
@@ -78,13 +83,11 @@ public class FriendService {
             throw new RuntimeException("Không thể kết bạn với tài khoản đang bị khóa");
         }
 
-        Friendship saved = friendRepo.save(
-                Friendship.builder()
-                        .requesterId(requesterId)
-                        .receiverId(receiverId)
-                        .status(Friendship.Status.PENDING)
-                        .build()
-        );
+        Friendship saved = friendRepo.save(Friendship.builder()
+                .requesterId(requesterId)
+                .receiverId(receiverId)
+                .status(Friendship.Status.PENDING)
+                .build());
 
         notificationService.send(
                 receiverId,
@@ -148,8 +151,7 @@ public class FriendService {
     }
 
     public void remove(String userId, String friendId) {
-        friendRepo.findBetween(userId, friendId)
-                .ifPresent(friendRepo::delete);
+        friendRepo.findBetween(userId, friendId).ifPresent(friendRepo::delete);
     }
 
     public List<User> getFriends(String userId, String search, int size) {
@@ -157,74 +159,50 @@ public class FriendService {
         String q = normalizeSearch(search);
 
         Set<String> friendIds = getFriendIds(userId);
+        if (friendIds.isEmpty()) return new ArrayList<>();
 
-        if (friendIds.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        return userRepo.findAllById(friendIds)
-                .stream()
-                .filter(user -> user.getId() != null)
-                .filter(user -> !user.isLocked())
-                .filter(user -> matchesSearch(user, q))
+        return userRepo.findAllById(friendIds).stream()
+                .filter(u -> u.getId() != null)
+                .filter(u -> !u.isLocked())
+                .filter(u -> matchesSearch(u, q))
                 .limit(safeSize)
                 .collect(Collectors.toList());
     }
 
     public List<Map<String, Object>> getPending(String userId, int size) {
         int safeSize = normalizeSize(size);
-
         List<Map<String, Object>> result = new ArrayList<>();
 
-        List<Friendship> incoming = friendRepo.findByReceiverIdAndStatus(
-                userId,
-                Friendship.Status.PENDING
-        );
-
+        List<Friendship> incoming = friendRepo.findByReceiverIdAndStatus(userId, Friendship.Status.PENDING);
         for (Friendship friendship : incoming) {
-            Map<String, Object> item = toPendingItem(friendship, userId, "INCOMING");
-            result.add(item);
+            result.add(toPendingItem(friendship, userId, "INCOMING"));
         }
 
-        List<Friendship> outgoing = friendRepo.findByRequesterIdAndStatus(
-                userId,
-                Friendship.Status.PENDING
-        );
-
+        List<Friendship> outgoing = friendRepo.findByRequesterIdAndStatus(userId, Friendship.Status.PENDING);
         for (Friendship friendship : outgoing) {
-            Map<String, Object> item = toPendingItem(friendship, userId, "OUTGOING");
-            result.add(item);
+            result.add(toPendingItem(friendship, userId, "OUTGOING"));
         }
 
         result.sort((a, b) -> {
             Object aDate = a.get("createdAt");
             Object bDate = b.get("createdAt");
-
             if (aDate == null && bDate == null) return 0;
             if (aDate == null) return 1;
             if (bDate == null) return -1;
-
             return String.valueOf(bDate).compareTo(String.valueOf(aDate));
         });
 
-        return result.stream()
-                .limit(safeSize)
-                .collect(Collectors.toList());
+        return result.stream().limit(safeSize).collect(Collectors.toList());
     }
 
     public Map<String, String> getStatus(String userId, String targetId) {
         return friendRepo.findBetween(userId, targetId)
-                .map(friendship -> Map.of("status", friendship.getStatus().name()))
+                .map(f -> Map.of("status", f.getStatus().name()))
                 .orElse(Map.of("status", "NONE"));
     }
 
-    private Map<String, Object> toPendingItem(
-            Friendship friendship,
-            String currentUserId,
-            String direction
-    ) {
+    private Map<String, Object> toPendingItem(Friendship friendship, String currentUserId, String direction) {
         Map<String, Object> item = new HashMap<>();
-
         item.put("id", friendship.getId());
         item.put("requesterId", friendship.getRequesterId());
         item.put("receiverId", friendship.getReceiverId());
@@ -237,28 +215,88 @@ public class FriendService {
                 : friendship.getReceiverId();
 
         item.put("otherUserId", otherUserId);
-
-        userRepo.findById(friendship.getRequesterId())
-                .ifPresent(user -> item.put("requester", user));
-
-        userRepo.findById(friendship.getReceiverId())
-                .ifPresent(user -> item.put("receiver", user));
-
-        userRepo.findById(otherUserId)
-                .ifPresent(user -> item.put("otherUser", user));
+        userRepo.findById(friendship.getRequesterId()).ifPresent(u -> item.put("requester", u));
+        userRepo.findById(friendship.getReceiverId()).ifPresent(u -> item.put("receiver", u));
+        userRepo.findById(otherUserId).ifPresent(u -> item.put("otherUser", u));
 
         return item;
     }
 
     private Set<String> getFriendIds(String userId) {
-        return friendRepo.findFriends(userId)
-                .stream()
-                .map(friendship ->
-                        friendship.getRequesterId().equals(userId)
-                                ? friendship.getReceiverId()
-                                : friendship.getRequesterId()
-                )
+        return friendRepo.findFriends(userId).stream()
+                .map(f -> f.getRequesterId().equals(userId) ? f.getReceiverId() : f.getRequesterId())
                 .collect(Collectors.toSet());
+    }
+
+    private void enrichMatch(User current, User candidate) {
+        Set<String> mySubjects = subjectSet(current);
+        Set<String> candidateSubjects = subjectSet(candidate);
+
+        List<String> common = candidateSubjects.stream()
+                .filter(mySubjects::contains)
+                .sorted()
+                .collect(Collectors.toList());
+
+        Set<String> myWeak = normalizedSet(current.getWeakSubjects());
+        Set<String> candidateStrong = normalizedSet(candidate.getStrongSubjects());
+        long helpMatches = myWeak.stream().filter(candidateStrong::contains).count();
+
+        int score = 50;
+        score += common.size() * 10;
+        score += helpMatches * 15;
+        if (sameText(current.getSchool(), candidate.getSchool())) score += 8;
+        if (sameText(current.getUserType(), candidate.getUserType())) score += 5;
+        if (candidate.getAvailableSchedule() != null && current.getAvailableSchedule() != null) {
+            score += Math.min(10, sharedScheduleDays(current, candidate) * 3);
+        }
+        score = Math.max(0, Math.min(99, score));
+
+        candidate.setMatchScore(score);
+        candidate.setCommonSubjects(common);
+        candidate.setMatchReason(buildMatchReason(common, helpMatches, current, candidate));
+    }
+
+    private Set<String> subjectSet(User user) {
+        Set<String> result = new HashSet<>();
+        if (user == null) return result;
+        result.addAll(normalizedSet(user.getInterests()));
+        result.addAll(normalizedSet(user.getStrongSubjects()));
+        result.addAll(normalizedSet(user.getWeakSubjects()));
+        if (user.getSkills() != null) {
+            user.getSkills().stream()
+                    .map(User.UserSkill::getSubject)
+                    .map(this::normalize)
+                    .filter(s -> !s.isBlank())
+                    .forEach(result::add);
+        }
+        return result;
+    }
+
+    private Set<String> normalizedSet(List<String> values) {
+        if (values == null) return new HashSet<>();
+        return values.stream()
+                .map(this::normalize)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toSet());
+    }
+
+    private int sharedScheduleDays(User current, User candidate) {
+        Set<String> myDays = current.getAvailableSchedule().stream()
+                .map(User.AvailableSlot::getDayOfWeek)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return (int) candidate.getAvailableSchedule().stream()
+                .map(User.AvailableSlot::getDayOfWeek)
+                .filter(myDays::contains)
+                .count();
+    }
+
+    private String buildMatchReason(List<String> common, long helpMatches, User current, User candidate) {
+        if (helpMatches > 0) return "Bạn cần cải thiện môn mà người này học tốt";
+        if (!common.isEmpty()) return "Có điểm chung về " + String.join(", ", common);
+        if (sameText(current.getSchool(), candidate.getSchool())) return "Cùng trường hoặc tổ chức học tập";
+        return "Có hồ sơ học tập phù hợp để kết nối";
     }
 
     private int normalizeSize(int size) {
@@ -270,29 +308,19 @@ public class FriendService {
     }
 
     private boolean matchesSearch(User user, String q) {
-        if (q == null || q.isBlank()) {
-            return true;
-        }
+        if (q == null || q.isBlank()) return true;
+        String fullName = user.getFullName() == null ? "" : user.getFullName().toLowerCase();
+        String email = user.getEmail() == null ? "" : user.getEmail().toLowerCase();
+        String studentCode = user.getStudentCode() == null ? "" : user.getStudentCode().toLowerCase();
+        String school = user.getSchool() == null ? "" : user.getSchool().toLowerCase();
+        return fullName.contains(q) || email.contains(q) || studentCode.contains(q) || school.contains(q);
+    }
 
-        String fullName = user.getFullName() == null
-                ? ""
-                : user.getFullName().toLowerCase();
+    private boolean sameText(String a, String b) {
+        return !normalize(a).isBlank() && normalize(a).equals(normalize(b));
+    }
 
-        String email = user.getEmail() == null
-                ? ""
-                : user.getEmail().toLowerCase();
-
-        String studentCode = user.getStudentCode() == null
-                ? ""
-                : user.getStudentCode().toLowerCase();
-
-        String school = user.getSchool() == null
-                ? ""
-                : user.getSchool().toLowerCase();
-
-        return fullName.contains(q)
-                || email.contains(q)
-                || studentCode.contains(q)
-                || school.contains(q);
+    private String normalize(String value) {
+        return value == null ? "" : value.toLowerCase().trim();
     }
 }

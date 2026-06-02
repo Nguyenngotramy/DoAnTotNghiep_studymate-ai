@@ -1,11 +1,9 @@
-import { useMemo, useEffect } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-import { useQuery } from '@tanstack/react-query'
-import { authApi } from '@/api/services'
 import {
   UserCircle, Mail, GraduationCap, MapPin, Target,
-  BookOpen, Clock3, ShieldCheck, ChevronRight, Sparkles, Crown
+  BookOpen, Clock3, ShieldCheck, ChevronRight, Sparkles
 } from 'lucide-react'
 
 const COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#ec4899', '#3b82f6', '#22c55e', '#f97316', '#8b5cf6']
@@ -53,75 +51,9 @@ function formatDay(day?: string) {
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const { user: authUser, updateUser } = useAuthStore()
-
-  // Refetch user data to get latest membership tier
-  const { data: latestUser, refetch: refetchUser, isLoading } = useQuery({
-    queryKey: ['current-user'],
-    queryFn: () => authApi.me(),
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-  })
-
-  useEffect(() => {
-    if (latestUser) {
-      console.log('ProfilePage - Updating user in auth store:', latestUser)
-      console.log('ProfilePage - latestUser.membershipTier:', (latestUser as any)?.membershipTier)
-      updateUser(latestUser)
-    }
-  }, [latestUser, updateUser])
-
-  // Also refetch on mount
-  useEffect(() => {
-    refetchUser()
-  }, [refetchUser])
-
-  // Use latestUser if available, otherwise fall back to authUser
-  const user = latestUser || authUser
+  const { user } = useAuthStore()
 
   const color = useMemo(() => nameColor(user?.fullName), [user?.fullName])
-
-  // Show loading while fetching
-  if (isLoading && !latestUser) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>
-  }
-
-  // Get membership tier info - prioritize latestUser
-  const membershipTier = (latestUser as any)?.membershipTier || (user as any)?.membershipTier || 'MEMBER'
-  const isSilver = membershipTier === 'SILVER'
-  const isGold = membershipTier === 'GOLD'
-
-  // Debug log
-  console.log('ProfilePage - user:', user)
-  console.log('ProfilePage - user.membershipTier:', (user as any)?.membershipTier)
-  console.log('ProfilePage - membershipTier:', membershipTier)
-  console.log('ProfilePage - isSilver:', isSilver)
-  console.log('ProfilePage - isGold:', isGold)
-  console.log('ProfilePage - latestUser:', latestUser)
-
-  // Get membership label
-  const getMembershipLabel = () => {
-    if (user?.role === 'ADMIN') return 'Quản trị viên'
-    if (isGold) return 'Hội viên vàng'
-    if (isSilver) return 'Hội viên bạc'
-    return 'Thành viên'
-  }
-
-  // Get membership badge color
-  const getBadgeColor = () => {
-    if (user?.role === 'ADMIN') return 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-    if (isGold) return 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-    if (isSilver) return 'bg-gray-400/10 text-gray-300 border-gray-400/20'
-    return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-  }
-
-  // Get bio text
-  const getBioText = () => {
-    if ((user as any)?.bio) return (user as any).bio
-    if (isGold) return 'Hội viên vàng của StudyMate AI'
-    if (isSilver) return 'Hội viên bạc của StudyMate AI'
-    return 'Thành viên StudyMate AI'
-  }
 
   const summaryItems = [
     {
@@ -184,27 +116,11 @@ export default function ProfilePage() {
         />
 
         <div className="px-6 pb-6 -mt-8 flex items-start gap-4">
-          <div className="relative">
-            <div
-              className="w-16 h-16 rounded-2xl ring-4 ring-[#16161d] flex items-center justify-center text-[20px] font-bold text-white"
-              style={{ background: `linear-gradient(135deg, ${color}, #8b5cf6)` }}
-            >
-              {initials(user?.fullName)}
-            </div>
-            {(isSilver || isGold) && (
-              <div
-                className="absolute -top-2 -right-2 rounded-full flex items-center justify-center"
-                style={{
-                  width: 24,
-                  height: 24,
-                  background: isGold ? 'linear-gradient(135deg,#ffd700,#ffec8b)' : 'linear-gradient(135deg,#c0c0c0,#e8e8e8)',
-                  border: '2px solid #fff',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                }}
-              >
-                <Crown size={12} className={isGold ? 'text-yellow-700' : 'text-gray-700'} strokeWidth={2.5} />
-              </div>
-            )}
+          <div
+            className="w-16 h-16 rounded-2xl ring-4 ring-[#16161d] flex items-center justify-center text-[20px] font-bold text-white"
+            style={{ background: `linear-gradient(135deg, ${color}, #8b5cf6)` }}
+          >
+            {initials(user?.fullName)}
           </div>
 
           <div className="flex-1 min-w-0 pt-8">
@@ -212,13 +128,13 @@ export default function ProfilePage() {
               <p className="text-[18px] font-semibold text-[#f0f0f5] truncate">
                 {user?.fullName || 'Người dùng'}
               </p>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getBadgeColor()}`}>
-                {getMembershipLabel()}
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                {user?.role === 'ADMIN' ? 'Quản trị viên' : 'Thành viên'}
               </span>
             </div>
 
             <p className="text-[12px] text-[#8b8b9e] mt-1">
-              {getBioText()}
+              {(user as any)?.bio || 'Thành viên StudyMate AI'}
             </p>
 
             <div className="flex flex-wrap gap-4 mt-3 text-[12px] text-[#8b8b9e]">

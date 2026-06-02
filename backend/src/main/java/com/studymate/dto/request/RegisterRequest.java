@@ -24,9 +24,20 @@ public class RegisterRequest {
     // ── Onboarding step 2 ─────────────────────────────────
     private String userType;          // STUDENT | HIGHSCHOOL | TEACHER | OTHER
     private String school;
+    private String major;
+    private List<String> interestedFields;
 
     // ── Onboarding step 3 ─────────────────────────────────
     private List<String> strongSubjects;   // môn giỏi → skill level 3
     private List<String> weakSubjects;     // môn yếu  → skill level 1
+    private List<String> interests;
+    private List<AvailableSlotRequest> availableSchedule;
     private String       goal;
+
+    @Data
+    public static class AvailableSlotRequest {
+        private String dayOfWeek;
+        private String startTime;
+        private String endTime;
+    }
 }

@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.repository.Query;
 import java.util.List;
 
 public interface PostRepository extends MongoRepository<Post, String> {
-    
+
     @Query("{ 'published': true, '$or': [ { 'moderationStatus': 'APPROVED' }, { 'moderationStatus': null } ] }")
     Page<Post> findActivePosts(Pageable pageable);
 
@@ -29,10 +29,10 @@ public interface PostRepository extends MongoRepository<Post, String> {
 
     @Query("{ '_id': ?0, 'authorId': ?1 }")
     Post findByIdAndAuthorId(String id, String authorId);
-    
+
     // Admin & Moderation Queries
     Page<Post> findByModerationStatus(String moderationStatus, Pageable pageable);
-    
+
     List<Post> findByModerationStatus(String moderationStatus);
 
     @Query("{ 'authorId': ?0, 'moderationStatus': 'NEEDS_REVISION' }")

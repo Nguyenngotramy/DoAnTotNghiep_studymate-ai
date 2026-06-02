@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -39,8 +41,9 @@ public class PostController {
     }
 
     @GetMapping("/trending")
-    public ResponseEntity<?> trending() {
-        return ResponseEntity.ok(ApiResponse.ok(postService.trending()));
+    public ResponseEntity<?> trending(Authentication auth) {
+        String userId = auth != null ? auth.getName() : null;
+        return ResponseEntity.ok(ApiResponse.ok(postService.trending(userId)));
     }
 
     @GetMapping("/trending-tags")
@@ -71,6 +74,13 @@ public class PostController {
     @GetMapping("/hidden")
     public ResponseEntity<?> hidden(Authentication auth) {
         return ResponseEntity.ok(ApiResponse.ok(postService.getHiddenPosts(auth.getName())));
+    }
+
+    @GetMapping("/my-pending")
+    public ResponseEntity<?> myPending(Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                postRepo.findRevisionPostsByAuthor(auth.getName())
+        ));
     }
 
     @GetMapping("/user/{authorId}")
@@ -110,6 +120,28 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.ok(postService.save(id, auth.getName())));
     }
 
+    @PostMapping("/{id}/report")
+    public ResponseEntity<?> report(@PathVariable String id, Authentication auth,
+                                    @RequestBody(required = false) Map<String, String> body) {
+        String reason = body == null ? "" : body.getOrDefault("reason", "");
+        return ResponseEntity.ok(ApiResponse.ok(postService.report(id, auth.getName(), reason), "Đã báo cáo bài viết"));
+    }
+
+    @PostMapping("/{id}/share")
+    public ResponseEntity<?> share(
+            @PathVariable String id,
+            Authentication auth,
+            @RequestBody(required = false) Map<String, List<String>> body
+    ) {
+        List<String> friendIds = body != null ? body.get("friendIds") : null;
+        List<String> groupIds = body != null ? body.get("groupIds") : null;
+        if (friendIds == null) friendIds = Collections.emptyList();
+        if (groupIds == null) groupIds = Collections.emptyList();
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                postService.share(id, auth.getName(), friendIds, groupIds), "Đã chia sẻ thành công!"));
+    }
+
     @PostMapping("/{id}/hide")
     public ResponseEntity<?> hide(@PathVariable String id, Authentication auth) {
         postService.hidePost(id, auth.getName());
@@ -131,8 +163,8 @@ public class PostController {
     }
 
     @PostMapping("/{id}/comments/{commentId}/reply")
-    public ResponseEntity<?> replyComment(@PathVariable String id, @PathVariable String commentId, Authentication auth,
-                                           @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> replyComment(@PathVariable String id, @PathVariable String commentId,
+                                           Authentication auth, @RequestBody Map<String, String> body) {
         var user = userRepo.findById(auth.getName()).orElseThrow();
         return ResponseEntity.ok(ApiResponse.ok(
                 postService.replyComment(id, commentId, auth.getName(), user.getFullName(), body.get("content"))));
@@ -145,50 +177,10 @@ public class PostController {
     }
 
     @PatchMapping("/{id}/comments/{commentId}")
-    public ResponseEntity<?> editComment(@PathVariable String id, @PathVariable String commentId, Authentication auth,
-                                         @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> editComment(@PathVariable String id, @PathVariable String commentId,
+                                         Authentication auth, @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(ApiResponse.ok(
                 postService.editComment(id, commentId, auth.getName(), body.get("content"))));
-    }
-
-    @PostMapping("/{id}/share")
-    public ResponseEntity<?> sharePost(
-            @PathVariable String id,
-            Authentication auth,
-            @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                postService.sharePost(
-                        id,
-                        auth.getName(),
-                        body.get("targetType"),
-                        body.get("targetUserId"),
-                        body.get("targetGroupId"),
-                        body.get("message")
-                ),
-                "Đã chia sẻ bài viết thành công"
-        ));
-    }
-
-    @GetMapping("/{id}/shares")
-    public ResponseEntity<?> getShares(@PathVariable String id) {
-        return ResponseEntity.ok(ApiResponse.ok(postService.getShares(id)));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable String id, Authentication auth) {
-        postService.delete(id, auth.getName());
-        return ResponseEntity.ok(ApiResponse.ok(null, "Đã xoá bài viết"));
-    }
-
-    @PostMapping("/{id}/report")
-    public ResponseEntity<?> report(@PathVariable String id, Authentication auth, @RequestBody Map<String, String> body) {
-        var user = userRepo.findById(auth.getName()).orElseThrow();
-        String reasonType = body.get("reasonType");
-        String reasonText = body.get("reasonText");
-        return ResponseEntity.ok(ApiResponse.ok(
-                postService.reportPost(id, auth.getName(), user.getFullName(), reasonType, reasonText),
-                "Báo cáo bài viết thành công"
-        ));
     }
 
     @PostMapping("/{id}/resubmit")
@@ -199,10 +191,9 @@ public class PostController {
         ));
     }
 
-    @GetMapping("/my-pending")
-    public ResponseEntity<?> myPending(Authentication auth) {
-        return ResponseEntity.ok(ApiResponse.ok(
-                postRepo.findRevisionPostsByAuthor(auth.getName())
-        ));
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable String id, Authentication auth) {
+        postService.delete(id, auth.getName());
+        return ResponseEntity.ok(ApiResponse.ok(null, "Đã xoá bài viết"));
     }
 }

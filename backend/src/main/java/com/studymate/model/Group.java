@@ -23,24 +23,12 @@ public class Group {
     private String subject;
     private String coverColor;
 
-    /**
-     * true  = hiện mã nhóm ra ngoài (nhóm công khai)
-     * false = ẩn mã nhóm (nhóm riêng tư)
-     */
     @Builder.Default
     private boolean publicVisible = true;
 
-    /**
-     * true  = nhập mã xong phải chờ trưởng nhóm duyệt
-     * false = nhập mã xong vào nhóm luôn
-     */
     @Builder.Default
     private boolean requireApproval = false;
 
-    /**
-     * true  = bài đăng mới phải chờ trưởng nhóm duyệt
-     * false = đăng là hiện luôn
-     */
     @Builder.Default
     private boolean requirePostApproval = false;
 
@@ -63,6 +51,12 @@ public class Group {
 
     @LastModifiedDate
     private Instant updatedAt;
+
+    @Transient
+    private Integer matchScore;
+
+    @Transient
+    private String matchReason;
 
     public int getMemberCount() {
         return members == null ? 0 : members.size();
