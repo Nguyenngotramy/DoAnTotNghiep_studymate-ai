@@ -46,7 +46,7 @@ cloudinary:
 
 app:
   jwt:
-    secret: ${JWT_SECRET}        # ❌ Xóa default value
+    secret: ${JWT_SECRET}        
     access-token-expiration: 86400000
     refresh-token-expiration: 604800000
   ml-service:
@@ -58,7 +58,8 @@ app:
   frontend-url: ${FRONTEND_URL}
   admin:
     email: ${ADMIN_EMAIL}
-    password: ${ADMIN_PASSWORD}  # ❌ Xóa default value
+    password: ${ADMIN_PASSWORD}  
+    fullName: ${ADMIN_FULL_NAME:Admin} 
   openai:
     api-key: ${OPENAI_API_KEY}
     base-url: ${OPENAI_BASE_URL:https://openrouter.ai/api/v1}

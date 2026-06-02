@@ -60,6 +60,7 @@ public class User {
 
     @Builder.Default
     private int streak = 0;
+    private Instant lastStreakAt; 
 
     @Builder.Default
     private List<UserSkill> skills = new ArrayList<>();
