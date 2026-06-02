@@ -10,155 +10,57 @@ import {
   BrainCircuit,
   History,
   RefreshCw,
-  CalendarDays,
-  Wrench,
-  AlertTriangle,
 } from 'lucide-react'
 
-type TargetType =
-  | 'ALL'
-  | 'SELECTED_USERS'
-  | 'WEAK_USERS'
-  | 'LOCKED_USERS'
-  | 'UNLOCKED_USERS'
-
-type NotificationType =
-  | 'GENERAL'
-  | 'EVENT'
-  | 'MAINTENANCE'
-  | 'WARNING'
-  | 'SUPPORT'
-
-type Priority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
+type TargetType = 'ALL' | 'SELECTED_USERS' | 'WEAK_USERS' | 'LOCKED_USERS' | 'UNLOCKED_USERS'
 
 type UserRow = {
-  id?: string
-  _id?: string
-  userId?: string
+  id: string
   fullName?: string
-  name?: string
   email?: string
   locked?: boolean
   isLocked?: boolean
 }
 
-type WeakUserRow = {
-  id?: string
-  userId?: string
-  fullName?: string
-  name?: string
-  email?: string
-}
-
 type BroadcastLog = {
   id: string
+  target: string
   title: string
   message: string
-  type: NotificationType
-  priority: Priority
-  targetType: TargetType
-  recipientIds?: string[]
-  recipientCount: number
-  createdBy?: string
+  count: number
   createdAt: string
 }
 
 const templates = [
   {
     label: 'Nhắc nhở học tập',
-    type: 'SUPPORT' as NotificationType,
-    priority: 'NORMAL' as Priority,
     title: 'Hỗ trợ học tập từ StudyMate AI',
-    message:
-      'Kết quả gần đây cho thấy bạn có thể cần thêm hỗ trợ học tập. Hãy xem lại tài liệu, quiz và nhóm học phù hợp nhé.',
+    message: 'Kết quả gần đây cho thấy bạn có thể cần thêm hỗ trợ học tập. Hãy xem lại tài liệu, quiz và nhóm học phù hợp nhé.',
   },
   {
-    label: 'Thông báo sự kiện',
-    type: 'EVENT' as NotificationType,
-    priority: 'NORMAL' as Priority,
-    title: 'Sự kiện học tập mới trên StudyMate AI',
-    message:
-      'StudyMate AI vừa có sự kiện học tập mới. Hãy kiểm tra thông tin và tham gia để cải thiện tiến độ học tập của bạn.',
-  },
-  {
-    label: 'Thông báo bảo trì',
-    type: 'MAINTENANCE' as NotificationType,
-    priority: 'HIGH' as Priority,
-    title: 'Thông báo bảo trì hệ thống',
-    message:
-      'StudyMate AI sẽ tiến hành bảo trì hệ thống trong thời gian sắp tới. Một số tính năng có thể tạm thời không khả dụng.',
-  },
-  {
-    label: 'Cảnh báo học lực yếu',
-    type: 'WARNING' as NotificationType,
-    priority: 'HIGH' as Priority,
-    title: 'Cảnh báo hỗ trợ học tập',
-    message:
-      'Hệ thống ghi nhận kết quả học tập của bạn đang có dấu hiệu giảm. Hãy ôn tập thêm và tham gia nhóm học phù hợp.',
+    label: 'Thông báo hệ thống',
+    title: 'Thông báo từ StudyMate AI',
+    message: 'Hệ thống có cập nhật mới. Vui lòng kiểm tra lại thông tin và hoạt động học tập của bạn.',
   },
   {
     label: 'Tài khoản đã mở khóa',
-    type: 'GENERAL' as NotificationType,
-    priority: 'NORMAL' as Priority,
     title: 'Tài khoản của bạn đã được mở khóa',
-    message:
-      'Tài khoản của bạn đã được mở khóa. Bạn có thể đăng nhập và tiếp tục sử dụng StudyMate AI.',
+    message: 'Tài khoản của bạn đã được mở khóa. Bạn có thể đăng nhập và tiếp tục sử dụng StudyMate AI.',
+  },
+  {
+    label: 'Cảnh báo học lực yếu',
+    title: 'Cảnh báo hỗ trợ học tập',
+    message: 'Hệ thống ghi nhận kết quả học tập của bạn đang có dấu hiệu giảm. Hãy ôn tập thêm và tham gia nhóm học phù hợp.',
   },
 ]
 
-function getUserId(user: UserRow | WeakUserRow) {
-  return user.id || user.userId || user._id || ''
-}
-
-function getUserName(user: UserRow | WeakUserRow) {
-  return user.fullName || user.name || user.email || getUserId(user) || 'Người dùng'
-}
-
-function targetLabel(targetType: TargetType) {
-  switch (targetType) {
-    case 'ALL':
-      return 'Toàn hệ thống'
-    case 'SELECTED_USERS':
-      return 'User được chọn'
-    case 'WEAK_USERS':
-      return 'User học lực yếu'
-    case 'LOCKED_USERS':
-      return 'User bị khóa'
-    case 'UNLOCKED_USERS':
-      return 'User đang hoạt động'
-    default:
-      return targetType
-  }
-}
-
-function notificationTypeLabel(type: NotificationType) {
-  switch (type) {
-    case 'EVENT':
-      return 'Sự kiện'
-    case 'MAINTENANCE':
-      return 'Bảo trì'
-    case 'WARNING':
-      return 'Cảnh báo'
-    case 'SUPPORT':
-      return 'Hỗ trợ học tập'
-    default:
-      return 'Thông báo chung'
-  }
-}
-
 export default function AdminNotifications() {
   const [targetType, setTargetType] = useState<TargetType>('ALL')
-  const [notificationType, setNotificationType] = useState<NotificationType>('GENERAL')
-  const [priority, setPriority] = useState<Priority>('NORMAL')
-
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
-
   const [users, setUsers] = useState<UserRow[]>([])
-  const [totalUsers, setTotalUsers] = useState(0)
-  const [weakUsers, setWeakUsers] = useState<WeakUserRow[]>([])
+  const [weakUsers, setWeakUsers] = useState<any[]>([])
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
-
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [history, setHistory] = useState<BroadcastLog[]>([])
@@ -167,33 +69,15 @@ export default function AdminNotifications() {
     try {
       setLoading(true)
 
-      const [usersRes, alertRes, historyRes]: any = await Promise.all([
-        adminApi.getUsers(0, undefined, 10000),
-        adminApi.getAlertCenter(),
-        adminApi.getNotificationHistory(),
-      ])
+      const usersRes: any = await adminApi.getUsers(0)
+      const alertRes: any = await adminApi.getAlertCenter()
 
       const userList = Array.isArray(usersRes)
         ? usersRes
-        : usersRes?.content || usersRes?.data?.content || []
-
-      const totalUserCount =
-        usersRes?.totalElements ||
-        usersRes?.data?.totalElements ||
-        userList.length
-
-      const weakLearnerList = Array.isArray(alertRes?.weakLearners)
-        ? alertRes.weakLearners
-        : alertRes?.data?.weakLearners || []
-
-      const historyList = Array.isArray(historyRes)
-        ? historyRes
-        : historyRes?.content || historyRes?.data || []
+        : usersRes?.content || []
 
       setUsers(userList)
-      setTotalUsers(totalUserCount)
-      setWeakUsers(weakLearnerList)
-      setHistory(historyList)
+      setWeakUsers(alertRes?.weakLearners || [])
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Không thể tải dữ liệu thông báo')
     } finally {
@@ -215,14 +99,13 @@ export default function AdminNotifications() {
 
   const targetUsers = useMemo(() => {
     if (targetType === 'SELECTED_USERS') {
-      return users.filter(u => selectedUsers.includes(getUserId(u)))
+      return users.filter(u => selectedUsers.includes(u.id))
     }
 
     if (targetType === 'WEAK_USERS') {
       return weakUsers.map(w => ({
-        id: getUserId(w),
-        fullName: getUserName(w),
-        email: w.email,
+        id: w.userId,
+        fullName: w.name,
       }))
     }
 
@@ -237,19 +120,7 @@ export default function AdminNotifications() {
     return users
   }, [targetType, users, selectedUsers, weakUsers, lockedUsers, unlockedUsers])
 
-  const targetUserIds = useMemo(() => {
-    if (targetType === 'ALL') return []
-
-    return targetUsers
-      .map(user => getUserId(user))
-      .filter(id => id && id.trim().length > 0)
-  }, [targetType, targetUsers])
-
-  const recipientCount = targetType === 'ALL' ? totalUsers : targetUserIds.length
-
   const applyTemplate = (template: typeof templates[number]) => {
-    setNotificationType(template.type)
-    setPriority(template.priority)
     setTitle(template.title)
     setMessage(template.message)
   }
@@ -273,39 +144,33 @@ export default function AdminNotifications() {
       return
     }
 
-    if (targetType !== 'ALL' && targetUserIds.length === 0) {
+    if (targetType !== 'ALL' && targetUsers.length === 0) {
       toast.error('Không có user phù hợp để gửi')
       return
     }
 
-    const confirmed = window.confirm(
-      `Bạn có chắc muốn gửi thông báo này cho ${recipientCount} user không?`
-    )
-
-    if (!confirmed) return
-
     try {
       setSending(true)
 
-      await adminApi.sendAdminNotification({
+      if (targetType === 'ALL') {
+        await adminApi.broadcast(title.trim(), message.trim())
+      } else {
+        for (const user of targetUsers) {
+          await adminApi.sendSupportReminder(user.id, message.trim())
+        }
+      }
+
+      const log: BroadcastLog = {
+        id: crypto.randomUUID(),
+        target: targetType,
         title: title.trim(),
         message: message.trim(),
-        type: notificationType,
-        priority,
-        targetType,
-        userIds: targetUserIds,
-      })
+        count: targetType === 'ALL' ? users.length : targetUsers.length,
+        createdAt: new Date().toISOString(),
+      }
 
+      setHistory(prev => [log, ...prev])
       toast.success('Đã gửi thông báo thành công')
-
-      setTitle('')
-      setMessage('')
-      setTargetType('ALL')
-      setNotificationType('GENERAL')
-      setPriority('NORMAL')
-      setSelectedUsers([])
-
-      await fetchData()
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Không thể gửi thông báo')
     } finally {
@@ -322,14 +187,13 @@ export default function AdminNotifications() {
             Gửi thông báo
           </h1>
           <p className="text-[13px] text-[#8b8b9e] mt-1">
-            Gửi thông báo sự kiện, bảo trì, cảnh báo hoặc hỗ trợ học tập cho user thật trong hệ thống.
+            Gửi thông báo toàn hệ thống, theo nhóm user, user học lực yếu hoặc user bị khóa/mới mở khóa.
           </p>
         </div>
 
         <button
           onClick={fetchData}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[.04] hover:bg-white/[.08] disabled:opacity-60 text-[13px] text-[#d8d8e2] border border-white/[.08]"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[.04] hover:bg-white/[.08] text-[13px] text-[#d8d8e2] border border-white/[.08]"
         >
           <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
           Làm mới
@@ -339,7 +203,7 @@ export default function AdminNotifications() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
         <div className="rounded-2xl border border-white/[.08] bg-[#12121a] p-4">
           <p className="text-[12px] text-[#8b8b9e]">Tổng user</p>
-          <h2 className="text-2xl font-semibold mt-2">{totalUsers}</h2>
+          <h2 className="text-2xl font-semibold mt-2">{users.length}</h2>
         </div>
 
         <div className="rounded-2xl border border-yellow-500/15 bg-yellow-500/5 p-4">
@@ -386,67 +250,32 @@ export default function AdminNotifications() {
                 {users.length === 0 ? (
                   <p className="text-[13px] text-[#8b8b9e]">Không có user.</p>
                 ) : (
-                  users.map(user => {
-                    const userId = getUserId(user)
-
-                    return (
-                      <label
-                        key={userId}
-                        className="flex items-center gap-3 py-2 text-[13px] cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedUsers.includes(userId)}
-                          onChange={() => toggleUser(userId)}
-                        />
-                        <span>
-                          {getUserName(user)}
-                          <span className="text-[#6b6b7c] ml-2">{user.email}</span>
-                        </span>
-                      </label>
-                    )
-                  })
+                  users.map(user => (
+                    <label
+                      key={user.id}
+                      className="flex items-center gap-3 py-2 text-[13px] cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={() => toggleUser(user.id)}
+                      />
+                      <span>
+                        {user.fullName || user.email || user.id}
+                        <span className="text-[#6b6b7c] ml-2">{user.email}</span>
+                      </span>
+                    </label>
+                  ))
                 )}
               </div>
             )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-[12px] text-[#8b8b9e]">Loại thông báo</label>
-                <select
-                  value={notificationType}
-                  onChange={e => setNotificationType(e.target.value as NotificationType)}
-                  className="mt-1 w-full bg-[#0a0a0f] border border-white/[.08] rounded-xl px-3 py-2 text-[13px] outline-none"
-                >
-                  <option value="GENERAL">Thông báo chung</option>
-                  <option value="EVENT">Sự kiện học tập</option>
-                  <option value="MAINTENANCE">Bảo trì hệ thống</option>
-                  <option value="WARNING">Cảnh báo</option>
-                  <option value="SUPPORT">Hỗ trợ học tập</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[12px] text-[#8b8b9e]">Mức độ ưu tiên</label>
-                <select
-                  value={priority}
-                  onChange={e => setPriority(e.target.value as Priority)}
-                  className="mt-1 w-full bg-[#0a0a0f] border border-white/[.08] rounded-xl px-3 py-2 text-[13px] outline-none"
-                >
-                  <option value="LOW">Thấp</option>
-                  <option value="NORMAL">Bình thường</option>
-                  <option value="HIGH">Cao</option>
-                  <option value="URGENT">Khẩn cấp</option>
-                </select>
-              </div>
-            </div>
 
             <div>
               <label className="text-[12px] text-[#8b8b9e]">Tiêu đề</label>
               <input
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder="Ví dụ: Thông báo bảo trì hệ thống"
+                placeholder="Nhập tiêu đề thông báo..."
                 className="mt-1 w-full bg-[#0a0a0f] border border-white/[.08] rounded-xl px-3 py-2 text-[13px] outline-none focus:border-red-500/50"
               />
             </div>
@@ -469,7 +298,6 @@ export default function AdminNotifications() {
                 {templates.map(template => (
                   <button
                     key={template.label}
-                    type="button"
                     onClick={() => applyTemplate(template)}
                     className="px-3 py-1.5 rounded-lg bg-white/[.04] hover:bg-white/[.08] border border-white/[.08] text-[12px]"
                   >
@@ -479,24 +307,13 @@ export default function AdminNotifications() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/[.08] bg-[#0a0a0f] p-3">
-              <p className="text-[12px] text-[#8b8b9e] mb-1">Xem trước</p>
-              <p className="text-[14px] font-semibold">{title || 'Tiêu đề thông báo'}</p>
-              <p className="text-[13px] text-[#a5a5b8] mt-1 whitespace-pre-line">
-                {message || 'Nội dung thông báo sẽ hiển thị tại đây.'}
-              </p>
-              <p className="text-[11px] text-[#6b6b7c] mt-3">
-                {notificationTypeLabel(notificationType)} · {priority} · {targetLabel(targetType)} · {recipientCount} user
-              </p>
-            </div>
-
             <button
               onClick={handleSend}
               disabled={sending}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-[14px] font-medium"
             >
               <Send size={16} />
-              {sending ? 'Đang gửi...' : `Gửi thông báo (${recipientCount} user)`}
+              {sending ? 'Đang gửi...' : `Gửi thông báo (${targetType === 'ALL' ? users.length : targetUsers.length} user)`}
             </button>
           </div>
         </div>
@@ -513,7 +330,7 @@ export default function AdminNotifications() {
                 <Users size={17} className="text-blue-400" />
                 <div>
                   <p className="text-[13px]">Toàn hệ thống</p>
-                  <p className="text-[11px] text-[#8b8b9e]">{totalUsers} user</p>
+                  <p className="text-[11px] text-[#8b8b9e]">{users.length} user</p>
                 </div>
               </button>
 
@@ -549,34 +366,6 @@ export default function AdminNotifications() {
                   <p className="text-[11px] text-[#8b8b9e]">{unlockedUsers.length} user</p>
                 </div>
               </button>
-
-              <button
-                onClick={() => {
-                  setNotificationType('EVENT')
-                  setPriority('NORMAL')
-                }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[.03] hover:bg-white/[.06] border border-white/[.08] text-left"
-              >
-                <CalendarDays size={17} className="text-purple-400" />
-                <div>
-                  <p className="text-[13px]">Thông báo sự kiện</p>
-                  <p className="text-[11px] text-[#8b8b9e]">Workshop, deadline, lịch học</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => {
-                  setNotificationType('MAINTENANCE')
-                  setPriority('HIGH')
-                }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/[.03] hover:bg-white/[.06] border border-white/[.08] text-left"
-              >
-                <Wrench size={17} className="text-orange-400" />
-                <div>
-                  <p className="text-[13px]">Thông báo bảo trì</p>
-                  <p className="text-[11px] text-[#8b8b9e]">Bảo trì server, cập nhật hệ thống</p>
-                </div>
-              </button>
             </div>
           </div>
 
@@ -586,10 +375,10 @@ export default function AdminNotifications() {
               Lịch sử broadcast
             </h2>
 
-            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+            <div className="space-y-3">
               {history.length === 0 ? (
                 <p className="text-[13px] text-[#8b8b9e]">
-                  Chưa có lịch sử gửi thông báo.
+                  Chưa có lịch sử trong phiên hiện tại.
                 </p>
               ) : (
                 history.map(item => (
@@ -597,19 +386,12 @@ export default function AdminNotifications() {
                     key={item.id}
                     className="rounded-xl border border-white/[.08] bg-[#0a0a0f] p-3"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-[13px] font-medium">{item.title}</p>
-                      {item.priority === 'URGENT' || item.priority === 'HIGH' ? (
-                        <AlertTriangle size={14} className="text-red-400 mt-0.5" />
-                      ) : null}
-                    </div>
-
+                    <p className="text-[13px] font-medium">{item.title}</p>
                     <p className="text-[11px] text-[#8b8b9e] mt-1">
-                      {targetLabel(item.targetType)} · {notificationTypeLabel(item.type)} · {item.recipientCount} user
+                      {item.target} · {item.count} user
                     </p>
-
                     <p className="text-[11px] text-[#6b6b7c] mt-1">
-                      {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : '—'}
+                      {new Date(item.createdAt).toLocaleString('vi-VN')}
                     </p>
                   </div>
                 ))

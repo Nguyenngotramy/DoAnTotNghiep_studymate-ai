@@ -141,7 +141,3 @@ public class GroupPost {
         PENDING, APPROVED, REJECTED
     }
 }
-
-
-
-

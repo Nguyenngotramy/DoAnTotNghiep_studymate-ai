@@ -2,12 +2,18 @@ import api from './axios'
 import type {
   User, Group, GroupMember, Task, TaskStatus, TaskComment,
   ChatMessage, Document, Flashcard, QuizQuestion, PredictInput,
-  Post, PostAiCheckResult, DirectMessage, Conversation, Notification, Friendship,
+  Post, DirectMessage, Conversation, Notification, Friendship,
   PageResponse, ApiResponse, TaskAttachment,
-  FlashcardDeck, FlashcardFolder,
+  FlashcardDeck, FlashcardFolder, FlashcardRating, FlashcardStudySummary, FlashcardCardProgressView,
   QuizSet, QuizFolder,
+  SavedSummary,
+  VocabularyItem,
+  VocabularyPayload,
+  VocabularySet,
   StudyProfile, StudyTermRecord, StudySubjectRecord, StudyPrediction
 } from '@/types'
+
+const AI_AGENT_URL = 'http://localhost:3000'
 
 const d = <T>(r: { data: ApiResponse<T> }) => r.data.data
 
@@ -40,6 +46,8 @@ export const userApi = {
     coverImage?: string
     userType?: string
     goal?: string
+    major?: string
+    interestedFields?: string[]
     onboardingDone?: boolean
     strongSubjects?: string[]
     weakSubjects?: string[]
@@ -77,6 +85,17 @@ export const userApi = {
       })
       .then(r => d<{ url: string }>(r))
   },
+
+  onboardingOptions: (params?: { userType?: string; major?: string; q?: string }) =>
+    api.get('/users/onboarding-options', { params }).then(r => d<{
+      schools: string[]
+      subjects: string[]
+      majors: string[]
+      interestFields: string[]
+      interestTags: string[]
+      goals: string[]
+      timeSlots: { start: string; end: string; label: string }[]
+    }>(r)),
 }
 
 export const authApi = {
@@ -90,8 +109,16 @@ export const authApi = {
     studentCode?: string
     userType?: string
     school?: string
+    major?: string
+    interestedFields?: string[]
     strongSubjects?: string[]
     weakSubjects?: string[]
+    interests?: string[]
+    availableSchedule?: {
+      dayOfWeek: string
+      startTime: string
+      endTime: string
+    }[]
     goal?: string
   }) => api.post('/auth/register', body).then(r => r.data),
 
@@ -110,51 +137,6 @@ export const dashboardApi = {
   getFeed: () => api.get('/dashboard/feed').then(r => d<Post[]>(r)),
 }
 
-export const projectApi = {
-  create: (groupId: string, body: { name: string; description: string; startDate?: string; endDate?: string; memberIds?: string[] }) =>
-    api.post(`/groups/${groupId}/projects`, body).then(r => r.data),
-
-  getProjects: (groupId: string) =>
-    api.get(`/groups/${groupId}/projects`).then(r => r.data),
-
-  getProject: (groupId: string, projectId: string) =>
-    api.get(`/groups/${groupId}/projects/${projectId}`).then(r => r.data),
-
-  update: (groupId: string, projectId: string, body: any) =>
-    api.patch(`/groups/${groupId}/projects/${projectId}`, body).then(r => r.data),
-
-  delete: (groupId: string, projectId: string) =>
-    api.delete(`/groups/${groupId}/projects/${projectId}`).then(r => r.data),
-
-  complete: (groupId: string, projectId: string) =>
-    api.post(`/groups/${groupId}/projects/${projectId}/complete`).then(r => r.data),
-
-  cancel: (groupId: string, projectId: string) =>
-    api.post(`/groups/${groupId}/projects/${projectId}/cancel`).then(r => r.data),
-
-  getProjectProgress: (groupId: string, projectId: string) =>
-    api.get(`/groups/${groupId}/projects/${projectId}/progress`).then(r => r.data),
-
-  exportProjectProgress: (groupId: string, projectId: string) =>
-    api.get(`/groups/${groupId}/projects/${projectId}/progress/export`, { responseType: 'blob' }).then(r => r.data),
-
-  // Project-based task APIs
-  getProjectTasks: (groupId: string, projectId: string) =>
-    api.get(`/groups/${groupId}/projects/${projectId}/tasks`).then(r => r.data),
-
-  createProjectTask: (groupId: string, projectId: string, data: any) =>
-    api.post(`/groups/${groupId}/projects/${projectId}/tasks`, data).then(r => r.data),
-
-  updateProjectTask: (groupId: string, projectId: string, taskId: string, data: any) =>
-    api.put(`/groups/${groupId}/projects/${projectId}/tasks/${taskId}`, data).then(r => r.data),
-
-  updateProjectTaskStatus: (groupId: string, projectId: string, taskId: string, status: string) =>
-    api.patch(`/groups/${groupId}/projects/${projectId}/tasks/${taskId}/status`, { status }).then(r => r.data),
-
-  deleteProjectTask: (groupId: string, projectId: string, taskId: string) =>
-    api.delete(`/groups/${groupId}/projects/${projectId}/tasks/${taskId}`).then(r => r.data),
-}
-
 export const postApi = {
   feed: (page = 0, tag?: string) =>
     api.get('/posts/feed', { params: { page, ...(tag ? { tag } : {}) } }).then(r => d<PageResponse<Post>>(r)),
@@ -170,22 +152,6 @@ export const postApi = {
 
   trendingTags: () =>
     api.get('/posts/trending-tags').then(r => d<{ tag: string; count: number }[]>(r)),
-
-  searchTags: (search = '') =>
-    api.get('/posts/tags', { params: { search } }).then(r => d<{ tag: string; count: number }[]>(r)),
-
-  aiCheck: (body: {
-    title: string
-    content: string
-    subject: string
-    tags: string[]
-  }) =>
-    api.post('/posts/ai-check', body).then(r => {
-      if (!r.data.success) {
-        throw new Error(r.data.message || 'AI đang bận, bạn vẫn có thể đăng bài để hệ thống kiểm duyệt sau')
-      }
-      return d<PostAiCheckResult>(r)
-    }),
 
   saved: (page = 0) =>
     api.get('/posts/saved', { params: { page } }).then(r => d<PageResponse<Post>>(r)),
@@ -205,18 +171,16 @@ export const postApi = {
   create: (body: {
     title: string
     content: string
-    subject: string
     tags: string[]
     imageUrls?: string[]
     videoUrl?: string
     coverImage?: string
     summary?: string
-  }) => api.post('/posts', body, { timeout: 120_000 }).then(r => d<Post>(r)),
+  }) => api.post('/posts', body).then(r => d<Post>(r)),
 
   update: (id: string, body: {
     title: string
     content: string
-    subject: string
     tags: string[]
     imageUrls?: string[]
     videoUrl?: string
@@ -233,29 +197,16 @@ export const postApi = {
   save: (id: string) =>
     api.post(`/posts/${id}/save`).then(r => d<Post>(r)),
 
+  report: (id: string, reason?: string) =>
+    api.post(`/posts/${id}/report`, {
+      reason: reason || 'Nội dung cần được xem xét',
+    }).then(r => d<Post>(r)),
+
+  share: (id: string, body?: { friendIds?: string[]; groupIds?: string[] }) =>
+    api.post(`/posts/${id}/share`, body || {}).then(r => d<Post>(r)),
+
   addComment: (id: string, content: string) =>
     api.post(`/posts/${id}/comments`, { content }).then(r => d(r)),
-
-  replyComment: (id: string, commentId: string, content: string) =>
-    api.post(`/posts/${id}/comments/${commentId}/reply`, { content }).then(r => d(r)),
-
-  deleteComment: (id: string, commentId: string) =>
-    api.delete(`/posts/${id}/comments/${commentId}`).then(r => d(r)),
-
-  editComment: (id: string, commentId: string, content: string) =>
-    api.patch(`/posts/${id}/comments/${commentId}`, { content }).then(r => d(r)),
-
-  sharePost: (id: string, payload: { targetType: 'FRIEND' | 'GROUP'; targetUserId?: string; targetGroupId?: string; message?: string }) =>
-    api.post(`/posts/${id}/share`, payload).then(r => d(r)),
-
-  reportPost: (postId: string, reasonType: string, reasonText: string) =>
-    api.post(`/posts/${postId}/report`, { reasonType, reasonText }).then(r => d<any>(r)),
-
-  resubmitPost: (postId: string) =>
-    api.post(`/posts/${postId}/resubmit`).then(r => d<Post>(r)),
-
-  getMyPending: () =>
-    api.get('/posts/my-pending').then(r => d<Post[]>(r)),
 
   uploadImage: (file: File) => {
     const fd = new FormData()
@@ -279,39 +230,13 @@ export const postApi = {
 }
 
 export const friendApi = {
-  suggestions: (search = '', size = 10000) =>
-    api
-      .get('/friends/suggestions', {
-        params: { search, size },
-      })
-      .then(r => asArray<User>(d<any>(r))),
-
-  pending: (size = 10000) =>
-    api
-      .get('/friends/pending', {
-        params: { size },
-      })
-      .then(r => asArray<Friendship>(d<any>(r))),
-
-  list: (search = '', size = 10000) =>
-    api
-      .get('/friends', {
-        params: { search, size },
-      })
-      .then(r => asArray<User>(d<any>(r))),
-
-  send: (userId: string) =>
-    api.post(`/friends/${userId}/request`),
-
-  accept: (userId: string) =>
-    api.post(`/friends/${userId}/accept`),
-
-  reject: (userId: string) =>
-    api.post(`/friends/${userId}/reject`),
-
-  remove: (userId: string) =>
-    api.delete(`/friends/${userId}`),
-
+  suggestions: () => api.get('/friends/suggestions').then(r => d<User[]>(r)),
+  pending: () => api.get('/friends/pending').then(r => d<Friendship[]>(r)),
+  list: () => api.get('/friends').then(r => d<User[]>(r)),
+  send: (userId: string) => api.post(`/friends/${userId}/request`),
+  accept: (userId: string) => api.post(`/friends/${userId}/accept`),
+  reject: (userId: string) => api.post(`/friends/${userId}/reject`),
+  remove: (userId: string) => api.delete(`/friends/${userId}`),
   status: (userId: string) =>
     api.get(`/friends/${userId}/status`).then(r => d<{ status: string }>(r)),
 }
@@ -738,6 +663,15 @@ export const flashcardApi = {
     cards: { question: string; answer: string }[]
   }) =>
     api.post('/flashcards/from-document', body).then(r => d<FlashcardDeck>(r)),
+
+  getStudySummary: (deckId: string) =>
+    api.get(`/flashcards/${deckId}/study-summary`).then(r => d<FlashcardStudySummary>(r)),
+
+  recordReview: (deckId: string, cardId: string, rating: FlashcardRating) =>
+    api.post(`/flashcards/${deckId}/cards/${cardId}/review`, { rating }).then(r => d<FlashcardCardProgressView>(r)),
+
+  completeStudySession: (deckId: string, needReviewCount: number) =>
+    api.post(`/flashcards/${deckId}/study-session-complete`, { needReviewCount }),
 }
 
 export const predictApi = {
@@ -755,43 +689,13 @@ export const notificationApi = {
     api.get('/notifications/unread-count').then(r => d<{ count: number }>(r)),
 }
 
-export const uploadApi = {
-  uploadImage: (file: File) => {
-    const fd = new FormData()
-    fd.append('file', file)
-    return api
-      .post('/upload/image', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      .then(r => d<{ url: string; relativeUrl?: string }>(r))
-  },
-}
-
-export const membershipApi = {
-  getMy: () => api.get('/membership/me').then(r => d<any>(r)),
-  getPlans: () => api.get('/membership/plans').then(r => d<any>(r)),
-  getOrders: () => api.get('/membership/orders').then(r => d<any[]>(r)),
-  createOrder: (payload: { tier: 'SILVER' | 'GOLD'; period: 'WEEK' | 'MONTH' | 'YEAR'; note?: string }) =>
-    api.post('/membership/orders', payload).then(r => d<any>(r)),
-}
-
-export const adminMembershipApi = {
-  getStats: () => api.get('/admin/membership/stats').then(r => d<any>(r)),
-  getOrders: (status?: string) =>
-    api.get('/admin/membership/orders', { params: status ? { status } : {} }).then(r => d<any[]>(r)),
-  approve: (id: string, adminNote?: string) =>
-    api.post(`/admin/membership/orders/${id}/approve`, { adminNote }).then(r => d<any>(r)),
-  reject: (id: string, adminNote?: string) =>
-    api.post(`/admin/membership/orders/${id}/reject`, { adminNote }).then(r => d<any>(r)),
-}
-
 export const adminApi = {
   getDashboard: () => api.get('/admin/dashboard').then(r => d(r)),
   getAlertCenter: () => api.get('/admin/alerts/center').then(r => d(r)),
   getSystemStats: () => api.get('/admin/stats').then(r => d(r)),
 
-  getUsers: (page = 0, search?: string, size = 20) =>
-    api.get('/admin/users', { params: { page, search, size } }).then(r => d(r)),
+  getUsers: (page = 0, search?: string) =>
+    api.get('/admin/users', { params: { page, search } }).then(r => d(r)),
 
   getUserDetail: (userId: string) =>
     api.get(`/admin/users/${userId}`).then(r => d(r)),
@@ -876,64 +780,10 @@ export const adminApi = {
   broadcast: (title: string, body: string) =>
     api.post('/admin/notifications/broadcast', { title, body }),
 
-  sendAdminNotification: (payload: {
-    title: string
-    message: string
-    type: 'GENERAL' | 'EVENT' | 'MAINTENANCE' | 'WARNING' | 'SUPPORT'
-    priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
-    targetType: 'ALL' | 'SELECTED_USERS' | 'WEAK_USERS' | 'LOCKED_USERS' | 'UNLOCKED_USERS'
-    userIds: string[]
-  }) =>
-    api.post('/admin/notifications/send', payload).then(r => d(r)),
-
-  getNotificationHistory: () =>
-    api.get('/admin/notifications/history').then(r => d(r)),
-
-  getAdminSettings: () =>
-    api.get('/admin/settings/config').then(r => d<Record<string, any>>(r)),
-
-  saveAdminSettings: (settings: Record<string, any>) =>
-    api.put('/admin/settings/config', settings).then(r => d<Record<string, any>>(r)),
-
   getLogs: (page = 0) =>
     api.get('/admin/logs', {
       params: { page },
     }).then(r => d(r)),
-}
-
-export const adminPostApi = {
-  listModerationPosts: (tab?: string, page = 0, status?: string) =>
-    api.get('/admin/posts/moderation', { params: { tab, status, page } }).then(r => d<PageResponse<Post>>(r)),
-
-  getModerationCounts: () =>
-    api.get('/admin/posts/moderation/counts').then(r => d<{ pending: number; flagged: number; reported: number; processed: number }>(r)),
-
-  getReports: () =>
-    api.get('/admin/posts/reports').then(r => d<PostReport[]>(r)),
-
-  approvePost: (postId: string) =>
-    api.patch(`/admin/posts/${postId}/approve`).then(r => d<Post>(r)),
-
-  rejectPost: (postId: string, reason: string) =>
-    api.patch(`/admin/posts/${postId}/reject`, { reason }).then(r => d<Post>(r)),
-
-  removePost: (postId: string, reason?: string) =>
-    api.patch(`/admin/posts/${postId}/remove`, reason ? { reason } : {}).then(r => d<Post>(r)),
-
-  requestRevision: (postId: string, message: string) =>
-    api.patch(`/admin/posts/${postId}/request-revision`, { message }).then(r => d<Post>(r)),
-
-  dismissReport: (reportId: string, reviewNote?: string) =>
-    api.patch(`/admin/posts/reports/${reportId}/dismiss`, reviewNote ? { reviewNote } : {}).then(r => d<any>(r)),
-
-  normalizeLegacy: () =>
-    api.post('/admin/posts/normalize-legacy').then(r => d<{ fixed: number }>(r)),
-
-  rescanMedia: (limit = 30) =>
-    api.post('/admin/posts/rescan-media', null, { params: { limit } }).then(r => d<{ rescanned: number }>(r)),
-
-  warnUser: (userId: string, postId: string, level: 'REMINDER' | 'WARNING' | 'SEVERE', reason: string, message: string) =>
-    api.post(`/admin/posts/users/${userId}/warnings`, { postId, level, reason, message }).then(r => d<UserWarning>(r)),
 }
 
 export const groupPostApi = {
@@ -1111,6 +961,125 @@ export const quizApi = {
     }[]
   }) =>
     api.post('/quizzes/from-document', body).then(r => d<QuizSet>(r)),
+
+  getWeakQuestionIds: (quizId: string) =>
+    api.get(`/quizzes/${quizId}/weak-questions`).then(r => d<string[]>(r)),
+
+  recordAttempt: (quizId: string, body: { questionId: string; correct: boolean }) =>
+    api.post(`/quizzes/${quizId}/attempts`, body),
+}
+
+export const summaryApi = {
+  list: (search?: string) =>
+    api.get('/summaries', { params: search ? { search } : {} }).then(r => d<SavedSummary[]>(r)),
+
+  get: (summaryId: string) =>
+    api.get(`/summaries/${summaryId}`).then(r => d<SavedSummary>(r)),
+
+  saveFromDocument: (body: {
+    docId: string
+    title: string
+    content: string
+    style?: string
+    length?: string
+    blogAppendix?: string
+    relatedBlogTitles?: string[]
+  }) =>
+    api.post('/summaries/from-document', body).then(r => d<SavedSummary>(r)),
+
+  savePersonal: (body: {
+    title: string
+    content: string
+    style?: string
+    length?: string
+  }) =>
+    api.post('/summaries', body).then(r => d<SavedSummary>(r)),
+
+  delete: (summaryId: string) =>
+    api.delete(`/summaries/${summaryId}`),
+}
+
+export const vocabularyApi = {
+  parsePaste: (text: string) =>
+    fetch(`${AI_AGENT_URL}/vocabulary/parse-paste`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    }).then(async res => {
+      if (!res.ok) throw new Error(await res.text())
+      return res.json() as Promise<{ count: number; vocabulary: VocabularyPayload }>
+    }),
+
+  importFile: async (file: File) => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch(`${AI_AGENT_URL}/vocabulary/import`, { method: 'POST', body: fd })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json() as Promise<{ count: number; vocabulary: VocabularyPayload }>
+  },
+
+  extract: (body: { topic?: string; file_url?: string; text?: string; max_items?: number }) =>
+    fetch(`${AI_AGENT_URL}/vocabulary/extract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(async res => {
+      if (!res.ok) throw new Error(await res.text())
+      return res.json() as Promise<{ count: number; vocabulary: VocabularyPayload }>
+    }),
+
+  toFlashcards: (vocabulary: VocabularyItem[], num_cards = 10) =>
+    fetch(`${AI_AGENT_URL}/vocabulary/to-flashcards`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vocabulary, num_cards }),
+    }).then(async res => {
+      if (!res.ok) throw new Error(await res.text())
+      return res.json() as Promise<{ flashcards: { question: string; answer: string }[]; vocabulary: VocabularyPayload }>
+    }),
+
+  toQuiz: (vocabulary: VocabularyItem[], num_questions = 10) =>
+    fetch(`${AI_AGENT_URL}/vocabulary/to-quiz`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vocabulary, num_questions }),
+    }).then(async res => {
+      if (!res.ok) throw new Error(await res.text())
+      return res.json() as Promise<{
+        questions: QuizQuestion[]
+        vocabulary: VocabularyPayload
+      }>
+    }),
+}
+
+export const vocabularySetApi = {
+  list: (search?: string) =>
+    api.get('/vocabulary-sets', { params: search ? { search } : {} }).then(r => d<VocabularySet[]>(r)),
+
+  get: (id: string) =>
+    api.get(`/vocabulary-sets/${id}`).then(r => d<VocabularySet>(r)),
+
+  save: (body: {
+    title: string
+    description?: string
+    folderId?: string
+    sourceType?: 'IMPORT' | 'AI' | 'MANUAL'
+    entries: { tu_vung: string; nghia: string; vi_du?: string; phat_am?: string }[]
+  }) =>
+    api.post('/vocabulary-sets', {
+      title: body.title,
+      description: body.description,
+      folderId: body.folderId,
+      sourceType: body.sourceType ?? 'MANUAL',
+      entries: body.entries.map(e => ({
+        tuVung: e.tu_vung,
+        nghia: e.nghia,
+        viDu: e.vi_du,
+        phatAm: e.phat_am,
+      })),
+    }).then(r => d<VocabularySet>(r)),
+
+  delete: (id: string) => api.delete(`/vocabulary-sets/${id}`),
 }
 
 export const studyDriveApi = {

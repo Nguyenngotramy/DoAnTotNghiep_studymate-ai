@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   HelpCircle,
   CheckCircle2,
@@ -25,7 +25,8 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { quizApi } from '@/api/services'
-import type { QuizFolder, QuizSet } from '@/types'
+import QuizPracticeSession from '@/components/quiz/QuizPracticeSession'
+import type { QuizFolder, QuizSet, QuizSetItem } from '@/types'
 
 const LABELS = ['A', 'B', 'C', 'D']
 
@@ -363,11 +364,8 @@ export default function QuizPage() {
   const [sourceType, setSourceType] = useState<'ALL' | 'PERSONAL' | 'DOCUMENT_AI'>('ALL')
 
   const [activeSet, setActiveSet] = useState<QuizSet | null>(null)
-  const [idx, setIdx] = useState(0)
-  const [selected, setSelected] = useState<number | null>(null)
-  const [answered, setAnswered] = useState(false)
-  const [score, setScore] = useState(0)
-  const [done, setDone] = useState(false)
+  const [practiceMode, setPracticeMode] = useState<'ALL' | 'WEAK'>('ALL')
+  const [sessionQuestions, setSessionQuestions] = useState<QuizSetItem[]>([])
 
   const [showFolderModal, setShowFolderModal] = useState(false)
   const [showQuizModal, setShowQuizModal] = useState(false)
@@ -473,41 +471,60 @@ export default function QuizPage() {
   const aiQuizCount = quizSets.filter(set => set.sourceType === 'DOCUMENT_AI').length
   const personalQuizCount = quizSets.filter(set => set.sourceType === 'PERSONAL').length
 
-  const start = (set: QuizSet) => {
+  const weakQueries = useQueries({
+    queries: quizSets.map(set => ({
+      queryKey: ['quiz-weak', set.id],
+      queryFn: () => quizApi.getWeakQuestionIds(set.id),
+      enabled: Boolean(set.id),
+    })),
+  })
+
+  const weakCountByQuizId = useMemo(() => {
+    const map = new Map<string, number>()
+    quizSets.forEach((set, i) => {
+      const ids = weakQueries[i]?.data
+      if (ids) map.set(set.id, ids.length)
+    })
+    return map
+  }, [quizSets, weakQueries])
+
+  const recordAttemptMut = useMutation({
+    mutationFn: ({
+      quizId,
+      questionId,
+      correct,
+    }: {
+      quizId: string
+      questionId: string
+      correct: boolean
+    }) => quizApi.recordAttempt(quizId, { questionId, correct }),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['quiz-weak', vars.quizId] })
+    },
+  })
+
+  const start = async (set: QuizSet, mode: 'ALL' | 'WEAK' = 'ALL') => {
+    let questions = [...(set.questions || [])]
+
+    if (mode === 'WEAK') {
+      try {
+        const weakIds = await quizApi.getWeakQuestionIds(set.id)
+        const weakSet = new Set(weakIds)
+        questions = questions.filter(q => q.id && weakSet.has(q.id))
+        if (questions.length === 0) {
+          toast.error('Chưa có câu yếu. Hãy làm quiz đầy đủ trước.')
+          return
+        }
+      } catch (e: any) {
+        toast.error(e?.response?.data?.message ?? 'Không tải được danh sách câu yếu')
+        return
+      }
+    }
+
+    questions.sort(() => Math.random() - 0.5)
+    setPracticeMode(mode)
+    setSessionQuestions(questions)
     setActiveSet(set)
-    setIdx(0)
-    setSelected(null)
-    setAnswered(false)
-    setScore(0)
-    setDone(false)
-  }
-
-  const choose = (optIdx: number) => {
-    if (answered || !activeSet) return
-    setSelected(optIdx)
-    setAnswered(true)
-    if (optIdx === activeSet.questions[idx].correctIndex) {
-      setScore(s => s + 1)
-    }
-  }
-
-  const next = () => {
-    if (!activeSet) return
-    if (idx + 1 >= activeSet.questions.length) {
-      setDone(true)
-      return
-    }
-    setIdx(idx + 1)
-    setSelected(null)
-    setAnswered(false)
-  }
-
-  const restart = () => {
-    setIdx(0)
-    setSelected(null)
-    setAnswered(false)
-    setScore(0)
-    setDone(false)
   }
 
   if (!activeSet) {
@@ -854,14 +871,32 @@ export default function QuizPage() {
                     )}
                   </div>
 
-                  <button
-                    onClick={() => start(set)}
-                    className="w-full h-12 rounded-2xl mt-4 text-[13px] font-medium flex items-center justify-center gap-2"
-                    style={{ background: '#6366f1', color: '#fff' }}
-                  >
-                    <HelpCircle size={14} />
-                    Bắt đầu làm quiz
-                  </button>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <button
+                      onClick={() => start(set, 'ALL')}
+                      className="w-full h-11 rounded-2xl text-[13px] font-medium flex items-center justify-center gap-2"
+                      style={{ background: '#6366f1', color: '#fff' }}
+                    >
+                      <HelpCircle size={14} />
+                      Bắt đầu quiz
+                    </button>
+                    <button
+                      onClick={() => start(set, 'WEAK')}
+                      className="w-full h-10 rounded-2xl text-[12px] border flex items-center justify-center gap-2"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text2)', background: 'var(--bg3)' }}
+                    >
+                      <Target size={13} className="text-orange-400" />
+                      Luyện câu yếu
+                      {(weakCountByQuizId.get(set.id) ?? 0) > 0 && (
+                        <span
+                          className="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
+                          style={{ background: 'rgba(249,115,22,.15)', color: '#f97316' }}
+                        >
+                          {weakCountByQuizId.get(set.id)}
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 </div>
               )
             })}
@@ -899,257 +934,26 @@ export default function QuizPage() {
     )
   }
 
-  const q = activeSet.questions[idx]
-  const total = activeSet.questions.length
-  const pct = Math.round((score / total) * 100)
-  const currentFolder = activeSet.folderId ? folderMap.get(activeSet.folderId) : null
-
-  if (done) {
+  if (activeSet && sessionQuestions.length > 0) {
     return (
-      <div className="max-w-3xl mx-auto">
-        <div
-          className="rounded-[30px] border p-8 text-center"
-          style={{
-            background:
-              'linear-gradient(180deg, color-mix(in srgb, var(--bg2) 95%, #6366f1 5%), var(--bg2))',
-            borderColor: 'color-mix(in srgb, var(--border) 84%, #6366f1 16%)',
-          }}
-        >
-          <div className="text-5xl mb-4">{pct >= 80 ? '🏆' : pct >= 60 ? '👍' : '📚'}</div>
-          <h2 className="text-[26px] font-bold mb-2" style={{ color: 'var(--text)' }}>
-            {pct >= 80 ? 'Xuất sắc!' : pct >= 60 ? 'Khá tốt!' : 'Cần ôn thêm!'}
-          </h2>
-          <p className="text-[14px] mb-7" style={{ color: 'var(--text2)' }}>
-            {activeSet.title}
-          </p>
-
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            {[
-              { label: 'Đúng', val: score, color: '#22c55e', icon: '✅' },
-              { label: 'Sai', val: total - score, color: '#ef4444', icon: '❌' },
-              { label: 'Điểm', val: `${pct}%`, color: '#6366f1', icon: '⭐' },
-            ].map(s => (
-              <div
-                key={s.label}
-                className="p-5 rounded-[24px] border"
-                style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
-              >
-                <div className="text-2xl mb-2">{s.icon}</div>
-                <div className="text-[28px] font-bold" style={{ color: s.color }}>
-                  {s.val}
-                </div>
-                <div className="text-[11px]" style={{ color: 'var(--text3)' }}>
-                  {s.label}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={restart}
-              className="flex-1 py-3.5 rounded-2xl text-[13px] font-semibold text-white flex items-center justify-center gap-2"
-              style={{ background: '#6366f1' }}
-            >
-              <RotateCcw size={14} />
-              Làm lại
-            </button>
-            <button
-              onClick={() => setActiveSet(null)}
-              className="flex-1 py-3.5 rounded-2xl border text-[13px] font-medium flex items-center justify-center gap-2"
-              style={{ borderColor: 'var(--border)', color: 'var(--text2)', background: 'var(--bg3)' }}
-            >
-              <ArrowLeft size={14} />
-              Chọn bộ khác
-            </button>
-          </div>
-        </div>
-      </div>
+      <QuizPracticeSession
+        quizSet={activeSet}
+        sessionQuestions={sessionQuestions}
+        practiceMode={practiceMode}
+        onExit={() => {
+          setActiveSet(null)
+          setSessionQuestions([])
+        }}
+        onRestart={mode => start(activeSet, mode)}
+        onRecordAttempt={(quizId, questionId, correct) => {
+          recordAttemptMut.mutate({ quizId, questionId, correct })
+        }}
+        onSessionComplete={() => {
+          qc.invalidateQueries({ queryKey: ['quiz-weak', activeSet.id] })
+        }}
+      />
     )
   }
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div
-        className="rounded-[30px] border p-6"
-        style={{
-          background:
-            'linear-gradient(180deg, color-mix(in srgb, var(--bg2) 96%, #6366f1 4%), var(--bg2))',
-          borderColor: 'var(--border)',
-        }}
-      >
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <button
-              onClick={() => setActiveSet(null)}
-              className="flex items-center gap-1.5 text-[12px] transition-colors mb-2"
-              style={{ color: 'var(--text3)' }}
-            >
-              <ArrowLeft size={14} />
-              Quay lại danh sách
-            </button>
-
-            <h2 className="text-[28px] font-semibold leading-tight" style={{ color: 'var(--text)' }}>
-              {activeSet.title}
-            </h2>
-
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <SourceBadge quizSet={activeSet} />
-              {currentFolder && (
-                <span
-                  className="px-2.5 py-1 rounded-full text-[11px] border flex items-center gap-1.5"
-                  style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
-                >
-                  <Folder size={12} style={{ color: currentFolder.color || '#6366f1' }} />
-                  {currentFolder.name}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div
-            className="rounded-2xl px-4 py-2 border"
-            style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
-          >
-            <span className="text-[12px]">Điểm hiện tại: </span>
-            <span className="font-semibold text-green-500">{score}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="h-3 rounded-full overflow-hidden" style={{ background: 'var(--bg3)' }}>
-        <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{
-            width: `${(idx / total) * 100}%`,
-            background: 'linear-gradient(90deg, #6366f1, #818cf8)',
-          }}
-        />
-      </div>
-
-      <div
-        className="rounded-[28px] border p-6"
-        style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
-      >
-        <div className="flex items-center justify-between mb-5">
-          <span className="text-[12px]" style={{ color: 'var(--text3)' }}>
-            Câu {idx + 1}/{total}
-          </span>
-          <span className="text-[12px] font-semibold text-indigo-400">
-            <Target size={13} className="inline mr-1" />
-            Quiz Mode
-          </span>
-        </div>
-
-        <p className="text-[18px] font-semibold leading-relaxed mb-6" style={{ color: 'var(--text)' }}>
-          {q.question}
-        </p>
-
-        <div className="space-y-3">
-          {q.options.map((opt, i) => {
-            const isCorrect = i === q.correctIndex
-            const isSelected = i === selected
-
-            let bg = 'var(--bg3)'
-            let border = 'var(--border)'
-            let color = 'var(--text)'
-            let labelBg = 'rgba(255,255,255,.08)'
-
-            if (answered) {
-              if (isCorrect) {
-                bg = 'rgba(34,197,94,.10)'
-                border = 'rgba(34,197,94,.38)'
-                color = '#22c55e'
-                labelBg = 'rgba(34,197,94,.18)'
-              } else if (isSelected) {
-                bg = 'rgba(239,68,68,.10)'
-                border = 'rgba(239,68,68,.38)'
-                color = '#ef4444'
-                labelBg = 'rgba(239,68,68,.18)'
-              }
-            } else if (isSelected) {
-              bg = 'rgba(99,102,241,.12)'
-              border = 'rgba(99,102,241,.40)'
-              color = '#818cf8'
-              labelBg = 'rgba(99,102,241,.20)'
-            }
-
-            return (
-              <button
-                key={i}
-                onClick={() => choose(i)}
-                disabled={answered}
-                className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all"
-                style={{ background: bg, border: `1px solid ${border}` }}
-              >
-                <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-[12px] font-bold flex-shrink-0"
-                  style={{ background: labelBg, color }}
-                >
-                  {LABELS[i]}
-                </div>
-
-                <span className="text-[13px] font-medium flex-1" style={{ color }}>
-                  {opt}
-                </span>
-
-                {answered && isCorrect && <CheckCircle2 size={16} className="text-green-400 flex-shrink-0" />}
-                {answered && isSelected && !isCorrect && <XCircle size={16} className="text-red-400 flex-shrink-0" />}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {answered && (
-        <div
-          className="rounded-2xl p-4"
-          style={{
-            background: selected === q.correctIndex ? 'rgba(34,197,94,.07)' : 'rgba(239,68,68,.07)',
-            border: `1px solid ${
-              selected === q.correctIndex ? 'rgba(34,197,94,.22)' : 'rgba(239,68,68,.22)'
-            }`,
-          }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            {selected === q.correctIndex ? (
-              <>
-                <CheckCircle2 size={14} className="text-green-400" />
-                <span className="text-[12px] font-semibold text-green-400">Chính xác! 🎉</span>
-              </>
-            ) : (
-              <>
-                <XCircle size={14} className="text-red-400" />
-                <span className="text-[12px] font-semibold text-red-400">Chưa đúng!</span>
-              </>
-            )}
-          </div>
-
-          <p className="text-[12px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--text2)' }}>
-            {q.explanation}
-          </p>
-        </div>
-      )}
-
-      {answered && (
-        <button
-          onClick={next}
-          className="w-full py-3.5 rounded-2xl text-[13px] font-semibold text-white transition-all flex items-center justify-center gap-2"
-          style={{ background: '#6366f1' }}
-        >
-          {idx + 1 >= total ? (
-            <>
-              <Trophy size={15} />
-              Xem kết quả
-            </>
-          ) : (
-            <>
-              Câu tiếp theo
-              <ChevronRight size={15} />
-            </>
-          )}
-        </button>
-      )}
-    </div>
-  )
+  return null
 }

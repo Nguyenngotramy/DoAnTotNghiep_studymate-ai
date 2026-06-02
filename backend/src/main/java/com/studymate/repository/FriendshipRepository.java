@@ -4,8 +4,7 @@ import com.studymate.model.Friendship;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public interface FriendshipRepository extends MongoRepository<Friendship, String> {
 
@@ -19,5 +18,6 @@ public interface FriendshipRepository extends MongoRepository<Friendship, String
 
     List<Friendship> findByRequesterIdAndStatus(String requesterId, Friendship.Status status);
 
+    // Để FriendService loại trừ pending khi gợi ý
     List<Friendship> findByRequesterIdOrReceiverId(String requesterId, String receiverId);
 }

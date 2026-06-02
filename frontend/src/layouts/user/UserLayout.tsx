@@ -1,17 +1,17 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import SideToolbar from '@/components/SideToolbar'
+import FloatingAgent from '@/components/FloatingAgent'
 import { useAuthStore } from '@/store/authStore'
 import { authApi, notificationApi, dmApi } from '@/api/services'
 import toast from 'react-hot-toast'
-import UserAvatar from '@/components/UserAvatar'
+import { initials } from '@/utils/helpers'
 import {
   LayoutDashboard, BookOpen, Compass, Users, MessageCircle,
   UsersRound, KanbanSquare, Layers, HelpCircle, BarChart2,
   BrainCircuit, User, Settings, LogOut, Search, Bell,
   Zap, Flame, X, ChevronRight, CheckCircle2, AlertCircle,
-  FileText, Heart, Check,   FolderOpen,
-  Crown,
+  FileText, Heart, Check, FolderOpen
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -214,6 +214,55 @@ function notifMeta(type?: string) {
   }
 }
 
+function resolveAvatarUrl(avatar?: string | null) {
+  if (!avatar) return ''
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar
+  return `${BACKEND}${avatar.startsWith('/') ? avatar : `/${avatar}`}`
+}
+
+function Avatar({
+  name,
+  avatar,
+  size = 28,
+}: {
+  name?: string
+  avatar?: string | null
+  size?: number
+}) {
+  const text = name ? initials(name) : '?'
+  const [imgError, setImgError] = useState(false)
+  const url = resolveAvatarUrl(avatar)
+
+  return (
+    <div
+      className="rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
+      style={{
+        width: size,
+        height: size,
+        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+      }}
+    >
+      {url && !imgError ? (
+        <img
+          src={url}
+          alt={name ?? 'avatar'}
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <span
+          className="text-white font-semibold"
+          style={{
+            fontSize: size <= 28 ? '10px' : '11px',
+          }}
+        >
+          {text}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function NotifDropdown({
   unread,
   notifications,
@@ -321,25 +370,12 @@ function NotifDropdown({
 }
 
 export default function UserLayout() {
-  const { user, refreshToken, logout, updateUser } = useAuthStore()
+  const { user, refreshToken, logout } = useAuthStore()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
   const [showSearch, setShowSearch] = useState(false)
   const [showNotif, setShowNotif] = useState(false)
-
-  const { data: freshUser } = useQuery({
-    queryKey: ['auth-me-sync'],
-    queryFn: () => authApi.me(),
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
-  })
-
-  useEffect(() => {
-    if (freshUser) updateUser(freshUser)
-  }, [freshUser, updateUser])
-
-  const displayUser = freshUser ?? user
 
   const { data: notificationsPage } = useQuery({
     queryKey: ['notifications', 0],
@@ -434,6 +470,7 @@ export default function UserLayout() {
       {showSearch && <SearchModal onClose={() => setShowSearch(false)} />}
 
       <SideToolbar />
+      <FloatingAgent /> 
 
       <aside
         className="w-[210px] min-w-[210px] flex flex-col"
@@ -480,19 +517,18 @@ export default function UserLayout() {
 
           <NavSection title="Tài khoản" />
           <NavItem to="/profile" icon={User} label="Hồ sơ cá nhân" />
-          <NavItem to="/membership" icon={Crown} label="Nâng cấp gói" />
           <NavItem to="/settings" icon={Settings} label="Cài đặt" />
         </nav>
 
         <div className="p-2 flex-shrink-0" style={{ borderTop: '0.5px solid var(--border)' }}>
           <div className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-white/[.04] transition-colors cursor-pointer">
-            <UserAvatar name={displayUser?.fullName} avatar={displayUser?.avatar} size={28} tier={displayUser?.membershipTier} />
+            <Avatar name={user?.fullName} avatar={user?.avatar} size={28} />
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-medium truncate" style={{ color: 'var(--text)' }}>
-                {displayUser?.fullName}
+                {user?.fullName}
               </div>
               <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
-                {(displayUser?.xp ?? 0).toLocaleString()} XP
+                {(user?.xp ?? 0).toLocaleString()} XP
               </div>
             </div>
             <button
@@ -578,7 +614,7 @@ export default function UserLayout() {
 
           <Link to="/profile">
             <div className="cursor-pointer hover:ring-2 hover:ring-indigo-500/50 rounded-full transition-all">
-              <UserAvatar name={displayUser?.fullName} avatar={displayUser?.avatar} size={28} tier={displayUser?.membershipTier} />
+              <Avatar name={user?.fullName} avatar={user?.avatar} size={28} />
             </div>
           </Link>
         </header>

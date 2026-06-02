@@ -37,6 +37,30 @@ public class QuizController {
         ));
     }
 
+    @GetMapping("/quizzes/{quizId}/weak-questions")
+    public ResponseEntity<?> getWeakQuestions(@PathVariable String quizId, Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                quizService.getWeakQuestionIds(auth.getName(), quizId)
+        ));
+    }
+
+    @PostMapping("/quizzes/{quizId}/attempts")
+    public ResponseEntity<?> recordAttempt(
+            @PathVariable String quizId,
+            Authentication auth,
+            @RequestBody Map<String, Object> body
+    ) {
+        String questionId = body.get("questionId") == null ? "" : body.get("questionId").toString();
+        if (questionId.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Thiếu questionId"));
+        }
+        boolean correct = Boolean.TRUE.equals(body.get("correct"))
+                || "true".equalsIgnoreCase(String.valueOf(body.get("correct")));
+
+        quizService.recordAttempt(auth.getName(), quizId, questionId, correct);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Đã lưu kết quả câu hỏi"));
+    }
+
     @DeleteMapping("/quizzes/{quizId}")
     public ResponseEntity<?> deleteQuizSet(@PathVariable String quizId, Authentication auth) {
         quizService.deleteQuizSet(auth.getName(), quizId);

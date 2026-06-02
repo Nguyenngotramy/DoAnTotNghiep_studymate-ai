@@ -23,25 +23,25 @@ public class Post {
     private String title;
     private String content;
     private String summary;
-    private String subject; // Môn học chính (Toán, Lý, Hóa...)
+    private String subject;
 
     // AI Summary
     private String aiSummary;
-    private String aiSummaryStatus; // PENDING | DONE | FAILED
+    private String aiSummaryStatus;
     private Instant aiSummaryUpdatedAt;
 
     // AI Moderation
-    private String moderationStatus; // APPROVED | PENDING_REVIEW | NEEDS_REVISION | REJECTED | REMOVED
+    private String moderationStatus;
     private String moderationReason;
     private String removedReason;
     private String aiDetectedSubject;
     private double aiTagConfidence;
-    private String aiSafetyStatus; // SAFE | WARNING | VIOLATION
+    private String aiSafetyStatus;
     private String aiSafetyReason;
     private List<String> aiTagSuggestion;
 
-    // AI media moderation (images / video)
-    private String mediaSafetyStatus; // SAFE | WARNING | VIOLATION | UNKNOWN
+    // AI media moderation
+    private String mediaSafetyStatus;
     private String mediaSafetyReason;
     @Builder.Default
     private List<String> flaggedImageUrls = new ArrayList<>();
@@ -71,6 +71,9 @@ public class Post {
 
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();
+
+    @Builder.Default
+    private List<PostReport> reports = new ArrayList<>();
 
     @Builder.Default
     private boolean published = true;
@@ -105,5 +108,16 @@ public class Post {
         private boolean deleted;
         private String deletedBy;
         private Instant deletedAt;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PostReport {
+        private String id;
+        private String userId;
+        private String reason;
+        private Instant createdAt;
     }
 }

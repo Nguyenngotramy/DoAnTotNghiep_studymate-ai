@@ -58,6 +58,16 @@ type ScheduleDay = {
 
 const WEEK_DAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật']
 
+const DAY_LABEL_BY_KEY: Record<string, string> = {
+  MON: WEEK_DAYS[0],
+  TUE: WEEK_DAYS[1],
+  WED: WEEK_DAYS[2],
+  THU: WEEK_DAYS[3],
+  FRI: WEEK_DAYS[4],
+  SAT: WEEK_DAYS[5],
+  SUN: WEEK_DAYS[6],
+}
+
 const inputCls =
   'h-11 rounded-xl px-3.5 w-full outline-none text-[13px] font-medium transition-all duration-150 ' +
   'bg-[var(--bg3)] border border-[var(--border)] text-[var(--text)] ' +
@@ -470,6 +480,35 @@ export default function PredictPage() {
 
     const weakCycle = [weak[0], weak[1] || weak[0], weak[2] || weak[0], weak[0], weak[1] || weak[0], weak[2] || weak[0]]
     const strongCycle = [strong[0], strong[1] || strong[0], strong[0], strong[1] || strong[0], strong[0], strong[0]]
+    const freeSlots = ((user as any)?.availableSchedule ?? []) as Array<{
+      dayOfWeek: string
+      startTime: string
+      endTime: string
+    }>
+
+    if (freeSlots.length > 0) {
+      const grouped = WEEK_DAYS.map((day, index) => {
+        const slots = freeSlots
+          .filter(slot => DAY_LABEL_BY_KEY[slot.dayOfWeek] === day)
+          .slice(0, 3)
+          .map((slot, slotIndex) => ({
+            time: `${slot.startTime} - ${slot.endTime}`,
+            subject: slotIndex < 2
+              ? weakCycle[(index + slotIndex) % weakCycle.length] || reviewSubject
+              : strongCycle[index % strongCycle.length] || reviewSubject,
+            type: slotIndex < 2 ? 'focus' as const : 'review' as const,
+          }))
+
+        return {
+          day,
+          slots: slots.length
+            ? slots
+            : [{ time: '15 phút', subject: restLabel, type: 'rest' as const }],
+        }
+      })
+
+      return grouped
+    }
 
     return WEEK_DAYS.map((day, index) => {
       if (day === 'Chủ nhật') {
@@ -491,7 +530,7 @@ export default function PredictPage() {
         ],
       }
     })
-  }, [prediction])
+  }, [prediction, user])
 
   const createNewTerm = () => {
     if (!user || !profileForm) return

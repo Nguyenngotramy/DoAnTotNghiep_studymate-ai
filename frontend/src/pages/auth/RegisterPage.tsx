@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { authApi } from '@/api/services'
+import { authApi, userApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import {
@@ -40,6 +40,25 @@ const USER_TYPES = [
   { id: 'STUDENT', icon: GraduationCap, label: 'Sinh viên ĐH', color: '#6366f1' },
   { id: 'HIGHSCHOOL', icon: School, label: 'Học sinh THPT', color: '#14b8a6' },
   { id: 'OTHER', icon: Users2, label: 'Khác', color: '#8b5cf6' },
+]
+
+const DAYS = [
+  { key: 'MON', label: 'T2' },
+  { key: 'TUE', label: 'T3' },
+  { key: 'WED', label: 'T4' },
+  { key: 'THU', label: 'T5' },
+  { key: 'FRI', label: 'T6' },
+  { key: 'SAT', label: 'T7' },
+  { key: 'SUN', label: 'CN' },
+]
+
+const DEFAULT_TIME_SLOTS = [
+  { start: '06:00', end: '08:00', label: '6h-8h' },
+  { start: '08:00', end: '10:00', label: '8h-10h' },
+  { start: '13:00', end: '15:00', label: '13h-15h' },
+  { start: '15:00', end: '17:00', label: '15h-17h' },
+  { start: '17:00', end: '19:00', label: '17h-19h' },
+  { start: '19:00', end: '21:00', label: '19h-21h' },
 ]
 
 function Logo() {
@@ -124,9 +143,19 @@ export default function RegisterPage() {
   const [step1, setStep1] = useState<Step1Data | null>(null)
   const [userType, setUserType] = useState('')
   const [school, setSchool] = useState('')
+  const [major, setMajor] = useState('')
   const [strong, setStrong] = useState<string[]>([])
   const [weak, setWeak] = useState<string[]>([])
+  const [interests, setInterests] = useState<string[]>([])
+  const [customInterest, setCustomInterest] = useState('')
   const [goal, setGoal] = useState('')
+  const [schoolOptions, setSchoolOptions] = useState<string[]>([])
+  const [majorOptions, setMajorOptions] = useState<string[]>([])
+  const [fieldOptions, setFieldOptions] = useState<string[]>([])
+  const [subjectOptions, setSubjectOptions] = useState<string[]>(SUBJECTS)
+  const [goalOptions, setGoalOptions] = useState<string[]>(GOALS)
+  const [timeSlots, setTimeSlots] = useState(DEFAULT_TIME_SLOTS)
+  const [schedule, setSchedule] = useState<{ day: string; start: string; end: string }[]>([])
 
   const {
     register,
@@ -141,11 +170,61 @@ export default function RegisterPage() {
 
   const agreed = watch('agreeTerms')
 
+  useEffect(() => {
+    userApi.onboardingOptions({ userType: userType || undefined, major: major || undefined, q: school || undefined })
+      .then(data => {
+        if (data.schools) setSchoolOptions(data.schools)
+        if (data.majors) setMajorOptions(data.majors)
+        if (data.interestFields) setFieldOptions(data.interestFields)
+        if (data.subjects?.length) setSubjectOptions(data.subjects)
+        if (data.goals?.length) setGoalOptions(data.goals)
+        if (data.timeSlots?.length) setTimeSlots(data.timeSlots)
+      })
+      .catch(() => {})
+  }, [userType, major, school])
+
   const toggleSubject = (sub: string, list: string[], setList: (v: string[]) => void) => {
     if (list.includes(sub)) setList(list.filter(s => s !== sub))
     else if (list.length < 4) setList([...list, sub])
     else toast('Chọn tối đa 4 môn!')
   }
+
+  const toggleInterest = (tag: string) => {
+    setInterests(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
+  }
+
+  const addCustomInterest = () => {
+    const value = customInterest.trim()
+    if (!value) return
+    setInterests(prev => prev.includes(value) ? prev : [...prev, value])
+    setCustomInterest('')
+  }
+
+  const applySchedulePreset = (preset: 'EVENING' | 'WEEKEND' | 'MORNING') => {
+    const next =
+      preset === 'EVENING'
+        ? ['MON', 'WED', 'FRI'].map(day => ({ day, start: '19:00', end: '21:00' }))
+        : preset === 'WEEKEND'
+          ? [
+              { day: 'SAT', start: '08:00', end: '10:00' },
+              { day: 'SUN', start: '08:00', end: '10:00' },
+              { day: 'SAT', start: '15:00', end: '17:00' },
+            ]
+          : ['TUE', 'THU', 'SAT'].map(day => ({ day, start: '06:00', end: '08:00' }))
+    setSchedule(next)
+  }
+
+  const toggleSlot = (day: string, start: string, end: string) => {
+    setSchedule(prev => {
+      const exists = prev.some(s => s.day === day && s.start === start)
+      return exists
+        ? prev.filter(s => !(s.day === day && s.start === start))
+        : [...prev, { day, start, end }]
+    })
+  }
+
+  const isSlotSelected = (day: string, start: string) =>
+    schedule.some(s => s.day === day && s.start === start)
 
   const onStep1 = (data: Step1Data) => {
     setStep1(data)
@@ -166,11 +245,19 @@ export default function RegisterPage() {
         password: step1.password,
         userType,
         school,
+        major,
+        interestedFields: interests,
         strongSubjects: strong,
         weakSubjects: weak,
+        interests: [...new Set([major, ...strong, ...weak, ...interests].filter(Boolean))],
+        availableSchedule: schedule.map(s => ({
+          dayOfWeek: s.day,
+          startTime: s.start,
+          endTime: s.end,
+        })),
         goal,
       })
-      setAuth(res.user, res.accessToken, res.refreshToken)
+      setAuth(res.data.user, res.data.accessToken, res.data.refreshToken)
       toast.success('Chào mừng bạn đến với StudyMate AI! 🎉')
       navigate('/dashboard', { replace: true })
     } catch (err: any) {
@@ -289,7 +376,7 @@ export default function RegisterPage() {
         style={{ background: 'linear-gradient(to bottom,transparent,var(--border),transparent)' }}
       />
 
-      <div className="flex-1 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden min-h-screen">
         <div className="absolute inset-0 pointer-events-none">
           <div
             className="absolute -bottom-8 -left-8 w-64 h-64 rounded-full opacity-[.04]"
@@ -307,7 +394,7 @@ export default function RegisterPage() {
           <Logo />
         </div>
 
-        <div className="w-full max-w-[400px] mb-6 relative z-10">
+        <div className="w-full max-w-[400px] mb-4 relative z-10 flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px]" style={{ color: 'var(--text3)' }}>
               Bước {step}/3
@@ -324,7 +411,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="w-full max-w-[400px] relative z-10">
+        <div className="w-full max-w-[400px] relative z-10 max-h-[calc(100vh-130px)] overflow-y-auto pr-1 overscroll-contain">
           {step === 1 && (
             <div>
               <h1 className="text-[24px] font-bold mb-1" style={{ color: 'var(--text)' }}>
@@ -570,6 +657,7 @@ export default function RegisterPage() {
                 <input
                   value={school}
                   onChange={e => setSchool(e.target.value)}
+                  list="register-school-options"
                   placeholder="VD: ĐH Bách Khoa HCM, THPT Nguyễn Huệ..."
                   className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all"
                   style={{
@@ -578,7 +666,36 @@ export default function RegisterPage() {
                     color: 'var(--text)',
                   }}
                 />
+                <datalist id="register-school-options">
+                  {schoolOptions.map(s => <option key={s} value={s} />)}
+                </datalist>
               </div>
+
+              {userType === 'STUDENT' && (
+                <div className="mb-4">
+                  <label className="block text-[12px] font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
+                    Chuyen nganh dang hoc
+                  </label>
+                  <input
+                    value={major}
+                    onChange={e => setMajor(e.target.value)}
+                    list="register-major-options"
+                    placeholder="VD: Cong nghe thong tin, Marketing, Y da khoa..."
+                    className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all"
+                    style={{
+                      background: 'var(--bg2)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text)',
+                    }}
+                  />
+                  <datalist id="register-major-options">
+                    {majorOptions.map(s => <option key={s} value={s} />)}
+                  </datalist>
+                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--text3)' }}>
+                    Chuyen nganh dung de goi y mon hoc phu hop; ban van co the quan tam nganh khac o buoc sau.
+                  </p>
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <button
@@ -607,7 +724,7 @@ export default function RegisterPage() {
           {step === 3 && (
             <div>
               <h1 className="text-[24px] font-bold mb-1" style={{ color: 'var(--text)' }}>
-                Môn học & Mục tiêu 🎯
+                {userType === 'STUDENT' ? 'Chuyên ngành, môn học & mục tiêu' : 'Môn học & Mục tiêu 🎯'}
               </h1>
               <p className="text-[13px] mb-4" style={{ color: 'var(--text3)' }}>
                 AI sẽ gợi ý bạn học và lập kế hoạch tối ưu cho bạn
@@ -615,10 +732,10 @@ export default function RegisterPage() {
 
               <div className="mb-4">
                 <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--text)' }}>
-                  Bạn giỏi môn gì? <span style={{ color: 'var(--text3)', fontWeight: 400 }}>({strong.length}/4)</span>
+                  {userType === 'STUDENT' ? 'Môn/kỹ năng trong chuyên ngành bạn học tốt?' : 'Bạn giỏi môn gì?'} <span style={{ color: 'var(--text3)', fontWeight: 400 }}>({strong.length}/4)</span>
                 </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {SUBJECTS.map(s => (
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                  {subjectOptions.map(s => (
                     <button
                       key={s}
                       onClick={() => toggleSubject(s, strong, setStrong)}
@@ -646,10 +763,10 @@ export default function RegisterPage() {
 
               <div className="mb-4">
                 <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--text)' }}>
-                  Cần cải thiện môn gì? <span style={{ color: 'var(--text3)', fontWeight: 400 }}>({weak.length}/4)</span>
+                  {userType === 'STUDENT' ? 'Môn/kỹ năng bạn muốn học hoặc cần cải thiện?' : 'Cần cải thiện môn gì?'} <span style={{ color: 'var(--text3)', fontWeight: 400 }}>({weak.length}/4)</span>
                 </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {SUBJECTS.filter(s => !strong.includes(s)).map(s => (
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                  {subjectOptions.filter(s => !strong.includes(s)).map(s => (
                     <button
                       key={s}
                       onClick={() => toggleSubject(s, weak, setWeak)}
@@ -675,12 +792,65 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              <div className="mb-4">
+                <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--text)' }}>
+                  {userType === 'STUDENT' ? 'Ngành/mảng quan tâm khác' : 'Tag quan tâm khác'}
+                </p>
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                  {(fieldOptions.length ? fieldOptions : subjectOptions).filter(s => !strong.includes(s) && !weak.includes(s)).slice(0, 16).map(s => (
+                    <button
+                      key={s}
+                      onClick={() => toggleInterest(s)}
+                      className="text-[11px] px-2.5 py-1.5 rounded-lg border font-medium transition-all"
+                      style={
+                        interests.includes(s)
+                          ? {
+                              borderColor: 'rgba(99,102,241,.45)',
+                              background: 'rgba(99,102,241,.12)',
+                              color: '#a5b4fc',
+                            }
+                          : {
+                              borderColor: 'var(--border)',
+                              background: 'var(--bg2)',
+                              color: 'var(--text2)',
+                            }
+                      }
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    value={customInterest}
+                    onChange={e => setCustomInterest(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addCustomInterest()
+                      }
+                    }}
+                    placeholder="Thêm ngành/môn quan tâm riêng"
+                    className="flex-1 h-9 px-3 rounded-lg text-[12px] outline-none"
+                    style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={addCustomInterest}
+                    className="h-9 px-3 rounded-lg text-[12px] font-medium"
+                    style={{ background: 'rgba(99,102,241,.14)', color: '#a5b4fc' }}
+                  >
+                    Thêm
+                  </button>
+                </div>
+              </div>
+
               <div className="mb-5">
                 <p className="text-[12px] font-semibold mb-2" style={{ color: 'var(--text)' }}>
                   Mục tiêu học tập?
                 </p>
-                <div className="space-y-1.5">
-                  {GOALS.map(g => (
+                <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                  {goalOptions.map(g => (
                     <button
                       key={g}
                       onClick={() => setGoal(g)}
@@ -704,6 +874,59 @@ export default function RegisterPage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="mb-5">
+                <p className="text-[12px] font-semibold mb-1" style={{ color: 'var(--text)' }}>
+                  Gợi ý thời khóa biểu học tập
+                </p>
+                <div className="mb-2 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => applySchedulePreset('EVENING')} className="px-2.5 py-1.5 rounded-lg text-[11px]" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)' }}>
+                    Tối T2-T4-T6
+                  </button>
+                  <button type="button" onClick={() => applySchedulePreset('WEEKEND')} className="px-2.5 py-1.5 rounded-lg text-[11px]" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)' }}>
+                    Cuối tuần
+                  </button>
+                  <button type="button" onClick={() => applySchedulePreset('MORNING')} className="px-2.5 py-1.5 rounded-lg text-[11px]" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text2)' }}>
+                    Sáng sớm
+                  </button>
+                </div>
+                <div className="overflow-auto max-h-56">
+                  <table className="w-full min-w-[360px] text-[11px]">
+                    <thead>
+                      <tr>
+                        <th className="py-1 pr-2 text-left font-medium" style={{ color: 'var(--text3)' }}>Giờ</th>
+                        {DAYS.map(d => (
+                          <th key={d.key} className="py-1 px-0.5 font-medium" style={{ color: 'var(--text3)' }}>
+                            {d.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {timeSlots.map(slot => (
+                        <tr key={slot.start}>
+                          <td className="py-1 pr-2 whitespace-nowrap" style={{ color: 'var(--text3)' }}>{slot.label}</td>
+                          {DAYS.map(d => (
+                            <td key={d.key} className="py-1 px-0.5 text-center">
+                              <button
+                                onClick={() => toggleSlot(d.key, slot.start, slot.end)}
+                                className="w-8 h-7 rounded-md border transition-all"
+                                style={{
+                                  background: isSlotSelected(d.key, slot.start) ? 'rgba(99,102,241,.75)' : 'var(--bg2)',
+                                  borderColor: isSlotSelected(d.key, slot.start) ? '#6366f1' : 'var(--border)',
+                                }}
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-[11px] mt-2" style={{ color: 'var(--text3)' }}>
+                  Đã chọn {schedule.length} khung giờ. Hệ thống dùng lịch này để gợi ý bạn học trùng thời gian và tạo lịch ôn môn cần cải thiện.
+                </p>
               </div>
 
               <div className="flex gap-3">
