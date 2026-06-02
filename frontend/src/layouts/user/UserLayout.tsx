@@ -5,13 +5,14 @@ import FloatingAgent from '@/components/FloatingAgent'
 import { useAuthStore } from '@/store/authStore'
 import { authApi, notificationApi, dmApi } from '@/api/services'
 import toast from 'react-hot-toast'
-import { initials } from '@/utils/helpers'
+import UserAvatar from '@/components/UserAvatar'
 import {
   LayoutDashboard, BookOpen, Compass, Users, MessageCircle,
   UsersRound, KanbanSquare, Layers, HelpCircle, BarChart2,
   BrainCircuit, User, Settings, LogOut, Search, Bell,
   Zap, Flame, X, ChevronRight, CheckCircle2, AlertCircle,
-  FileText, Heart, Check, FolderOpen, Crown
+  FileText, Heart, Check,   FolderOpen,
+  Crown, PenSquare,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -59,12 +60,12 @@ function NavSection({ title }: { title: string }) {
 }
 
 const QUICK_LINKS = [
+  { label: 'Viết bài', to: '/blog/create', icon: PenSquare, color: '#ec4899' },
   { label: 'Blog học tập', to: '/blog', icon: BookOpen, color: '#6366f1' },
   { label: 'Nhóm của tôi', to: '/groups', icon: UsersRound, color: '#14b8a6' },
   { label: 'Flashcard', to: '/flashcard', icon: Layers, color: '#f59e0b' },
   { label: 'Học tập cá nhân', to: '/study-drive', icon: FolderOpen, color: '#22c55e' },
   { label: 'Dự đoán học lực', to: '/predict', icon: BrainCircuit, color: '#8b5cf6' },
-  { label: 'Nâng cấp gói', to: '/membership', icon: Crown, color: '#f59e0b' },
 ]
 
 function SearchModal({ onClose }: { onClose: () => void }) {
@@ -215,55 +216,6 @@ function notifMeta(type?: string) {
   }
 }
 
-function resolveAvatarUrl(avatar?: string | null) {
-  if (!avatar) return ''
-  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar
-  return `${BACKEND}${avatar.startsWith('/') ? avatar : `/${avatar}`}`
-}
-
-function Avatar({
-  name,
-  avatar,
-  size = 28,
-}: {
-  name?: string
-  avatar?: string | null
-  size?: number
-}) {
-  const text = name ? initials(name) : '?'
-  const [imgError, setImgError] = useState(false)
-  const url = resolveAvatarUrl(avatar)
-
-  return (
-    <div
-      className="rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
-      style={{
-        width: size,
-        height: size,
-        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-      }}
-    >
-      {url && !imgError ? (
-        <img
-          src={url}
-          alt={name ?? 'avatar'}
-          className="w-full h-full object-cover"
-          onError={() => setImgError(true)}
-        />
-      ) : (
-        <span
-          className="text-white font-semibold"
-          style={{
-            fontSize: size <= 28 ? '10px' : '11px',
-          }}
-        >
-          {text}
-        </span>
-      )}
-    </div>
-  )
-}
-
 function NotifDropdown({
   unread,
   notifications,
@@ -371,12 +323,25 @@ function NotifDropdown({
 }
 
 export default function UserLayout() {
-  const { user, refreshToken, logout } = useAuthStore()
+  const { user, refreshToken, logout, updateUser } = useAuthStore()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
   const [showSearch, setShowSearch] = useState(false)
   const [showNotif, setShowNotif] = useState(false)
+
+  const { data: freshUser } = useQuery({
+    queryKey: ['auth-me-sync'],
+    queryFn: () => authApi.me(),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  })
+
+  useEffect(() => {
+    if (freshUser) updateUser(freshUser)
+  }, [freshUser, updateUser])
+
+  const displayUser = freshUser ?? user
 
   const { data: notificationsPage } = useQuery({
     queryKey: ['notifications', 0],
@@ -501,6 +466,7 @@ export default function UserLayout() {
 
           <NavSection title="Cộng đồng" />
           <NavItem to="/blog" icon={BookOpen} label="Blog học tập" />
+          <NavItem to="/blog/create" icon={PenSquare} label="Viết bài" />
           <NavItem to="/discover" icon={Compass} label="Khám phá" />
           <NavItem to="/friends" icon={Users} label="Kết bạn" />
           <NavItem to="/inbox" icon={MessageCircle} label="Tin nhắn" badge={messageUnread} />
@@ -524,13 +490,13 @@ export default function UserLayout() {
 
         <div className="p-2 flex-shrink-0" style={{ borderTop: '0.5px solid var(--border)' }}>
           <div className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-white/[.04] transition-colors cursor-pointer">
-            <Avatar name={user?.fullName} avatar={user?.avatar} size={28} />
+            <UserAvatar name={displayUser?.fullName} avatar={displayUser?.avatar} size={28} tier={displayUser?.membershipTier} />
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-medium truncate" style={{ color: 'var(--text)' }}>
-                {user?.fullName}
+                {displayUser?.fullName}
               </div>
               <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
-                {(user?.xp ?? 0).toLocaleString()} XP
+                {(displayUser?.xp ?? 0).toLocaleString()} XP
               </div>
             </div>
             <button
@@ -616,7 +582,7 @@ export default function UserLayout() {
 
           <Link to="/profile">
             <div className="cursor-pointer hover:ring-2 hover:ring-indigo-500/50 rounded-full transition-all">
-              <Avatar name={user?.fullName} avatar={user?.avatar} size={28} />
+              <UserAvatar name={displayUser?.fullName} avatar={displayUser?.avatar} size={28} tier={displayUser?.membershipTier} />
             </div>
           </Link>
         </header>

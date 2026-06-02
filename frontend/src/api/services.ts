@@ -144,6 +144,9 @@ export const projectApi = {
   getProjects: (groupId: string) =>
     api.get(`/groups/${groupId}/projects`).then(r => r.data),
 
+  getActive: (groupId: string) =>
+    api.get(`/groups/${groupId}/projects/active`).then(r => r.data),
+
   getProject: (groupId: string, projectId: string) =>
     api.get(`/groups/${groupId}/projects/${projectId}`).then(r => r.data),
 
@@ -179,6 +182,9 @@ export const projectApi = {
 
   deleteProjectTask: (groupId: string, projectId: string, taskId: string) =>
     api.delete(`/groups/${groupId}/projects/${projectId}/tasks/${taskId}`).then(r => r.data),
+
+  recordTaskProgress: (groupId: string, projectId: string, taskId: string) =>
+    api.post(`/groups/${groupId}/projects/${projectId}/tasks/${taskId}/progress`).then(r => r.data),
 }
 
 export const postApi = {

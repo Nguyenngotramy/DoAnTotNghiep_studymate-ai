@@ -45,6 +45,7 @@ async_client = AsyncOpenAI(
 
 # === FALLBACK CHUNG ===
 FALLBACK_MODELS = [
+    "google/gemini-2.0-flash-001"
     "deepseek/deepseek-v4-flash:free",         # Quality #1, 1M ctx, Tools ✓
     "nvidia/nemotron-3-super-120b-a12b:free",  # Quality #4, 1M ctx, Tools ✓
     "openai/gpt-oss-120b:free",                # Quality #5, 131K ctx, Tools ✓

@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { taskApi, groupApi, authApi } from '@/api/services'
+import { taskApi, groupApi, projectApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import type { Task, TaskStatus } from '@/types'
 import {
@@ -58,6 +58,24 @@ function rid(v: any): string {
     if ((v as any)._id) return String((v as any)._id)
   }
   return String(v)
+}
+
+function toInstantString(value?: string) {
+  if (!value) return undefined
+
+  const cleanValue = String(value).trim()
+  if (!cleanValue) return undefined
+
+  // input type="date" sẽ trả về dạng YYYY-MM-DD.
+  // Backend dùng java.time.Instant nên phải gửi đủ datetime + timezone.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) {
+    return new Date(`${cleanValue}T23:59:00`).toISOString()
+  }
+
+  const date = new Date(cleanValue)
+  if (Number.isNaN(date.getTime())) return undefined
+
+  return date.toISOString()
 }
 
 function TaskCard({
@@ -287,7 +305,7 @@ function AddTaskModal({
       taskApi.create(groupId as any, {
         ...form,
         assigneeId: form.assigneeId || undefined,
-        deadline: form.deadline || undefined,
+        deadline: toInstantString(form.deadline),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks', groupId] })
@@ -433,6 +451,12 @@ export default function KanbanPage() {
     enabled: !!groupId,
   })
 
+  const { data: activeProject } = useQuery({
+    queryKey: ['active-project', groupId],
+    queryFn: () => projectApi.getActive(groupId),
+    enabled: !!groupId,
+  })
+
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks', groupId],
     queryFn: () => taskApi.list(groupId as any),
@@ -457,12 +481,15 @@ export default function KanbanPage() {
   const updateStatus = useMutation({
     mutationFn: ({ taskId, status }: { taskId: string; status: TaskStatus }) =>
       taskApi.updateStatus(groupId as any, taskId as any, status),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ['tasks', groupId] })
       qc.invalidateQueries({ queryKey: ['my-tasks'] })
-      authApi.me().then(latestUser => {
-        useAuthStore.getState().updateUser(latestUser)
-      }).catch(e => console.error('Lỗi cập nhật XP:', e))
+
+      // Record task progress if task is completed and there's an active project
+      if (variables.status === 'DONE' && activeProject?.project?.id) {
+        projectApi.recordTaskProgress(groupId, activeProject.project.id, variables.taskId)
+          .catch((err: unknown) => console.error('Failed to record task progress:', err))
+      }
     },
     onError: () => {
       toast.error('Không thể cập nhật trạng thái task')

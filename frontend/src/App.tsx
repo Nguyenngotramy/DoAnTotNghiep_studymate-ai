@@ -40,6 +40,9 @@ import ChatPage from '@/pages/user/groups/ChatPage'
 import DocsPage from '@/pages/user/groups/DocsPage'
 import MyStudyDrivePage from '@/pages/user/groups/MyStudyDrivePage'
 import PersonalTaskDetailPage from '@/pages/user/groups/PersonalTaskDetailPage'
+import ProjectListPage from '@/pages/user/groups/ProjectListPage'
+import ProjectKanbanPage from '@/pages/user/groups/ProjectKanbanPage'
+import ProjectProgressPage from '@/pages/user/groups/ProjectProgressPage'
 // User — Learning
 import FlashcardPage from '@/pages/user/learning/FlashcardPage'
 import QuizPage from '@/pages/user/learning/QuizPage'
@@ -126,6 +129,9 @@ export default function App() {
           <Route path="/groups/:groupId" element={<GroupDetailPage />} />
           <Route path="/groups/:groupId/kanban" element={<KanbanPage />} />
           <Route path="/groups/:groupId/kanban/:taskId" element={<TaskDetailPage />} />
+          <Route path="/groups/:groupId/projects" element={<ProjectListPage />} />
+          <Route path="/groups/:groupId/projects/:projectId/kanban" element={<ProjectKanbanPage />} />
+          <Route path="/groups/:groupId/projects/:projectId/progress" element={<ProjectProgressPage />} />
           <Route path="/groups/:groupId/chat" element={<ChatPage />} />
           <Route path="/groups/:groupId/docs" element={<DocsPage />} />
           <Route path="/study-drive" element={<MyStudyDrivePage />} />
