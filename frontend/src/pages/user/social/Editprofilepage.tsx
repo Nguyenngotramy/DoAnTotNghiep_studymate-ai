@@ -10,6 +10,7 @@ import {
   User, BookOpen, MapPin, School,
   Target, Clock3
 } from 'lucide-react'
+import { resolveUserAvatar, hasCustomAvatar } from '@/utils/avatar'
 
 const COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#ec4899', '#3b82f6', '#22c55e', '#f97316', '#8b5cf6']
 
@@ -68,6 +69,7 @@ const SKILL_COLORS: Record<string, string> = {
 }
 
 const BACKEND = 'http://localhost:8080/api'
+
 const toAbsUrl = (url?: string) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
@@ -173,7 +175,7 @@ export default function EditProfilePage() {
       goal: (me as any).goal ?? '',
     })
 
-    setAvatarUrl(toAbsUrl(me.avatar))
+    setAvatarUrl(hasCustomAvatar(me.avatar) ? toAbsUrl(me.avatar) : resolveUserAvatar(null))
     setCoverUrl(toAbsUrl((me as any)?.coverImage))
     setSkills(((me?.skills as any[]) ?? []).map(s => ({ ...s })))
     setStrongSubjects(strong)
@@ -426,24 +428,12 @@ export default function EditProfilePage() {
 
         <div className="px-6 pb-5 -mt-8 flex items-center gap-4">
           <div className="relative group/av">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="avatar"
-                className="w-16 h-16 rounded-2xl object-cover"
-                style={{ boxShadow: '0 0 0 4px var(--bg2)' }}
-              />
-            ) : (
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center text-[20px] font-bold text-white"
-                style={{
-                  background: `linear-gradient(135deg, ${color}, #8b5cf6)`,
-                  boxShadow: '0 0 0 4px var(--bg2)',
-                }}
-              >
-                {ini(watchedFullName || me?.fullName)}
-              </div>
-            )}
+            <img
+              src={avatarUrl || resolveUserAvatar(null)}
+              alt="avatar"
+              className="w-16 h-16 rounded-2xl object-cover"
+              style={{ boxShadow: '0 0 0 4px var(--bg2)' }}
+            />
 
             <label className="absolute inset-0 rounded-2xl flex items-center justify-center cursor-pointer opacity-0 group-hover/av:opacity-100 transition-all">
               <div

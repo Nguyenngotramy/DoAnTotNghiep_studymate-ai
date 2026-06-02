@@ -20,6 +20,7 @@ public class SavedStudyItemService {
 
     private final SavedStudyItemRepository repo;
     private final StudyDriveFolderRepository folderRepo;
+    private final MembershipQuotaService membershipQuotaService;
 
     @Value("${app.upload.dir:./uploads}")
     private String uploadDir;
@@ -94,6 +95,8 @@ public class SavedStudyItemService {
             folderRepo.findByIdAndUserId(folderId, userId)
                     .orElseThrow(() -> new RuntimeException("Folder không tồn tại"));
         }
+
+        membershipQuotaService.assertCanUploadStudyDrive(userId, file.getSize() / 1024);
 
         try {
             String original = file.getOriginalFilename() == null ? "file" : file.getOriginalFilename();

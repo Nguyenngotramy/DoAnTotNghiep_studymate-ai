@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import UserAvatar from '@/components/UserAvatar'
 import clsx from 'clsx'
 import { chatApi, dmApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
@@ -110,45 +111,6 @@ function sameIds(a: any[], b: any[]) {
     if (Boolean(a[i]?.recalled) !== Boolean(b[i]?.recalled)) return false
   }
   return true
-}
-
-function Avatar({
-  name,
-  avatar,
-  size = 36,
-  bg,
-}: {
-  name: string
-  avatar?: string | null
-  size?: number
-  bg?: string
-}) {
-  const url = toAbsUrl(avatar)
-
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt={name}
-        className="rounded-full object-cover flex-shrink-0"
-        style={{ width: size, height: size }}
-      />
-    )
-  }
-
-  return (
-    <div
-      className="rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size <= 28 ? 10 : 12,
-        background: bg || nameColor(name),
-      }}
-    >
-      {ini(name)}
-    </div>
-  )
 }
 
 function DirectAttachmentCard({ att }: { att: DirectMessageAttachment }) {
@@ -1487,7 +1449,7 @@ export default function InboxPage() {
                           }}
                         >
                           <div className={clsx(!showMeta && 'invisible')}>
-                            <Avatar name={(msg as any).senderName || 'TV'} avatar={(msg as any).senderAvatar} size={36} />
+                            <UserAvatar name={(msg as any).senderName || 'TV'} avatar={(msg as any).senderAvatar} size={36} />
                           </div>
 
                           <div className={clsx('max-w-[78%] flex flex-col relative', isMe ? 'items-end' : 'items-start')}>
@@ -2060,7 +2022,7 @@ export default function InboxPage() {
                 <ArrowLeft size={16} />
               </button>
 
-              <Avatar name={activeName} avatar={activeAvatar} size={36} bg={activeColor} />
+              <UserAvatar name={activeName} avatar={activeAvatar} size={36} />
 
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-semibold truncate" style={{ color: 'var(--text)' }}>
@@ -2161,7 +2123,7 @@ export default function InboxPage() {
                         setReactionPickerId(null)
                       }}
                     >
-                      {!mine && <Avatar name={sname} avatar={activeAvatar} size={28} bg={activeColor} />}
+                      {!mine && <UserAvatar name={sname} avatar={activeAvatar} size={28} />}
 
                       <div className={clsx('max-w-[68%] flex flex-col', mine ? 'items-end' : 'items-start')}>
                         {!mine && (
@@ -2357,7 +2319,7 @@ export default function InboxPage() {
                         </div>
                       </div>
 
-                      {mine && <Avatar name={me?.fullName ?? 'Tôi'} avatar={myAvatarUrl} size={28} bg={nameColor(me?.fullName ?? '')} />}
+                      {mine && <UserAvatar name={me?.fullName ?? 'Tôi'} avatar={myAvatarUrl} size={28} />}
                     </div>
                   )
                 })
@@ -2589,7 +2551,7 @@ export default function InboxPage() {
                   style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <Avatar name={activeName} avatar={activeAvatar} size={44} bg={activeColor} />
+                    <UserAvatar name={activeName} avatar={activeAvatar} size={44} />
                     <div className="min-w-0">
                       <div className="text-[14px] font-semibold truncate" style={{ color: 'var(--text)' }}>
                         {activeName}

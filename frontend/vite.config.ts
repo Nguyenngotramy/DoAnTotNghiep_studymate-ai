@@ -48,15 +48,5 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
     chunkSizeWarningLimit: 2000,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          react:  ['react', 'react-dom', 'react-router-dom'],
-          query:  ['@tanstack/react-query'],
-          ui:     ['lucide-react', 'clsx', 'react-hot-toast'],
-          stomp:  ['@stomp/stompjs', 'sockjs-client'],
-        },
-      },
-    },
   },
 })

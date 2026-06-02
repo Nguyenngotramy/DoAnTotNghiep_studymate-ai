@@ -4,7 +4,9 @@ import {
   Layers,
   Plus,
   RotateCcw,
+  ChevronLeft,
   X,
+  Check,
   ArrowLeft,
   Search,
   FolderPlus,
@@ -18,24 +20,111 @@ import {
   Inbox,
   MoreVertical,
   Pencil,
-  Target,
-  CheckCircle2,
-  XCircle,
-  Trophy,
-  ChevronRight,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { flashcardApi } from '@/api/services'
 import type { Flashcard, FlashcardDeck, FlashcardFolder } from '@/types'
-import VocabularyToolkit from '@/components/VocabularyToolkit'
-import FlashcardStudySession from '@/components/learning/FlashcardStudySession'
-import { BookMarked, CalendarClock } from 'lucide-react'
 
 type DeckFormBody = {
   title: string
   description?: string
   folderId?: string
   cards: { question: string; answer: string }[]
+}
+
+function FlipCard({
+  card,
+  flipped,
+  onFlip,
+}: {
+  card: Flashcard
+  flipped: boolean
+  onFlip: () => void
+}) {
+  return (
+    <div className="w-full cursor-pointer select-none" style={{ perspective: 1200 }} onClick={onFlip}>
+      <div
+        className="relative w-full transition-all duration-500"
+        style={{
+          transformStyle: 'preserve-3d',
+          transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          height: 340,
+        }}
+      >
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center p-8 rounded-[28px] border shadow-sm"
+          style={{
+            backfaceVisibility: 'hidden',
+            background:
+              'linear-gradient(180deg, color-mix(in srgb, var(--bg2) 94%, #6366f1 6%), var(--bg2))',
+            borderColor: 'color-mix(in srgb, var(--border) 82%, #6366f1 18%)',
+            boxShadow: '0 18px 40px rgba(0,0,0,.06)',
+          }}
+        >
+          <div
+            className="mb-4 px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-[0.18em]"
+            style={{
+              background: 'rgba(99,102,241,.10)',
+              color: '#818cf8',
+              border: '1px solid rgba(99,102,241,.18)',
+            }}
+          >
+            CÂU HỎI
+          </div>
+
+          <p
+            className="text-center leading-relaxed font-semibold"
+            style={{
+              color: 'var(--text)',
+              fontSize: 'clamp(20px,2.2vw,28px)',
+              maxWidth: 760,
+            }}
+          >
+            {card.question}
+          </p>
+
+          <div className="mt-8 flex items-center gap-2 text-[12px]" style={{ color: 'var(--text3)' }}>
+            <RotateCcw size={13} />
+            Chạm để lật thẻ
+          </div>
+        </div>
+
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center p-8 rounded-[28px] border shadow-sm"
+          style={{
+            backfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)',
+            background:
+              'linear-gradient(180deg, color-mix(in srgb, var(--bg3) 92%, #6366f1 8%), var(--bg3))',
+            borderColor: 'rgba(99,102,241,.24)',
+            boxShadow: '0 18px 40px rgba(0,0,0,.06)',
+          }}
+        >
+          <div
+            className="mb-4 px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-[0.18em]"
+            style={{
+              background: 'rgba(99,102,241,.12)',
+              color: '#818cf8',
+              border: '1px solid rgba(99,102,241,.20)',
+            }}
+          >
+            ĐÁP ÁN
+          </div>
+
+          <p
+            className="text-center whitespace-pre-line leading-relaxed"
+            style={{
+              color: 'var(--text)',
+              fontSize: 'clamp(15px,1.8vw,20px)',
+              maxWidth: 760,
+            }}
+          >
+            {card.answer}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function CreateFolderModal({
@@ -290,72 +379,14 @@ export default function FlashcardPage() {
   const [sourceType, setSourceType] = useState<'ALL' | 'PERSONAL' | 'DOCUMENT_AI'>('ALL')
 
   const [activeDeck, setActiveDeck] = useState<FlashcardDeck | null>(null)
-  const [studyMode, setStudyMode] = useState<'DUE' | 'ALL'>('DUE')
   const [idx, setIdx] = useState(0)
-
-  // Local Quiz Practice from Flashcards state
-  const [quizMode, setQuizMode] = useState(false)
-  const [quizQuestions, setQuizQuestions] = useState<{
-    question: string
-    options: string[]
-    correctIndex: number
-    explanation: string
-  }[]>([])
-  const [selectedAns, setSelectedAns] = useState<number | null>(null)
-  const [quizScore, setQuizScore] = useState(0)
-  const [quizDone, setQuizDone] = useState(false)
-  const [answeredQuiz, setAnsweredQuiz] = useState(false)
-
-  const startQuizFromFlashcards = (deck: FlashcardDeck) => {
-    const cards = deck.cards || []
-    if (cards.length < 2) {
-      toast.error('Cần tối thiểu 2 thẻ flashcard để tạo bài Quiz ôn tập')
-      return
-    }
-
-    const questionsList = cards.map((card, currentIdx) => {
-      const correctAnswer = card.answer
-      
-      // Get all other answers as distractors
-      const otherAnswers = cards
-        .filter((_, idx) => idx !== currentIdx)
-        .map(c => c.answer)
-        .filter((value, index, self) => self.indexOf(value) === index)
-
-      // Randomly shuffle and select up to 3 distractors
-      const shuffledOther = [...otherAnswers].sort(() => Math.random() - 0.5)
-      const distractors = shuffledOther.slice(0, Math.min(3, shuffledOther.length))
-
-      // If less than 3, pad with placeholder answers
-      while (distractors.length < Math.min(3, cards.length - 1)) {
-        distractors.push(`Đáp án gây nhiễu ${distractors.length + 1}`)
-      }
-
-      // Merge and shuffle options
-      const options = [correctAnswer, ...distractors].sort(() => Math.random() - 0.5)
-      const correctIndex = options.indexOf(correctAnswer)
-
-      return {
-        question: card.question,
-        options,
-        correctIndex,
-        explanation: `Khái niệm: ${card.question}\nĐáp án chính xác: ${correctAnswer}`
-      }
-    })
-
-    setQuizQuestions(questionsList)
-    setIdx(0)
-    setSelectedAns(null)
-    setAnsweredQuiz(false)
-    setQuizScore(0)
-    setQuizDone(false)
-    setQuizMode(true)
-    setActiveDeck(deck)
-  }
+  const [flipped, setFlipped] = useState(false)
+  const [known, setKnown] = useState<Set<number>>(new Set())
+  const [review, setReview] = useState<Set<number>>(new Set())
+  const [done, setDone] = useState(false)
 
   const [showFolderModal, setShowFolderModal] = useState(false)
   const [showDeckModal, setShowDeckModal] = useState(false)
-  const [showVocabToolkit, setShowVocabToolkit] = useState(false)
   const [editingDeck, setEditingDeck] = useState<FlashcardDeck | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
@@ -443,10 +474,39 @@ export default function FlashcardPage() {
     },
   })
 
-  const startDeck = (deck: FlashcardDeck, mode: 'DUE' | 'ALL' = 'DUE') => {
-    setStudyMode(mode)
+  const activeCards = activeDeck?.cards ?? []
+  const currentCard = activeCards[idx]
+  const progress = activeCards.length ? Math.round(((known.size + review.size) / activeCards.length) * 100) : 0
+
+  const startDeck = (deck: FlashcardDeck) => {
     setActiveDeck(deck)
-    setQuizMode(false)
+    setIdx(0)
+    setFlipped(false)
+    setKnown(new Set())
+    setReview(new Set())
+    setDone(false)
+  }
+
+  const next = (remember: boolean) => {
+    if (!activeDeck) return
+    if (remember) setKnown(prev => new Set(prev).add(idx))
+    else setReview(prev => new Set(prev).add(idx))
+
+    if (idx + 1 >= activeCards.length) {
+      setDone(true)
+      return
+    }
+
+    setIdx(prev => prev + 1)
+    setFlipped(false)
+  }
+
+  const restart = () => {
+    setIdx(0)
+    setFlipped(false)
+    setKnown(new Set())
+    setReview(new Set())
+    setDone(false)
   }
 
   const folderMap = useMemo(() => {
@@ -498,15 +558,6 @@ export default function FlashcardPage() {
               >
                 <FolderPlus size={15} />
                 Tạo folder
-              </button>
-
-              <button
-                onClick={() => setShowVocabToolkit(true)}
-                className="h-11 px-4 rounded-2xl border text-[13px] font-medium flex items-center gap-2"
-                style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }}
-              >
-                <BookMarked size={15} />
-                Dán từ vựng
               </button>
 
               <button
@@ -823,34 +874,14 @@ export default function FlashcardPage() {
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-2 mt-4">
-                    <button
-                      onClick={() => startDeck(deck, 'DUE')}
-                      className="w-full h-11 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
-                      style={{ background: '#6366f1', color: '#fff' }}
-                    >
-                      <CalendarClock size={13} />
-                      Ôn thẻ đến hạn (SM-2)
-                    </button>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => startDeck(deck, 'ALL')}
-                        className="flex-1 h-11 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5 border"
-                        style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
-                      >
-                        {deck.aiGenerated ? <Sparkles size={13} /> : <Layers size={13} />}
-                        Học tất cả
-                      </button>
-                      <button
-                        onClick={() => startQuizFromFlashcards(deck)}
-                        className="flex-1 h-11 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5 border"
-                        style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
-                      >
-                        <Target size={13} className="text-indigo-400" />
-                        Luyện Quiz
-                      </button>
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => startDeck(deck)}
+                    className="w-full h-12 rounded-2xl mt-4 text-[13px] font-medium flex items-center justify-center gap-2"
+                    style={{ background: '#6366f1', color: '#fff' }}
+                  >
+                    {deck.aiGenerated ? <Sparkles size={14} /> : <Layers size={14} />}
+                    Bắt đầu học
+                  </button>
                 </div>
               )
             })}
@@ -862,36 +893,6 @@ export default function FlashcardPage() {
             loading={folderMut.isPending}
             onClose={() => setShowFolderModal(false)}
             onSubmit={body => folderMut.mutate(body)}
-          />
-        )}
-
-        {showVocabToolkit && (
-          <VocabularyToolkit
-            defaultTitle="Bộ từ vựng của tôi"
-            onClose={() => setShowVocabToolkit(false)}
-            onStudyNow={deck => {
-              setQuizMode(false)
-              startDeck(deck)
-              setShowVocabToolkit(false)
-            }}
-            onQuiz={questions => {
-              setActiveDeck({
-                id: 'vocab-quiz-temp',
-                title: 'Quiz từ vựng',
-                createdById: '',
-                aiGenerated: false,
-                sourceType: 'PERSONAL',
-                cards: [],
-              })
-              setQuizQuestions(questions)
-              setIdx(0)
-              setSelectedAns(null)
-              setAnsweredQuiz(false)
-              setQuizScore(0)
-              setQuizDone(false)
-              setQuizMode(true)
-              setShowVocabToolkit(false)
-            }}
           />
         )}
 
@@ -918,321 +919,231 @@ export default function FlashcardPage() {
     )
   }
 
-  if (activeDeck && !quizMode) {
-    const currentFolder = activeDeck.folderId ? folderMap.get(activeDeck.folderId) : null
+  if (done) {
     return (
-      <FlashcardStudySession
-        deck={activeDeck}
-        mode={studyMode}
-        folder={currentFolder ?? null}
-        sourceBadge={<SourceBadge deck={activeDeck} />}
-        onExit={() => {
-          setActiveDeck(null)
-          qc.invalidateQueries({ queryKey: ['flashcard-decks'] })
-        }}
-        onQuiz={() => startQuizFromFlashcards(activeDeck)}
-      />
+      <div className="max-w-3xl mx-auto">
+        <div
+          className="rounded-[30px] border p-8 text-center"
+          style={{
+            background:
+              'linear-gradient(180deg, color-mix(in srgb, var(--bg2) 95%, #6366f1 5%), var(--bg2))',
+            borderColor: 'color-mix(in srgb, var(--border) 84%, #6366f1 16%)',
+          }}
+        >
+          <div className="text-5xl mb-4">🎉</div>
+          <h2 className="text-[26px] font-bold mb-2" style={{ color: 'var(--text)' }}>
+            Hoàn thành bộ thẻ!
+          </h2>
+          <p className="text-[14px] mb-7" style={{ color: 'var(--text2)' }}>
+            {activeDeck.title}
+          </p>
+
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            {[
+              { label: 'Đã nhớ', val: known.size, color: '#22c55e', icon: '✅' },
+              { label: 'Cần ôn', val: review.size, color: '#f59e0b', icon: '📖' },
+              { label: 'Tổng', val: activeCards.length, color: '#6366f1', icon: '🃏' },
+            ].map(s => (
+              <div
+                key={s.label}
+                className="p-5 rounded-[24px] border"
+                style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
+              >
+                <div className="text-2xl mb-2">{s.icon}</div>
+                <div className="text-[28px] font-bold" style={{ color: s.color }}>
+                  {s.val}
+                </div>
+                <div className="text-[11px]" style={{ color: 'var(--text3)' }}>
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={restart}
+              className="flex-1 py-3.5 rounded-2xl text-[13px] font-semibold text-white flex items-center justify-center gap-2"
+              style={{ background: '#6366f1' }}
+            >
+              <RotateCcw size={14} />
+              Ôn lại từ đầu
+            </button>
+            <button
+              onClick={() => setActiveDeck(null)}
+              className="flex-1 py-3.5 rounded-2xl border text-[13px] font-medium flex items-center justify-center gap-2"
+              style={{ borderColor: 'var(--border)', color: 'var(--text2)', background: 'var(--bg3)' }}
+            >
+              <ArrowLeft size={14} />
+              Chọn bộ khác
+            </button>
+          </div>
+        </div>
+      </div>
     )
   }
 
-  if (quizMode && quizQuestions.length > 0) {
-    const total = quizQuestions.length
-    const pct = Math.round((quizScore / total) * 100)
-    const currentQ = quizQuestions[idx]
+  const currentFolder = activeDeck.folderId ? folderMap.get(activeDeck.folderId) : null
 
-    const handleQuizChoose = (optIdx: number) => {
-      if (answeredQuiz) return
-      setSelectedAns(optIdx)
-      setAnsweredQuiz(true)
-      if (optIdx === currentQ.correctIndex) {
-        setQuizScore(s => s + 1)
-      }
-    }
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div
+        className="rounded-[30px] border p-6"
+        style={{
+          background:
+            'linear-gradient(180deg, color-mix(in srgb, var(--bg2) 96%, #6366f1 4%), var(--bg2))',
+          borderColor: 'var(--border)',
+        }}
+      >
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <button
+              onClick={() => setActiveDeck(null)}
+              className="flex items-center gap-1.5 text-[12px] transition-colors mb-2"
+              style={{ color: 'var(--text3)' }}
+            >
+              <ArrowLeft size={14} />
+              Quay lại danh sách
+            </button>
 
-    const handleQuizNext = () => {
-      if (idx + 1 >= total) {
-        setQuizDone(true)
-        return
-      }
-      setIdx(idx + 1)
-      setSelectedAns(null)
-      setAnsweredQuiz(false)
-    }
-
-    const handleQuizRestart = () => {
-      setIdx(0)
-      setSelectedAns(null)
-      setAnsweredQuiz(false)
-      setQuizScore(0)
-      setQuizDone(false)
-    }
-
-    if (quizDone) {
-      return (
-        <div className="max-w-3xl mx-auto">
-          <div
-            className="rounded-[30px] border p-8 text-center"
-            style={{
-              background:
-                'linear-gradient(180deg, color-mix(in srgb, var(--bg2) 95%, #6366f1 5%), var(--bg2))',
-              borderColor: 'color-mix(in srgb, var(--border) 84%, #6366f1 16%)',
-            }}
-          >
-            <div className="text-5xl mb-4">{pct >= 80 ? '🏆' : pct >= 60 ? '👍' : '📚'}</div>
-            <h2 className="text-[26px] font-bold mb-2" style={{ color: 'var(--text)' }}>
-              {pct >= 80 ? 'Xuất sắc!' : pct >= 60 ? 'Khá tốt!' : 'Cần ôn thêm!'}
+            <h2 className="text-[28px] font-semibold leading-tight" style={{ color: 'var(--text)' }}>
+              {activeDeck.title}
             </h2>
-            <p className="text-[14px] mb-7" style={{ color: 'var(--text2)' }}>
-              Luyện Quiz: {activeDeck?.title ?? 'Từ vựng'}
-            </p>
 
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              {[
-                { label: 'Đúng', val: quizScore, color: '#22c55e', icon: '✅' },
-                { label: 'Sai', val: total - quizScore, color: '#ef4444', icon: '❌' },
-                { label: 'Điểm', val: `${pct}%`, color: '#6366f1', icon: '⭐' },
-              ].map(s => (
-                <div
-                  key={s.label}
-                  className="p-5 rounded-[24px] border"
-                  style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
-                >
-                  <div className="text-2xl mb-2">{s.icon}</div>
-                  <div className="text-[28px] font-bold" style={{ color: s.color }}>
-                    {s.val}
-                  </div>
-                  <div className="text-[11px]" style={{ color: 'var(--text3)' }}>
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleQuizRestart}
-                className="flex-1 py-3.5 rounded-2xl text-[13px] font-semibold text-white flex items-center justify-center gap-2"
-                style={{ background: '#6366f1' }}
-              >
-                <RotateCcw size={14} />
-                Làm lại Quiz
-              </button>
-              <button
-                onClick={() => {
-                  setQuizMode(false)
-                  startDeck(activeDeck)
-                }}
-                className="flex-1 py-3.5 rounded-2xl text-[13px] font-semibold text-white flex items-center justify-center gap-2"
-                style={{ background: '#10b981' }}
-              >
-                <Layers size={14} />
-                Học thẻ flashcard
-              </button>
-              <button
-                onClick={() => {
-                  setQuizMode(false)
-                  setActiveDeck(null)
-                }}
-                className="flex-1 py-3.5 rounded-2xl border text-[13px] font-medium flex items-center justify-center gap-2"
-                style={{ borderColor: 'var(--border)', color: 'var(--text2)', background: 'var(--bg3)' }}
-              >
-                <ArrowLeft size={14} />
-                Danh sách bộ thẻ
-              </button>
-            </div>
-          </div>
-        </div>
-      )
-    }
-
-    const LABELS = ['A', 'B', 'C', 'D']
-
-    return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div
-          className="rounded-[30px] border p-6"
-          style={{
-            background:
-              'linear-gradient(180deg, color-mix(in srgb, var(--bg2) 96%, #6366f1 4%), var(--bg2))',
-            borderColor: 'var(--border)',
-          }}
-        >
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <button
-                onClick={() => {
-                  setQuizMode(false)
-                  setActiveDeck(null)
-                }}
-                className="flex items-center gap-1.5 text-[12px] transition-colors mb-2"
-                style={{ color: 'var(--text3)' }}
-              >
-                <ArrowLeft size={14} />
-                Quay lại danh sách
-              </button>
-
-              <h2 className="text-[28px] font-semibold leading-tight" style={{ color: 'var(--text)' }}>
-                Luyện Quiz: {activeDeck?.title ?? 'Từ vựng'}
-              </h2>
-
-              <div className="flex flex-wrap items-center gap-2 mt-3">
-                <SourceBadge deck={activeDeck} />
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <SourceBadge deck={activeDeck} />
+              {currentFolder && (
                 <span
                   className="px-2.5 py-1 rounded-full text-[11px] border flex items-center gap-1.5"
                   style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
                 >
-                  <Target size={12} className="text-indigo-400" />
-                  Quiz Mode thuật toán
+                  <Folder size={12} style={{ color: currentFolder.color || '#6366f1' }} />
+                  {currentFolder.name}
                 </span>
-              </div>
-            </div>
-
-            <div
-              className="rounded-2xl px-4 py-2 border"
-              style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
-            >
-              <span className="text-[12px]">Đúng: </span>
-              <span className="font-semibold text-green-500">{quizScore}</span>
+              )}
             </div>
           </div>
+
+          <button
+            onClick={restart}
+            className="flex items-center gap-2 text-[12px] px-4 h-11 rounded-2xl border"
+            style={{ color: 'var(--text2)', borderColor: 'var(--border)', background: 'var(--bg3)' }}
+          >
+            <RotateCcw size={14} />
+            Làm lại
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 mt-5">
+          {[
+            { label: 'Tổng', val: activeCards.length, color: '#8b8b9e' },
+            { label: 'Đã nhớ', val: known.size, color: '#22c55e' },
+            { label: 'Cần ôn', val: review.size, color: '#f59e0b' },
+          ].map(s => (
+            <div
+              key={s.label}
+              className="rounded-[24px] p-4 text-center border"
+              style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
+            >
+              <div className="text-[28px] font-bold font-mono" style={{ color: s.color }}>
+                {s.val}
+              </div>
+              <div className="text-[11px]" style={{ color: 'var(--text3)' }}>
+                {s.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="flex justify-between text-[12px] mb-2" style={{ color: 'var(--text3)' }}>
+          <span>
+            Thẻ {idx + 1}/{activeCards.length}
+          </span>
+          <span style={{ color: '#818cf8' }}>{progress}%</span>
         </div>
 
         <div className="h-3 rounded-full overflow-hidden" style={{ background: 'var(--bg3)' }}>
           <div
             className="h-full rounded-full transition-all duration-300"
             style={{
-              width: `${(idx / total) * 100}%`,
+              width: `${((idx + 1) / Math.max(activeCards.length, 1)) * 100}%`,
               background: 'linear-gradient(90deg, #6366f1, #818cf8)',
             }}
           />
         </div>
 
-        <div
-          className="rounded-[28px] border p-6"
-          style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
-        >
-          <div className="flex items-center justify-between mb-5">
-            <span className="text-[12px]" style={{ color: 'var(--text3)' }}>
-              Câu {idx + 1}/{total}
-            </span>
-            <span className="text-[12px] font-semibold text-indigo-400 flex items-center gap-1">
-              <Target size={13} />
-              Chọn đáp án chính xác
-            </span>
-          </div>
-
-          <p className="text-[18px] font-semibold leading-relaxed mb-6" style={{ color: 'var(--text)' }}>
-            {currentQ.question}
-          </p>
-
-          <div className="space-y-3">
-            {currentQ.options.map((opt, i) => {
-              const isCorrect = i === currentQ.correctIndex
-              const isSelected = i === selectedAns
-
-              let bg = 'var(--bg3)'
-              let border = 'var(--border)'
-              let color = 'var(--text)'
-              let labelBg = 'rgba(255,255,255,.08)'
-
-              if (answeredQuiz) {
-                if (isCorrect) {
-                  bg = 'rgba(34,197,94,.10)'
-                  border = 'rgba(34,197,94,.38)'
-                  color = '#22c55e'
-                  labelBg = 'rgba(34,197,94,.18)'
-                } else if (isSelected) {
-                  bg = 'rgba(239,68,68,.10)'
-                  border = 'rgba(239,68,68,.38)'
-                  color = '#ef4444'
-                  labelBg = 'rgba(239,68,68,.18)'
-                }
-              } else if (isSelected) {
-                bg = 'rgba(99,102,241,.12)'
-                border = 'rgba(99,102,241,.40)'
-                color = '#818cf8'
-                labelBg = 'rgba(99,102,241,.20)'
-              }
-
-              return (
-                <button
-                  key={i}
-                  onClick={() => handleQuizChoose(i)}
-                  disabled={answeredQuiz}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-left transition-all"
-                  style={{ background: bg, border: `1px solid ${border}` }}
-                >
-                  <div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center text-[12px] font-bold flex-shrink-0"
-                    style={{ background: labelBg, color }}
-                  >
-                    {LABELS[i]}
-                  </div>
-
-                  <span className="text-[13px] font-medium flex-1" style={{ color }}>
-                    {opt}
-                  </span>
-
-                  {answeredQuiz && isCorrect && <CheckCircle2 size={16} className="text-green-400 flex-shrink-0" />}
-                  {answeredQuiz && isSelected && !isCorrect && <XCircle size={16} className="text-red-400 flex-shrink-0" />}
-                </button>
-              )
-            })}
-          </div>
+        <div className="flex gap-2 justify-center mt-4">
+          {activeCards.map((_, i) => (
+            <div
+              key={i}
+              className="w-2.5 h-2.5 rounded-full transition-all"
+              style={{
+                background: known.has(i)
+                  ? '#22c55e'
+                  : review.has(i)
+                    ? '#f59e0b'
+                    : i === idx
+                      ? '#6366f1'
+                      : 'rgba(120,120,140,.25)',
+                transform: i === idx ? 'scale(1.3)' : 'scale(1)',
+              }}
+            />
+          ))}
         </div>
-
-        {answeredQuiz && (
-          <div
-            className="rounded-2xl p-4"
-            style={{
-              background: selectedAns === currentQ.correctIndex ? 'rgba(34,197,94,.07)' : 'rgba(239,68,68,.07)',
-              border: `1px solid ${
-                selectedAns === currentQ.correctIndex ? 'rgba(34,197,94,.22)' : 'rgba(239,68,68,.22)'
-              }`,
-            }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              {selectedAns === currentQ.correctIndex ? (
-                <>
-                  <CheckCircle2 size={14} className="text-green-400" />
-                  <span className="text-[12px] font-semibold text-green-400">Chính xác! 🎉</span>
-                </>
-              ) : (
-                <>
-                  <XCircle size={14} className="text-red-400" />
-                  <span className="text-[12px] font-semibold text-red-400">Chưa đúng!</span>
-                </>
-              )}
-            </div>
-
-            <p className="text-[12px] leading-relaxed whitespace-pre-line" style={{ color: 'var(--text2)' }}>
-              {currentQ.explanation}
-            </p>
-          </div>
-        )}
-
-        {answeredQuiz && (
-          <button
-            onClick={handleQuizNext}
-            className="w-full py-3.5 rounded-2xl text-[13px] font-semibold text-white transition-all flex items-center justify-center gap-2"
-            style={{ background: '#6366f1' }}
-          >
-            {idx + 1 >= total ? (
-              <>
-                <Trophy size={15} />
-                Xem kết quả
-              </>
-            ) : (
-              <>
-                Câu tiếp theo
-                <ChevronRight size={15} />
-              </>
-            )}
-          </button>
-        )}
       </div>
-    )
-  }
 
-  return null
+      {currentCard && <FlipCard card={currentCard} flipped={flipped} onFlip={() => setFlipped(v => !v)} />}
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => {
+            if (idx > 0) {
+              setIdx(idx - 1)
+              setFlipped(false)
+            }
+          }}
+          disabled={idx === 0}
+          className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border text-[12px] disabled:opacity-30"
+          style={{ borderColor: 'var(--border)', color: 'var(--text2)', background: 'var(--bg3)' }}
+        >
+          <ChevronLeft size={14} />
+          Trước
+        </button>
+
+        <button
+          onClick={() => next(false)}
+          className="flex-1 py-3.5 rounded-2xl text-[13px] font-semibold flex items-center justify-center gap-2"
+          style={{
+            background: 'rgba(239,68,68,.12)',
+            color: '#ef4444',
+            border: '1px solid rgba(239,68,68,.25)',
+          }}
+        >
+          <X size={15} />
+          Cần ôn
+        </button>
+
+        <button
+          onClick={() => next(true)}
+          className="flex-1 py-3.5 rounded-2xl text-[13px] font-semibold flex items-center justify-center gap-2"
+          style={{
+            background: 'rgba(34,197,94,.12)',
+            color: '#22c55e',
+            border: '1px solid rgba(34,197,94,.25)',
+          }}
+        >
+          <Check size={15} />
+          Đã nhớ
+        </button>
+      </div>
+
+      {!flipped && (
+        <p className="text-center text-[12px]" style={{ color: 'var(--text3)' }}>
+          Click vào thẻ để xem đáp án trước khi đánh giá
+        </p>
+      )}
+    </div>
+  )
 }

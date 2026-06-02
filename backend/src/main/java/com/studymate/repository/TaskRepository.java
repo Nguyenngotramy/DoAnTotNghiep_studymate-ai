@@ -3,7 +3,9 @@ package com.studymate.repository;
 import com.studymate.model.Task;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -45,4 +47,18 @@ public interface TaskRepository extends MongoRepository<Task, String> {
     List<Task> findByCreatedByIdOrderByCreatedAtDesc(String createdById);
 
     List<Task> findByAssigneeIdOrderByCreatedAtDesc(String assigneeId);
+
+    // Project-based queries
+    List<Task> findByGroupIdAndProjectIdOrderByCreatedAtDesc(String groupId, String projectId);
+
+    List<Task> findByProjectIdOrderByCreatedAtDesc(String projectId);
+
+    long countByProjectId(String projectId);
+
+    long countByProjectIdAndStatus(String projectId, Task.Status status);
+
+    @Query("{'projectId': ?0, 'status': {$ne: 'DONE'}, 'deadline': {$lt: ?1}}")
+    Long countOverdueByProjectId(String projectId, Instant now);
+
+    List<Task> findByProjectIdAndAssigneeIdOrderByCreatedAtDesc(String projectId, String assigneeId);
 }

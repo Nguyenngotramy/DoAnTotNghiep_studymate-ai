@@ -10,8 +10,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,7 +21,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder encoder;
     private final EmailService emailService;
-    private static final ZoneId STREAK_ZONE = ZoneId.of("Asia/Bangkok");
+    private final UserAccountLockService accountLockService;
 
     public record AuthResponse(User user, String accessToken, String refreshToken) {}
 
@@ -52,15 +50,16 @@ public class AuthService {
         User user = userRepo.findByEmail(req.getEmail())
                 .orElseThrow(() -> new RuntimeException("Email hoặc mật khẩu không đúng"));
 
-        if (user.isLocked()) {
-            throw new RuntimeException("Tài khoản đã bị khoá");
+        user = accountLockService.resolveLockState(user);
+        if (accountLockService.isAccessBlocked(user)) {
+            throw new RuntimeException(accountLockService.blockMessage(user));
         }
 
         if (!encoder.matches(req.getPassword(), user.getPassword())) {
             throw new RuntimeException("Email hoặc mật khẩu không đúng");
         }
 
-        user = applyDailyStreak(user);
+        user = ensureBannerDefaults(user);
         return tokens(user);
     }
 
@@ -92,9 +91,9 @@ public class AuthService {
             }
         }
 
-        List<String> majorTags = req.getMajor() == null ? List.of() : List.of(req.getMajor());
-        List<String> interests = mergeSubjects(req.getStrongSubjects(), req.getWeakSubjects(), req.getInterests(), req.getInterestedFields(), majorTags);
-        List<User.AvailableSlot> schedule = buildSchedule(req.getAvailableSchedule());
+        List<String> interests = new ArrayList<>();
+        if (req.getStrongSubjects() != null) interests.addAll(req.getStrongSubjects());
+        if (req.getWeakSubjects() != null) interests.addAll(req.getWeakSubjects());
 
         User user = User.builder()
                 .email(req.getEmail())
@@ -104,18 +103,14 @@ public class AuthService {
                 .role(User.Role.USER)
                 .userType(req.getUserType())
                 .school(req.getSchool())
-                .major(req.getMajor())
-                .interestedFields(req.getInterestedFields() != null ? req.getInterestedFields() : new ArrayList<>())
                 .strongSubjects(req.getStrongSubjects() != null ? req.getStrongSubjects() : new ArrayList<>())
                 .weakSubjects(req.getWeakSubjects() != null ? req.getWeakSubjects() : new ArrayList<>())
                 .goal(req.getGoal())
                 .skills(skills)
                 .interests(interests)
-                .availableSchedule(schedule)
                 .onboardingDone(true)
                 .xp(100)
                 .streak(1)
-                .lastStreakAt(Instant.now())
                 .build();
 
         user = userRepo.save(user);
@@ -128,8 +123,9 @@ public class AuthService {
         if (existing.isPresent()) {
             User user = existing.get();
 
-            if (user.isLocked()) {
-                throw new RuntimeException("Tài khoản đã bị khoá");
+            user = accountLockService.resolveLockState(user);
+            if (accountLockService.isAccessBlocked(user)) {
+                throw new RuntimeException(accountLockService.blockMessage(user));
             }
 
             boolean changed = false;
@@ -148,8 +144,6 @@ public class AuthService {
                 user = userRepo.save(user);
             }
 
-            user = applyDailyStreak(user);
-
             return tokens(user);
         }
 
@@ -162,7 +156,6 @@ public class AuthService {
                 .onboardingDone(false)
                 .xp(50)
                 .streak(1)
-                .lastStreakAt(Instant.now())
                 .build();
 
         newUser = userRepo.save(newUser);
@@ -178,11 +171,12 @@ public class AuthService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
-        if (user.isLocked()) {
-            throw new RuntimeException("Tài khoản đã bị khoá");
+        user = accountLockService.resolveLockState(user);
+        if (accountLockService.isAccessBlocked(user)) {
+            throw new RuntimeException(accountLockService.blockMessage(user));
         }
 
-        user = normalizeAndSaveIfNeeded(user);
+        user = ensureBannerDefaults(user);
 
         return Map.of(
                 "accessToken", jwtService.generateAccessToken(user.getId(), user.getRole().name())
@@ -238,76 +232,19 @@ public class AuthService {
         return String.format("%06d", new Random().nextInt(1_000_000));
     }
 
-    @SafeVarargs
-    private List<String> mergeSubjects(List<String>... subjectGroups) {
-        LinkedHashMap<String, String> merged = new LinkedHashMap<>();
-        for (List<String> subjects : subjectGroups) {
-            addSubjects(merged, subjects);
-        }
-        return new ArrayList<>(merged.values());
-    }
-
-    private void addSubjects(LinkedHashMap<String, String> merged, List<String> subjects) {
-        if (subjects == null) return;
-        for (String subject : subjects) {
-            if (subject == null || subject.isBlank()) continue;
-            merged.putIfAbsent(subject.toLowerCase().trim(), subject.trim());
-        }
-    }
-
-    private List<User.AvailableSlot> buildSchedule(List<RegisterRequest.AvailableSlotRequest> schedule) {
-        if (schedule == null) return new ArrayList<>();
-        return schedule.stream()
-                .filter(s -> s.getDayOfWeek() != null && s.getStartTime() != null && s.getEndTime() != null)
-                .map(s -> User.AvailableSlot.builder()
-                        .dayOfWeek(s.getDayOfWeek())
-                        .startTime(s.getStartTime())
-                        .endTime(s.getEndTime())
-                        .build())
-                .toList();
-    }
-
     private AuthResponse tokens(User user) {
         String access = jwtService.generateAccessToken(user.getId(), user.getRole().name());
         String refresh = jwtService.generateRefreshToken(user.getId());
         return new AuthResponse(user, access, refresh);
     }
 
-    private User applyDailyStreak(User user) {
+    private User ensureBannerDefaults(User user) {
         User normalized = normalizeBannerFields(user);
 
-        Instant now = Instant.now();
-        LocalDate today = LocalDate.ofInstant(now, STREAK_ZONE);
-        LocalDate yesterday = today.minusDays(1);
-        LocalDate last = normalized.getLastStreakAt() == null
-                ? null
-                : LocalDate.ofInstant(normalized.getLastStreakAt(), STREAK_ZONE);
-
-        if (last == null) {
-            normalized.setStreak(Math.max(1, normalized.getStreak()));
-            normalized.setXp(normalized.getXp() + XPService.Action.DAILY_LOGIN.points);
-            normalized.setLastStreakAt(now);
+        if (normalized != user) {
             return userRepo.save(normalized);
         }
-
-        if (last.isEqual(today)) {
-            return normalized != user ? userRepo.save(normalized) : user;
-        }
-
-        if (last.isEqual(yesterday)) {
-            normalized.setStreak(normalized.getStreak() + 1);
-        } else {
-            normalized.setStreak(1);
-        }
-
-        normalized.setXp(normalized.getXp() + XPService.Action.DAILY_LOGIN.points);
-        normalized.setLastStreakAt(now);
-        return userRepo.save(normalized);
-    }
-
-    private User normalizeAndSaveIfNeeded(User user) {
-        User normalized = normalizeBannerFields(user);
-        return normalized != user ? userRepo.save(normalized) : user;
+        return user;
     }
 
     private User normalizeBannerFields(User user) {

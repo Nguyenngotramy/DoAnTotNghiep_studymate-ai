@@ -21,8 +21,10 @@ public class GroupService {
     private final UserRepository userRepo;
     private final TaskRepository taskRepo;
     private final NotificationService notificationService;
+    private final MembershipQuotaService membershipQuotaService;
 
     public Group create(String userId, GroupRequest req) {
+        membershipQuotaService.assertCanCreateGroup(userId);
         User user = userRepo.findById(userId).orElseThrow();
 
         String code = generateCode();
@@ -76,21 +78,6 @@ public class GroupService {
 
     public List<Group> getPublicGroups() {
         return groupRepo.findByPublicVisibleTrueOrderByCreatedAtDesc();
-    }
-
-    public List<Group> getPublicGroups(String userId) {
-        User user = userRepo.findById(userId != null ? userId : "").orElse(null);
-        if (user == null) return getPublicGroups();
-
-        Set<String> profileTags = subjectSet(user);
-        return getPublicGroups().stream()
-                .peek(group -> enrichGroupMatch(group, profileTags))
-                .sorted(Comparator
-                        .comparing((Group g) -> Optional.ofNullable(g.getMatchScore()).orElse(0))
-                        .reversed()
-                        .thenComparing(Group::getMemberCount, Comparator.reverseOrder())
-                        .thenComparing(Group::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
-                .collect(Collectors.toList());
     }
 
     public Group getById(String groupId, String userId) {
@@ -437,52 +424,5 @@ public class GroupService {
         }
 
         return sb.toString();
-    }
-
-    private void enrichGroupMatch(Group group, Set<String> profileTags) {
-        String subject = normalize(group.getSubject());
-        int score = 50;
-        if (!subject.isBlank() && profileTags.contains(subject)) {
-            score += 35;
-        }
-        if (group.getName() != null && profileTags.stream().anyMatch(t -> normalize(group.getName()).contains(t))) {
-            score += 10;
-        }
-        if (group.getDescription() != null && profileTags.stream().anyMatch(t -> normalize(group.getDescription()).contains(t))) {
-            score += 8;
-        }
-        score += Math.min(7, group.getMemberCount());
-
-        group.setMatchScore(Math.max(0, Math.min(99, score)));
-        group.setMatchReason(profileTags.contains(subject)
-                ? "Phù hợp với môn bạn quan tâm"
-                : "Nhóm công khai đang hoạt động");
-    }
-
-    private Set<String> subjectSet(User user) {
-        Set<String> result = new HashSet<>();
-        addAllNormalized(result, user.getInterests());
-        addAllNormalized(result, user.getStrongSubjects());
-        addAllNormalized(result, user.getWeakSubjects());
-        if (user.getSkills() != null) {
-            user.getSkills().stream()
-                    .map(User.UserSkill::getSubject)
-                    .map(this::normalize)
-                    .filter(s -> !s.isBlank())
-                    .forEach(result::add);
-        }
-        return result;
-    }
-
-    private void addAllNormalized(Set<String> target, List<String> values) {
-        if (values == null) return;
-        values.stream()
-                .map(this::normalize)
-                .filter(s -> !s.isBlank())
-                .forEach(target::add);
-    }
-
-    private String normalize(String value) {
-        return value == null ? "" : value.toLowerCase().trim();
     }
 }

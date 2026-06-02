@@ -24,6 +24,7 @@ public class DocumentService {
     private final StudyDocumentRepository docRepo;
     private final GroupRepository groupRepo;
     private final OpenAiDocumentService openAiDocumentService;
+    private final MembershipQuotaService membershipQuotaService;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -131,9 +132,11 @@ public class DocumentService {
     public Map<String, String> summarize(String docId, String userId) {
         StudyDocument doc = getOne(docId);
         validateMember(doc.getGroupId(), userId);
+        membershipQuotaService.assertCanUseAiTrend(userId);
 
         String text = openAiDocumentService.extractText(doc.getFileUrl(), doc.getType(), doc.getName());
         String summary = openAiDocumentService.summarize(text, doc.getName());
+        membershipQuotaService.recordAiTrendUse(userId);
 
         return Map.of("summary", summary);
     }
@@ -141,17 +144,23 @@ public class DocumentService {
     public List<Map<String, Object>> generateFlashcards(String docId, String userId) {
         StudyDocument doc = getOne(docId);
         validateMember(doc.getGroupId(), userId);
+        membershipQuotaService.assertCanUseAiTrend(userId);
 
         String text = openAiDocumentService.extractText(doc.getFileUrl(), doc.getType(), doc.getName());
-        return openAiDocumentService.generateFlashcards(text, doc.getName());
+        List<Map<String, Object>> cards = openAiDocumentService.generateFlashcards(text, doc.getName());
+        membershipQuotaService.recordAiTrendUse(userId);
+        return cards;
     }
 
     public List<Map<String, Object>> generateQuiz(String docId, String userId) {
         StudyDocument doc = getOne(docId);
         validateMember(doc.getGroupId(), userId);
+        membershipQuotaService.assertCanUseAiTrend(userId);
 
         String text = openAiDocumentService.extractText(doc.getFileUrl(), doc.getType(), doc.getName());
-        return openAiDocumentService.generateQuiz(text, doc.getName());
+        List<Map<String, Object>> quiz = openAiDocumentService.generateQuiz(text, doc.getName());
+        membershipQuotaService.recordAiTrendUse(userId);
+        return quiz;
     }
 
     public Map<String, String> chatWithDoc(String docId, String userId, String question) {

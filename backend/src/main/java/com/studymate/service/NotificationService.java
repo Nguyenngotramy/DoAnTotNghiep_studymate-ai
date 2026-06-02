@@ -17,21 +17,22 @@ public class NotificationService {
     private final NotificationRepository notifRepo;
 
     public void send(String userId, String title, String body, String type) {
-        notifRepo.save(Notification.builder()
-                .userId(userId)
-                .title(title)
-                .body(body)
-                .type(type)
-                .build());
+        send(userId, title, body, type, null, null);
     }
 
     public void send(String userId, String title, String body, String type, String link) {
+        send(userId, title, body, type, link, null);
+    }
+
+    public void send(String userId, String title, String body, String type, String link, String actorId) {
+        if (userId == null || (actorId != null && userId.equals(actorId))) return;
         notifRepo.save(Notification.builder()
                 .userId(userId)
                 .title(title)
                 .body(body)
                 .type(type)
                 .link(link)
+                .actorId(actorId)
                 .build());
     }
 
@@ -48,6 +49,7 @@ public class NotificationService {
             String sourceId,
             String sourceType
     ) {
+        if (userId == null || (actorId != null && userId.equals(actorId))) return;
         notifRepo.save(Notification.builder()
                 .userId(userId)
                 .title(title)
@@ -64,7 +66,16 @@ public class NotificationService {
     }
 
     public void broadcast(List<String> userIds, String title, String body) {
-        userIds.forEach(uid -> send(uid, title, body, "BROADCAST"));
+        broadcast(userIds, title, body, null);
+    }
+
+    public void broadcast(List<String> userIds, String title, String body, String senderId) {
+        if (userIds == null) return;
+        userIds.forEach(uid -> {
+            if (senderId == null || !uid.equals(senderId)) {
+                send(uid, title, body, "BROADCAST", null, senderId);
+            }
+        });
     }
 
     public Page<Notification> getByUser(String userId, int page) {

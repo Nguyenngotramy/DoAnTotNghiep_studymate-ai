@@ -331,4 +331,70 @@ public class TaskController {
                 ApiResponse.ok(taskService.clearSubmission(groupId, taskId), "Đã thu hồi bài nộp")
         );
     }
+
+    // =========================
+    // PROJECT-BASED TASKS
+    // =========================
+
+    @GetMapping("/groups/{groupId}/projects/{projectId}/tasks")
+    public ResponseEntity<?> listProjectTasks(
+            @PathVariable String groupId,
+            @PathVariable String projectId
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(taskService.getByProject(groupId, projectId)));
+    }
+
+    @PostMapping("/groups/{groupId}/projects/{projectId}/tasks")
+    public ResponseEntity<?> createProjectTask(
+            @PathVariable String groupId,
+            @PathVariable String projectId,
+            Authentication auth,
+            @Valid @RequestBody TaskRequest req
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        taskService.createProjectTask(groupId, projectId, auth.getName(), req),
+                        "Tạo task thành công!"
+                )
+        );
+    }
+
+    @PutMapping("/groups/{groupId}/projects/{projectId}/tasks/{taskId}")
+    public ResponseEntity<?> updateProjectTask(
+            @PathVariable String groupId,
+            @PathVariable String projectId,
+            @PathVariable String taskId,
+            Authentication auth,
+            @Valid @RequestBody TaskRequest req
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.ok(taskService.updateProjectTask(groupId, projectId, taskId, auth.getName(), req))
+        );
+    }
+
+    @PatchMapping("/groups/{groupId}/projects/{projectId}/tasks/{taskId}/status")
+    public ResponseEntity<?> updateProjectTaskStatus(
+            @PathVariable String groupId,
+            @PathVariable String projectId,
+            @PathVariable String taskId,
+            @RequestBody Map<String, String> body
+    ) {
+        String rawStatus = body.get("status");
+        if (rawStatus == null || rawStatus.isBlank()) {
+            throw new RuntimeException("Thiếu trạng thái task");
+        }
+
+        Task.Status status = Task.Status.valueOf(rawStatus.trim().toUpperCase());
+        return ResponseEntity.ok(ApiResponse.ok(taskService.updateProjectTaskStatus(groupId, projectId, taskId, status)));
+    }
+
+    @DeleteMapping("/groups/{groupId}/projects/{projectId}/tasks/{taskId}")
+    public ResponseEntity<?> deleteProjectTask(
+            @PathVariable String groupId,
+            @PathVariable String projectId,
+            @PathVariable String taskId
+    ) {
+        taskService.deleteProjectTask(groupId, projectId, taskId);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Đã xoá task"));
+    }
 }
