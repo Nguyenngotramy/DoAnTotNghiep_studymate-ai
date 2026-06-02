@@ -632,4 +632,89 @@ public class TaskService {
             return null;
         }
     }
+
+    // =========================
+    // PROJECT-BASED TASKS
+    // =========================
+
+    public List<Task> getByProject(String groupId, String projectId) {
+        return taskRepo.findByProjectIdOrderByCreatedAtDesc(projectId);
+    }
+
+    public Task createProjectTask(String groupId, String projectId, String userId, TaskRequest req) {
+        String assigneeId = blankToNull(req.getAssigneeId());
+        String assigneeName = findUserFullName(assigneeId);
+        String creatorName = findUserFullName(userId);
+
+        Task task = Task.builder()
+                .groupId(groupId)
+                .projectId(projectId)
+                .personal(false)
+                .title(req.getTitle())
+                .description(req.getDescription())
+                .status(defaultStatus(req.getStatus()))
+                .priority(defaultPriority(req.getPriority()))
+                .label(req.getLabel())
+                .labelColor(defaultLabelColor(req.getLabelColor()))
+                .assigneeId(assigneeId)
+                .assigneeName(assigneeName)
+                .deadline(req.getDeadline())
+                .createdById(userId)
+                .createdByName(creatorName)
+                .build();
+
+        Task saved = taskRepo.save(task);
+
+        if (assigneeId != null && !assigneeId.equals(userId)) {
+            notifService.send(
+                    assigneeId,
+                    "Bạn được giao task mới",
+                    "Task: " + req.getTitle(),
+                    "TASK_ASSIGNED",
+                    "/groups/" + groupId + "/projects/" + projectId + "/tasks/" + saved.getId()
+            );
+        }
+
+        return saved;
+    }
+
+    public Task updateProjectTask(String groupId, String projectId, String taskId, String userId, TaskRequest req) {
+        Task task = taskRepo.findByIdAndProjectId(taskId, projectId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy task"));
+
+        task.setTitle(req.getTitle());
+        task.setDescription(req.getDescription());
+        task.setStatus(defaultStatus(req.getStatus()));
+        task.setPriority(defaultPriority(req.getPriority()));
+        task.setLabel(req.getLabel());
+        task.setLabelColor(defaultLabelColor(req.getLabelColor()));
+        task.setDeadline(req.getDeadline());
+
+        String assigneeId = blankToNull(req.getAssigneeId());
+        task.setAssigneeId(assigneeId);
+        task.setAssigneeName(findUserFullName(assigneeId));
+
+        return taskRepo.save(task);
+    }
+
+    public Task updateProjectTaskStatus(String groupId, String projectId, String taskId, Task.Status status) {
+        Task task = taskRepo.findByIdAndProjectId(taskId, projectId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy task"));
+
+        Task.Status oldStatus = task.getStatus();
+        task.setStatus(status);
+        Task saved = taskRepo.save(task);
+
+        if (status == Task.Status.DONE && oldStatus != Task.Status.DONE && saved.getAssigneeId() != null) {
+            xpService.award(saved.getAssigneeId(), XPService.Action.TASK_COMPLETED);
+        }
+
+        return saved;
+    }
+
+    public void deleteProjectTask(String groupId, String projectId, String taskId) {
+        Task task = taskRepo.findByIdAndProjectId(taskId, projectId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy task"));
+        taskRepo.delete(task);
+    }
 }

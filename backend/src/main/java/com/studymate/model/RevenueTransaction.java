@@ -29,7 +29,7 @@ public class RevenueTransaction {
     private RevenueSource source;
 
     /** Membership tier if source is MEMBERSHIP */
-    private MembershipTier tier;
+    private com.studymate.model.User.MembershipTier tier;
 
     /** Membership period if source is MEMBERSHIP */
     private MembershipPeriod period;

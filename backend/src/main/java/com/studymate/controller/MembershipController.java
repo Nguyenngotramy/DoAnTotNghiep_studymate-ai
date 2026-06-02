@@ -3,7 +3,7 @@ package com.studymate.controller;
 import com.studymate.dto.ApiResponse;
 import com.studymate.model.MembershipPayment;
 import com.studymate.model.MembershipPeriod;
-import com.studymate.model.MembershipTier;
+import com.studymate.model.User.MembershipTier;
 import com.studymate.repository.MembershipPaymentRepository;
 import com.studymate.service.MembershipPaymentService;
 import com.studymate.service.MembershipQuotaService;

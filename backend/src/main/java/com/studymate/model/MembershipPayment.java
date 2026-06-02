@@ -20,7 +20,7 @@ public class MembershipPayment {
     private String userEmail;
     private String userFullName;
 
-    private MembershipTier tier;
+    private com.studymate.model.User.MembershipTier tier;
     private MembershipPeriod period;
 
     private long amountVnd;

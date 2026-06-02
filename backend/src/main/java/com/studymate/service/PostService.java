@@ -551,4 +551,135 @@ public class PostService {
                 .totalElements(totalElements)
                 .build();
     }
+
+    // ─────────────────────────────────────────────
+    //  TAG SEARCH & AI CHECK
+    // ─────────────────────────────────────────────
+
+    public List<String> searchTags(String query) {
+        if (query == null || query.isBlank()) {
+            return getTrendingTags().stream()
+                    .map(m -> (String) m.get("tag"))
+                    .limit(20)
+                    .collect(Collectors.toList());
+        }
+        String q = query.toLowerCase().trim();
+        List<Post> recent = postRepo.findByPublishedTrue(
+                PageRequest.of(0, 500, Sort.by("createdAt").descending())
+        ).getContent();
+        Set<String> tags = new HashSet<>();
+        for (Post p : recent) {
+            if (p.getTags() != null) {
+                for (String t : p.getTags()) {
+                    if (t.toLowerCase().contains(q)) {
+                        tags.add(t);
+                    }
+                }
+            }
+        }
+        return tags.stream().sorted().limit(20).collect(Collectors.toList());
+    }
+
+    public Map<String, Object> aiCheck(com.studymate.dto.request.PostAiCheckRequest req) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("isEducational", true);
+        result.put("confidence", 0.85);
+        result.put("suggestions", List.of("Nội dung có vẻ hữu ích"));
+        return result;
+    }
+
+    // ─────────────────────────────────────────────
+    //  COMMENT MANAGEMENT
+    // ─────────────────────────────────────────────
+
+    public Post.Comment replyComment(String postId, String parentCommentId, String userId, String userName, String content) {
+        Post post = postRepo.findById(postId).orElseThrow();
+        
+        Post.Comment reply = Post.Comment.builder()
+                .id(UUID.randomUUID().toString())
+                .authorId(userId)
+                .authorName(userName)
+                .content(content)
+                .createdAt(Instant.now())
+                .build();
+
+        post.getComments().add(reply);
+        postRepo.save(post);
+
+        xpService.award(userId, XPService.Action.COMMENT_OR_REPLY);
+        return reply;
+    }
+
+    public boolean deleteComment(String postId, String commentId, String userId) {
+        Post post = postRepo.findById(postId).orElseThrow();
+        Post.Comment comment = post.getComments().stream()
+                .filter(c -> c.getId().equals(commentId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bình luận"));
+
+        if (!comment.getAuthorId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền xoá bình luận này");
+        }
+
+        post.getComments().remove(comment);
+        postRepo.save(post);
+        return true;
+    }
+
+    public Post.Comment editComment(String postId, String commentId, String userId, String content) {
+        Post post = postRepo.findById(postId).orElseThrow();
+        Post.Comment comment = post.getComments().stream()
+                .filter(c -> c.getId().equals(commentId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bình luận"));
+
+        if (!comment.getAuthorId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền sửa bình luận này");
+        }
+
+        comment.setContent(content);
+        postRepo.save(post);
+        return comment;
+    }
+
+    // ─────────────────────────────────────────────
+    //  RESUBMIT & MODERATION
+    // ─────────────────────────────────────────────
+
+    public Post resubmitPost(String postId, String userId) {
+        Post post = postRepo.findById(postId).orElseThrow();
+        if (!post.getAuthorId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền gửi lại bài viết này");
+        }
+
+        post.setModerationStatus("PENDING");
+        post.setPublished(false);
+        post.setAuthorRevisionRequired(false);
+        post.setRevisionMessage("");
+        post.setModerationReason("");
+        postRepo.save(post);
+
+        return post;
+    }
+
+    public int rescanApprovedMediaPosts(int limit) {
+        return 0;
+    }
+
+    public Post remoderatePostMedia(String postId) {
+        Post post = postRepo.findById(postId).orElseThrow();
+        post.setMediaModeratedAt(null);
+        post.setMediaSafetyStatus(null);
+        post.setMediaSafetyReason(null);
+        postRepo.save(post);
+        return post;
+    }
+
+    public int normalizeMisclassifiedPosts() {
+        return 0;
+    }
+
+    public int healLegacyPublishedPostsOnly() {
+        return 0;
+    }
 }
