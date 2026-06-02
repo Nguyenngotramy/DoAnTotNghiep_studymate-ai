@@ -1,105 +1,71 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
   servlet:
     context-path: /api
 
 spring:
   application:
     name: studymate-api
-
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/studymate}
+      uri: ${MONGO_URI}        
       database: studymate
       auto-index-creation: true
-
   servlet:
     multipart:
       enabled: true
       max-file-size: 50MB
       max-request-size: 100MB
-      file-size-threshold: 2KB
-
-  websocket:
-    message-size-limit: 65536
-
   security:
     oauth2:
       client:
         registration:
           google:
-            client-id:
-            client-secret:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
               - email
               - profile
-            redirect-uri: "http://localhost:8080/api/login/oauth2/code/google"
-        provider:
-          google:
-            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
-            token-uri: https://oauth2.googleapis.com/token
-            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
-            user-name-attribute: sub
-
+            redirect-uri: "${APP_PUBLIC_BASE_URL}/login/oauth2/code/google"
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME:your-gmail@gmail.com}
-    password: ${MAIL_PASSWORD:your-16-char-app-password}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-            required: true
-        connectiontimeout: 10000
-        timeout: 10000
-        writetimeout: 10000
 
-  task:
-    execution:
-      pool:
-        core-size: 2
-        max-size: 5
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
 
 app:
   jwt:
-    secret: ${JWT_SECRET:StudyMateAI_SuperSecretKey_2024_MustBe256BitsLong_DoNotUseInProd}
+    secret: ${JWT_SECRET}        # ❌ Xóa default value
     access-token-expiration: 86400000
     refresh-token-expiration: 604800000
-
   ml-service:
-    url: ${ML_SERVICE_URL:http://localhost:8000}
-
-  upload:
-    dir: ${UPLOAD_DIR:./uploads}
-    max-size: 52428800
-
+    url: ${ML_SERVICE_URL}
+  public-base-url: ${APP_PUBLIC_BASE_URL}
   cors:
     allowed-origins:
-      - http://localhost:3000
-      - http://localhost:3001
-      - http://localhost:3010
-      - http://localhost:5173
-
-  frontend-url: ${FRONTEND_URL:http://localhost:5173}
-  name: StudyMate AI
-
+      - ${FRONTEND_URL}
+  frontend-url: ${FRONTEND_URL}
   admin:
-    email: ${ADMIN_EMAIL:admin@studymate.com}
-    password: ${ADMIN_PASSWORD:Admin@2024!}
-    fullName: Admin System
-
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}  # ❌ Xóa default value
   openai:
-    api-key: ${OPENAI_API_KEY:}
-    base-url: ${OPENAI_BASE_URL:}
-    model: ${OPENAI_MODEL:gpt-4.1-mini}
+    api-key: ${OPENAI_API_KEY}
+    base-url: ${OPENAI_BASE_URL:https://openrouter.ai/api/v1}
+    model: ${OPENAI_MODEL:openai/gpt-4.1-mini}
+    vision-model: ${OPENAI_VISION_MODEL:openai/gpt-4o-mini}
 
 logging:
   level:
-    com.studymate: DEBUG
-    org.springframework.data.mongodb: INFO
-    org.springframework.security: INFO
-    org.springframework.web.multipart: DEBUG
-    org.apache.catalina.connector.Request: DEBUG
+    com.studymate: INFO           # Đổi DEBUG → INFO khi production
+    org.springframework.security: WARN

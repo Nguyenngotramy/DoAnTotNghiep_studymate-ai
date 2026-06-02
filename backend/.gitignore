@@ -1,0 +1,49 @@
+# ========================
+# BUILD OUTPUT
+# ========================
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# ========================
+# ENV & CONFIG NHẠY CẢM
+# ========================
+.env
+.env.*
+!.env.example
+src/main/resources/application-local.yml
+src/main/resources/application-secret.yml
+src/main/resources/application-prod.yml
+
+# ========================
+# UPLOADS LOCAL
+# ========================
+uploads/
+
+# ========================
+# MAVEN
+# ========================
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ========================
+# IDE
+# ========================
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ========================
+# OS
+# ========================
+.DS_Store
+Thumbs.db
