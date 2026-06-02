@@ -48,6 +48,11 @@ import StatisticsPage from '@/pages/user/learning/StatisticsPage'
 // User — Predict
 import PredictPage from '@/pages/user/predict/PredictPage'
 
+// User — Membership
+import MembershipPage from '@/pages/user/membership/MembershipPage'
+import PaymentPage from '@/pages/user/payment/PaymentPage'
+import PaymentResultPage from '@/pages/user/payment/PaymentResultPage'
+
 // Admin
 import AdminDashboard from '@/pages/admin/DashboardPage'
 import AdminUsers from '@/pages/admin/UsersPage'
@@ -128,6 +133,9 @@ export default function App() {
           <Route path="/quiz" element={<QuizPage />} />
           <Route path="/statistics" element={<StatisticsPage />} />
           <Route path="/predict" element={<PredictPage />} />
+          <Route path="/membership" element={<MembershipPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/payment/result" element={<PaymentResultPage />} />
         </Route>
 
         <Route

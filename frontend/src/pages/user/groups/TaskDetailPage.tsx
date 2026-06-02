@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactElement } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -419,7 +420,7 @@ export default function TaskDetailPage() {
     return comment.authorId === user?.id || canEdit
   }
 
-  const renderCommentNode = (comment: TaskComment, level = 0): JSX.Element => {
+  const renderCommentNode = (comment: TaskComment, level = 0): ReactElement => {
     const replies = buildCommentTree(comment.replies)
     const isReplyOpen = !!replyOpenMap[comment.id]
     const isEditOpen = !!editOpenMap[comment.id]

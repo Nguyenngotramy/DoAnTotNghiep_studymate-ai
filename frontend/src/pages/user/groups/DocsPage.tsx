@@ -85,19 +85,19 @@ async function backendSummary(
   return data.summary as string
 }
 
-async function fetchBlogContext(tag?: string): Promise<{ text: string; titles: string[] }> {
+async function fetchBlogContext(tag?: string): Promise<{ text: string; titles: string[]; appendix: string }> {
   try {
     const page = await postApi.feed(0, tag?.trim() || undefined)
     const posts: Post[] = page.content?.slice(0, 5) ?? []
-    if (!posts.length) return { text: '', titles: [] }
+    if (!posts.length) return { text: '', titles: [], appendix: '' }
     const titles = posts.map(p => p.title).filter(Boolean)
     const text = posts.map(p => {
       const body = (p.summary || p.content || '').slice(0, 1200)
       return `### ${p.title}\n${body}`
     }).join('\n\n---\n\n')
-    return { text, titles }
+    return { text, titles, appendix: text }
   } catch {
-    return { text: '', titles: [] }
+    return { text: '', titles: [], appendix: '' }
   }
 }
 
@@ -1279,7 +1279,7 @@ export default function DocsPage() {
     try {
       if (aiOptionsType === 'summarize') {
         let blogCtx = ''
-        let blogMeta = { titles: [] as string[], appendix: '' }
+        let blogMeta = { titles: [] as string[], appendix: '', text: '' }
         if (Number(opts.include_blogs)) {
           const tag = String(opts.blog_tag || doc.name.split('.')[0] || '')
           blogMeta = await fetchBlogContext(tag)

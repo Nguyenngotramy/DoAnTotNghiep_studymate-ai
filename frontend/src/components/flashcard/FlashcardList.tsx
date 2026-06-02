@@ -55,7 +55,7 @@ export default function FlashcardList({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
       {decks.map(deck => {
-        const folder = deck.folderId ? folderMap.get(deck.folderId) : null
+        const folder = deck.folderId ? folderMap.get(deck.folderId) ?? null : null
         const isDragging = draggingDeckId === deck.id
 
         return (

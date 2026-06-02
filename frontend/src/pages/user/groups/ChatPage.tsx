@@ -45,6 +45,8 @@ const STATUS_META: Record<TaskStatus, { label: string; color: string; icon: any 
   DONE: { label: 'Hoàn thành', color: '#22c55e', icon: CheckCircle2 },
 }
 
+const taskStatusMeta = (status?: TaskStatus) => STATUS_META[status ?? 'TODO']
+
 function normalizeId(id: any): string {
   if (!id) return ''
   if (typeof id === 'string') return id
@@ -1714,7 +1716,7 @@ export default function ChatPage() {
                   ) : (
                     <div className="space-y-2">
                       {upcomingTasks.map((task: any) => {
-                        const meta = STATUS_META[task.status || 'TODO']
+                        const meta = taskStatusMeta(task.status)
                         const Icon = meta.icon
                         const overdue = isOverdue(task.deadline, task.status)
 
@@ -1802,7 +1804,7 @@ export default function ChatPage() {
                   ) : (
                     <div className="space-y-2">
                       {myTasks.slice(0, 4).map((task: any) => {
-                        const meta = STATUS_META[task.status || 'TODO']
+                        const meta = taskStatusMeta(task.status)
                         return (
                           <button
                             key={normalizeId(task.id)}

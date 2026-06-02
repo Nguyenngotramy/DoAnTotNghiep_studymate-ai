@@ -11,7 +11,7 @@ import {
   UsersRound, KanbanSquare, Layers, HelpCircle, BarChart2,
   BrainCircuit, User, Settings, LogOut, Search, Bell,
   Zap, Flame, X, ChevronRight, CheckCircle2, AlertCircle,
-  FileText, Heart, Check, FolderOpen
+  FileText, Heart, Check, FolderOpen, Crown
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -64,6 +64,7 @@ const QUICK_LINKS = [
   { label: 'Flashcard', to: '/flashcard', icon: Layers, color: '#f59e0b' },
   { label: 'Học tập cá nhân', to: '/study-drive', icon: FolderOpen, color: '#22c55e' },
   { label: 'Dự đoán học lực', to: '/predict', icon: BrainCircuit, color: '#8b5cf6' },
+  { label: 'Nâng cấp gói', to: '/membership', icon: Crown, color: '#f59e0b' },
 ]
 
 function SearchModal({ onClose }: { onClose: () => void }) {
@@ -517,6 +518,7 @@ export default function UserLayout() {
 
           <NavSection title="Tài khoản" />
           <NavItem to="/profile" icon={User} label="Hồ sơ cá nhân" />
+          <NavItem to="/membership" icon={Crown} label="Nâng cấp gói" />
           <NavItem to="/settings" icon={Settings} label="Cài đặt" />
         </nav>
 

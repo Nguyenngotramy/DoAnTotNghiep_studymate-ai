@@ -52,7 +52,7 @@ export default function QuizList({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
       {quizSets.map(set => {
-        const folder = set.folderId ? folderMap.get(set.folderId) : null
+        const folder = set.folderId ? folderMap.get(set.folderId) ?? null : null
         const isDragging = draggingQuizId === set.id
 
         return (

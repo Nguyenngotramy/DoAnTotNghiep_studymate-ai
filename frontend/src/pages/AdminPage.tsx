@@ -20,11 +20,11 @@ export default function AdminPage() {
   })
 
   const lockMut = useMutation({
-    mutationFn: (id: number) => adminApi.lockUser(id),
+    mutationFn: (id: number) => adminApi.lockUser(String(id)),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-users'] }); toast.success('Đã khoá tài khoản') }
   })
   const unlockMut = useMutation({
-    mutationFn: (id: number) => adminApi.unlockUser(id),
+    mutationFn: (id: number) => adminApi.unlockUser(String(id)),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-users'] }); toast.success('Đã mở khoá') }
   })
 

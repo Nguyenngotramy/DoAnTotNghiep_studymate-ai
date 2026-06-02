@@ -73,13 +73,13 @@ export default function FriendsPage() {
   const [added, setAdded] = useState<Set<string>>(new Set())
 
   const { data: suggestions = [], isLoading: loadSuggest, refetch: refetchSuggest } =
-    useQuery({ queryKey: ['friends-suggestions'], queryFn: friendApi.suggestions, staleTime: 60000 })
+    useQuery({ queryKey: ['friends-suggestions'], queryFn: () => friendApi.suggestions(), staleTime: 60000 })
 
   const { data: pending = [], isLoading: loadPending } =
-    useQuery({ queryKey: ['friends-pending'], queryFn: friendApi.pending, staleTime: 30000 })
+    useQuery({ queryKey: ['friends-pending'], queryFn: () => friendApi.pending(), staleTime: 30000 })
 
   const { data: friends = [], isLoading: loadFriends } =
-    useQuery({ queryKey: ['friends-list'], queryFn: friendApi.list, staleTime: 60000 })
+    useQuery({ queryKey: ['friends-list'], queryFn: () => friendApi.list(), staleTime: 60000 })
 
   const sendReq = useMutation({
     mutationFn: (uid: string) => friendApi.send(uid),
