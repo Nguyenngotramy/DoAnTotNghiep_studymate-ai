@@ -15,11 +15,16 @@ services:
       - mongo_data:/data/db
     networks:
       - studymate-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # ── Python ML Service ─────────────────────────────────
   ml-service:
     build:
-      context: ./ml_service
+      context: ./ml_service # Tên thư mục chứa Python agent của bạn (đổi lại nếu thư mục tên là ai_agent)
       dockerfile: Dockerfile
     container_name: studymate-ml
     restart: unless-stopped
@@ -27,8 +32,9 @@ services:
       - "8000:8000"
     networks:
       - studymate-net
+    # Đổi cách check dùng lệnh python trực tiếp để không phụ thuộc vào curl
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -36,46 +42,44 @@ services:
   # ── Spring Boot Backend ───────────────────────────────
   backend:
     build:
-      context: ./backend/backend
+      context: ./backend  # 🛠 SỬA LỖI: Trỏ đúng vào thư mục chứa dự án backend
       dockerfile: Dockerfile
     container_name: studymate-backend
     restart: unless-stopped
     depends_on:
-      - mongodb
-      - ml-service
+      mongodb:
+        condition: service_healthy # Chỉ chạy backend khi DB đã SẴN SÀNG
+      ml-service:
+        condition: service_healthy # Chỉ chạy backend khi ML Service đã SẴN SÀNG
     environment:
-      MONGODB_URI: mongodb://mongodb:27017/studymate
-      ML_SERVICE_URL: http://ml-service:8000
-      JWT_SECRET: StudyMateAI_SuperSecretKey_2024_MustBe256BitsLong_DoNotUseInProd
-      ADMIN_EMAIL: admin@studymate.com
-      ADMIN_PASSWORD: Admin@2024!
-      UPLOAD_DIR: /app/uploads
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/studymate # 🛠 SỬA LỖI: Đúng chuẩn Spring Boot
+      - ML_SERVICE_URL=http://ml-service:8000
+      - JWT_SECRET=StudyMateAI_SuperSecretKey_2024_MustBe256BitsLong_DoNotUseInProd
+      - ADMIN_EMAIL=admin@studymate.com
+      - ADMIN_PASSWORD=Admin@2024!
+      - APP_UPLOAD_DIR=/app/uploads # 🛠 SỬA LỖI: Khớp với tên @Value("${app.upload.dir}") trong code Java của bạn
     ports:
       - "8080:8080"
     volumes:
       - uploads_data:/app/uploads
     networks:
       - studymate-net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/auth/me"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
+    # Loại bỏ healthcheck bằng curl của backend để tránh lỗi sập container vòng lặp
+    # Dùng tính năng tự check nội bộ của Spring nếu bạn có cài thư viện Actuator, nếu không thì tạm bỏ qua healthcheck này.
 
-  # ── React Frontend (dev) ──────────────────────────────
-  # Dùng để dev local. Production: build dist và serve bằng nginx
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile
-  #   container_name: studymate-frontend
-  #   ports:
-  #     - "5173:5173"
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - studymate-net
+  # ── React Frontend ────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: studymate-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"  # Chạy production trên port 80 luôn cho tiện truy cập
+    depends_on:
+      - backend
+    networks:
+      - studymate-net
 
 volumes:
   mongo_data:

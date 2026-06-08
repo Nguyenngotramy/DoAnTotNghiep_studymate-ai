@@ -8,5 +8,10 @@ RUN mvn package -DskipTests -q
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
+
+RUN apk add --no-cache ttf-dejavu
+
+RUN mkdir -p /app/uploads
+
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","app.jar"]
