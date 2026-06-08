@@ -4,20 +4,17 @@ Cài: pip install fastapi uvicorn httpx python-docx pypdf openpyxl
 Chạy: python main.py
 """
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Literal, Optional
 from multi_agent import get_orchestrator, reset_chat_metadata, get_chat_metadata
 from classifier_agent import (
-    classify_message,
     build_kb_filter,
-    build_generation_context,
     classification_to_api,
-    classify_for_generation,
-    get_agent_hint,
     SUBJECT_MAP,
 )
+from subject_metadata import classification_from_subject, build_compact_context
 import uvicorn
 import re
 import re as re_module
@@ -47,52 +44,120 @@ app.add_middleware(
 
 # ── Session store (mỗi user/tab có history riêng) ─────────────
 sessions: dict[str, list] = {}
+MAX_SESSIONS = 500
+MAX_SESSION_MESSAGES = 20
 
 
 # ════════════════════════════════════════════════════════
 # FILE FETCHER — lấy nội dung file thực từ URL
 # ════════════════════════════════════════════════════════
 
+def _basename_from_url(file_url: str) -> str:
+    from urllib.parse import unquote, urlparse
+
+    path = unquote(urlparse(file_url or "").path)
+    return path.rsplit("/", 1)[-1] if path else ""
+
+
+def _resolve_file_extension(file_url: str, filename: str, content_type: str = "", content: bytes = b"") -> str:
+    """Ưu tiên đuôi file thật (doc.name / URL), không dùng nhãn chủ đề."""
+    candidates: list[str] = []
+    for name in (filename, _basename_from_url(file_url)):
+        if name and "." in name:
+            candidates.append(name.rsplit(".", 1)[-1].lower())
+
+    ct = (content_type or "").lower()
+    if "pdf" in ct:
+        candidates.append("pdf")
+    if "wordprocessingml" in ct or "msword" in ct:
+        candidates.append("docx")
+    if "spreadsheetml" in ct or "ms-excel" in ct:
+        candidates.append("xlsx")
+    if "text/plain" in ct:
+        candidates.append("txt")
+    if "json" in ct:
+        candidates.append("json")
+
+    if content.startswith(b"%PDF"):
+        candidates.append("pdf")
+    elif content[:2] == b"PK":
+        candidates.append("docx")
+
+    for ext in candidates:
+        if ext in ("txt", "md", "csv", "docx", "pdf", "xlsx", "json"):
+            return ext
+    return candidates[0] if candidates else ""
+
+
+def _is_valid_document_content(content: str) -> bool:
+    if not content or len(content.strip()) < 40:
+        return False
+    error_markers = (
+        "Không thể đọc nội dung file",
+        "Lỗi khi đọc file",
+        "Loại file: không xác định",
+        "Loại file: KHÔNG XÁC ĐỊNH",
+    )
+    return not any(marker in content for marker in error_markers)
+
+
+def _resolve_document_filename(filename: str | None, file_url: str | None, topic: str) -> str:
+    return (filename or "").strip() or _basename_from_url(file_url or "") or (topic or "").strip()
+
+
 async def fetch_file_content(file_url: str, filename: str) -> str:
     if not file_url or file_url == '#':
-        return f"Tài liệu: {filename}"
+        return ""
 
     if not file_url.startswith('http'):
         base = "http://localhost:8080/api"
         file_url = base + (file_url if file_url.startswith('/') else '/' + file_url)
 
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
+        async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
             res = await client.get(file_url)
             res.raise_for_status()
 
-        ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+        ext = _resolve_file_extension(
+            file_url,
+            filename,
+            res.headers.get("content-type", ""),
+            res.content,
+        )
 
         if ext in ('txt', 'md', 'csv'):
-            return res.text[:8000]
+            return res.text[:12000]
 
         if ext == 'docx':
             from io import BytesIO
             from docx import Document as DocxDoc
             doc = DocxDoc(BytesIO(res.content))
             text = '\n'.join(p.text for p in doc.paragraphs if p.text.strip())
-            return text[:8000]
+            return text[:12000]
 
         if ext == 'pdf':
             from io import BytesIO
             import pypdf
             reader = pypdf.PdfReader(BytesIO(res.content))
             pages_text = [page.extract_text() for page in reader.pages if page.extract_text()]
-            return '\n'.join(pages_text)[:8000]
+            return '\n'.join(pages_text)[:12000]
 
-        return (
-            f"Tài liệu: {filename}\n"
-            f"Loại file: {ext.upper() if ext else 'không xác định'}\n"
-            "(Không thể đọc nội dung file loại này — chỉ hỗ trợ TXT, MD, CSV, DOCX, PDF)"
-        )
+        return ""
 
-    except Exception as e:
-        return f"Tài liệu: {filename}\n(Lỗi khi đọc file: {e})"
+    except Exception:
+        return ""
+
+
+def _require_readable_content(content: str, filename: str) -> str:
+    if _is_valid_document_content(content):
+        return content
+    raise HTTPException(
+        status_code=422,
+        detail=(
+            f"Không đọc được nội dung tài liệu '{filename}'. "
+            "Hỗ trợ PDF, DOCX, TXT, MD, CSV."
+        ),
+    )
 
 
 async def extract_text_from_upload(file: UploadFile) -> str:
@@ -129,6 +194,18 @@ def _extract_json(raw: str) -> dict:
         return json.loads(cleaned)
     except json.JSONDecodeError:
         pass
+
+    decoder = json.JSONDecoder()
+    for match in re_module.finditer(r"[\{\[]", cleaned):
+        try:
+            data, _ = decoder.raw_decode(cleaned[match.start():])
+            if isinstance(data, dict):
+                return data
+            if isinstance(data, list):
+                return {"items": data}
+        except json.JSONDecodeError:
+            continue
+
     match = re_module.search(r'\{.*\}', cleaned, re_module.DOTALL)
     if match:
         try:
@@ -141,17 +218,23 @@ def _extract_json(raw: str) -> dict:
 def parse_flashcards(raw: str) -> list[dict]:
     data  = _extract_json(raw)
     cards = []
-    if "flashcards" in data:
-        for item in data["flashcards"]:
-            front = item.get("front", "").strip()
-            back  = item.get("back",  "").strip()
+    items = data.get("flashcards") or data.get("items") or []
+    if isinstance(items, list):
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            front = str(item.get("front") or item.get("question") or "").strip()
+            back  = str(item.get("back") or item.get("answer") or "").strip()
             if front and back:
                 cards.append({
                     "question": front,
                     "answer":   back,
-                    "hint":     item.get("hint", ""),
-                    "type":     item.get("type", "mixed"),
+                    "hint":     str(item.get("hint", "") or ""),
+                    "type":     str(item.get("type", "mixed") or "mixed"),
                 })
+        if cards:
+            return cards
+    if "flashcards" in data:
         return cards
     return _parse_flashcards_regex_fallback(raw)
 
@@ -181,18 +264,33 @@ def _parse_flashcards_regex_fallback(raw: str) -> list[dict]:
 def parse_quiz(raw: str) -> list[dict]:
     data      = _extract_json(raw)
     questions = []
-    if "questions" in data:
-        for item in data["questions"]:
+    items = data.get("questions") or data.get("items") or []
+    if isinstance(items, list):
+        for item in items:
+            if not isinstance(item, dict):
+                continue
             opts = item.get("options", [])
+            opts = [str(o).strip() for o in opts if str(o).strip()] if isinstance(opts, list) else []
             if not item.get("question") or len(opts) < 2:
                 continue
-            correct_idx = min(max(int(item.get("correct_index", 0)), 0), len(opts) - 1)
+            raw_idx = item.get("correct_index", item.get("correctIndex", 0))
+            try:
+                correct_idx = int(raw_idx)
+            except (TypeError, ValueError):
+                if isinstance(raw_idx, str) and len(raw_idx) == 1 and raw_idx.upper() in "ABCD":
+                    correct_idx = ord(raw_idx.upper()) - ord("A")
+                else:
+                    correct_idx = 0
+            correct_idx = min(max(correct_idx, 0), len(opts) - 1)
             questions.append({
-                "question":     item["question"].strip(),
-                "options":      [str(o).strip() for o in opts],
+                "question":     str(item["question"]).strip(),
+                "options":      opts,
                 "correctIndex": correct_idx,
-                "explanation":  item.get("explanation", "").strip(),
+                "explanation":  str(item.get("explanation", "") or "").strip(),
             })
+        if questions:
+            return questions
+    if "questions" in data:
         return questions
     return _parse_quiz_regex_fallback(raw)
 
@@ -233,11 +331,18 @@ def _parse_quiz_regex_fallback(raw: str) -> list[dict]:
 class ChatMessage(BaseModel):
     text: str
     session_id: Optional[str] = None
+    subject: Optional[str] = None
+    subject_code: Optional[str] = None
+    doc_topic: Optional[str] = None
 
 
 class SummaryRequest(BaseModel):
     topic: str
+    filename: Optional[str] = None
     file_url: Optional[str] = None
+    subject: Optional[str] = None
+    subject_code: Optional[str] = None
+    doc_topic: Optional[str] = None
     style:  Literal["bullet", "paragraph", "outline", "map"] = "bullet"
     length: Literal["short", "medium", "long"] = "medium"
     blog_context: Optional[str] = None
@@ -245,7 +350,11 @@ class SummaryRequest(BaseModel):
 
 class FlashcardRequest(BaseModel):
     topic: str
+    filename: Optional[str] = None
     file_url:  Optional[str] = None
+    subject: Optional[str] = None
+    subject_code: Optional[str] = None
+    doc_topic: Optional[str] = None
     card_type: Literal["definition", "formula", "concept", "mixed"] = "mixed"
     num_cards: int = 5
     format:    Literal["qa", "cloze", "image_hint"] = "qa"
@@ -255,7 +364,11 @@ class FlashcardRequest(BaseModel):
 
 class QuizRequest(BaseModel):
     topic: str
+    filename: Optional[str] = None
     file_url:    Optional[str] = None
+    subject: Optional[str] = None
+    subject_code: Optional[str] = None
+    doc_topic: Optional[str] = None
     bloom_level: Literal["remember", "understand", "apply", "analyze"] = "understand"
     num_questions: int = 10
     use_vocabulary_pipeline: bool = True
@@ -271,6 +384,7 @@ class VocabItem(BaseModel):
 
 class VocabularyExtractRequest(BaseModel):
     topic: str = "từ vựng"
+    filename: Optional[str] = None
     file_url: Optional[str] = None
     text: Optional[str] = None
     max_items: int = 30
@@ -293,6 +407,26 @@ class ConfirmClassificationRequest(BaseModel):
 
 
 QUIZ_BATCH_SIZE = 15
+QUIZ_JSON_SCHEMA = (
+    '{"questions":[{"question":"...","options":["A","B","C","D"],'
+    '"correct_index":0,"explanation":"..."}]}'
+)
+
+
+def _require_doc_labels(subject: str | None, doc_topic: str | None, has_file: bool) -> None:
+    """Bắt buộc nhãn nhóm + nhãn tài liệu trước khi đọc file — không dùng ClassifierAgent."""
+    if not has_file:
+        return
+    if not (subject or "").strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Nhóm chưa gắn nhãn môn học. Vui lòng cập nhật môn học của nhóm trước.",
+        )
+    if not (doc_topic or "").strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Tài liệu chưa có nhãn chủ đề. Gắn nhãn tài liệu trước khi dùng AI.",
+        )
 
 
 async def _resolve_vocabulary(
@@ -312,6 +446,160 @@ async def _resolve_vocabulary(
     return []
 
 
+async def _search_kb_context(query: str, kb_filter: dict | None, n_results: int = 5) -> tuple[str, list[dict]]:
+    if not kb_filter:
+        return "", []
+
+    import asyncio
+    from knowledge_base import search as kb_search
+
+    results = await asyncio.get_event_loop().run_in_executor(
+        None,
+        lambda: kb_search(query=query, n_results=n_results, where_filter=kb_filter),
+    )
+    if not results:
+        return "", []
+
+    content = "\n\n---\n\n".join(r["content"] for r in results)
+    sources = [
+        {
+            "filename": r.get("filename", ""),
+            "source": r.get("source", ""),
+            "subject": r.get("subject", ""),
+            "subject_code": r.get("subject_code", ""),
+            "topic": r.get("topic", ""),
+            "score": r.get("relevance_score"),
+        }
+        for r in results
+    ]
+    return content, sources
+
+
+def _trim_session_store() -> None:
+    while len(sessions) > MAX_SESSIONS:
+        oldest = next(iter(sessions))
+        sessions.pop(oldest, None)
+
+
+def _remember_turn(session_id: str, history: list, user_text: str, assistant_text: str) -> None:
+    history.append({"role": "user", "content": user_text})
+    history.append({"role": "assistant", "content": assistant_text})
+    sessions[session_id] = history[-MAX_SESSION_MESSAGES:]
+    _trim_session_store()
+
+
+def _extract_requested_count(text: str, default: int, max_value: int) -> int:
+    match = re.search(r"\b(\d{1,2})\b", text or "")
+    if not match:
+        return default
+    return min(max(int(match.group(1)), 1), max_value)
+
+
+def _detect_chat_route(text: str) -> str | None:
+    normalized = (text or "").lower()
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+
+    route_rules = [
+        ("quiz", r"\b(quiz|trac nghiem|trắc nghiệm|cau hoi|câu hỏi|kiem tra|kiểm tra|de on|đề ôn)\b"),
+        ("flashcard", r"\b(flashcard|flash card|the ghi nho|thẻ ghi nhớ|the hoc|thẻ học|on tu|ôn từ)\b"),
+        ("summary", r"\b(tom tat|tóm tắt|rut gon|rút gọn|dan y|dàn ý|outline|mindmap|so do|sơ đồ)\b"),
+        ("tutor", r"\b(giai thich|giải thích|huong dan|hướng dẫn|vi sao|vì sao|tai sao|tại sao|la gi|là gì)\b"),
+    ]
+    for route, pattern in route_rules:
+        if re.search(pattern, normalized):
+            return route
+    return None
+
+
+def _structured_quiz(questions: list[dict]) -> dict | None:
+    if not questions:
+        return None
+    return {
+        "type": "quiz",
+        "items": [
+            {
+                "question": q["question"],
+                "options": q["options"],
+                "correct_index": q["correctIndex"],
+                "explanation": q.get("explanation", ""),
+            }
+            for q in questions
+        ],
+    }
+
+
+def _structured_flashcards(cards: list[dict]) -> dict | None:
+    if not cards:
+        return None
+    return {
+        "type": "flashcard",
+        "items": [
+            {
+                "front": c["question"],
+                "back": c["answer"],
+                "hint": c.get("hint", ""),
+                "type": c.get("type", "mixed"),
+            }
+            for c in cards
+        ],
+    }
+
+
+async def _run_fast_chat_route(route: str, orch, text: str, context: dict | None, history: list) -> tuple[str, str, dict | None, list[dict]]:
+    manual_sources: list[dict] = []
+    if route == "quiz":
+        n = _extract_requested_count(text, default=5, max_value=20)
+        kb_content, manual_sources = await _search_kb_context(
+            query=text,
+            kb_filter=(context or {}).get("kb_filter"),
+            n_results=5,
+        )
+        kb_note = (
+            f"\n\nNOI DUNG TU KNOWLEDGE BASE:\n{kb_content}\n\n"
+            "Chi tao cau hoi dua tren noi dung knowledge base neu phu hop."
+            if kb_content else ""
+        )
+        task = (
+            f"Tạo {n} câu quiz trắc nghiệm theo yêu cầu sau. "
+            f"CHỈ trả JSON thuần đúng schema {QUIZ_JSON_SCHEMA}.\nYêu cầu: {text}"
+            f"{kb_note}"
+        )
+        raw = await orch.quiz.run(message=task, context=context)
+        questions = parse_quiz(raw)
+        if not questions:
+            retry = f"{task}\n\nOutput trước chưa hợp lệ. Chỉ trả JSON hợp lệ theo schema: {QUIZ_JSON_SCHEMA}"
+            raw = await orch.quiz.run(message=retry, context=context)
+            questions = parse_quiz(raw)
+        return raw, "QuizAgent", _structured_quiz(questions), manual_sources
+
+    if route == "flashcard":
+        n = _extract_requested_count(text, default=5, max_value=20)
+        task = (
+            f"Tạo {n} flashcard theo yêu cầu sau. "
+            "CHỈ trả JSON thuần dạng {\"flashcards\":[{\"front\":\"...\",\"back\":\"...\",\"hint\":\"...\",\"type\":\"concept\"}]}.\n"
+            f"Yêu cầu: {text}"
+        )
+        raw = await orch.flashcard.run(message=task, context=context)
+        cards = parse_flashcards(raw)
+        if not cards:
+            retry = f"{task}\n\nOutput trước chưa hợp lệ. Chỉ trả JSON hợp lệ."
+            raw = await orch.flashcard.run(message=retry, context=context)
+            cards = parse_flashcards(raw)
+        return raw, "FlashcardAgent", _structured_flashcards(cards), manual_sources
+
+    if route == "summary":
+        task = f"Tóm tắt/rút ý chính theo yêu cầu sau, trình bày ngắn gọn, dễ học:\n{text}"
+        raw = await orch.summary.run(message=task, context=context)
+        return raw, "SummaryAgent", None, manual_sources
+
+    if route == "tutor":
+        raw = await orch.tutor.run(message=text, context=context, history=history)
+        return raw, "TutorAgent", None, manual_sources
+
+    raw = await orch.run(text, context=context, history=history)
+    return raw, "Orchestrator", None, manual_sources
+
+
 # ════════════════════════════════════════════════════════
 # ENDPOINTS
 # ════════════════════════════════════════════════════════
@@ -321,15 +609,24 @@ def index():
     return {"message": "StudyMind API v3.1 đang chạy", "docs": "/docs"}
 
 
-# ── UPLOAD — tự động classify khi upload file ──────────
+# ── UPLOAD — dùng nhãn môn học từ nhóm, không classify bằng AI ──
 
 @app.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...),
+    subject: Optional[str] = Form(None),
+    subject_code: Optional[str] = Form(None),
+):
     """
-    Upload file → tự động classify môn học → lưu ChromaDB với metadata đầy đủ.
-    Trả về classification để FE hiển thị tag xác nhận.
+    Upload file → lưu ChromaDB với metadata từ nhãn môn học đã gắn sẵn.
     """
     from knowledge_base import ingest_pdf_async
+
+    if not (subject or subject_code or "").strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Cần truyền nhãn môn học (subject) từ nhóm trước khi upload.",
+        )
 
     filename = file.filename or "document"
     text     = await extract_text_from_upload(file)
@@ -337,7 +634,13 @@ async def upload_document(file: UploadFile = File(...)):
     if not text.strip():
         raise HTTPException(status_code=422, detail="Không đọc được nội dung file.")
 
-    result = await ingest_pdf_async(pdf_path=filename, text=text, filename=filename)
+    result = await ingest_pdf_async(
+        pdf_path=filename,
+        text=text,
+        filename=filename,
+        subject=subject,
+        subject_code=subject_code,
+    )
 
     if result["status"] == "error":
         raise HTTPException(status_code=500, detail=result["error"])
@@ -345,32 +648,14 @@ async def upload_document(file: UploadFile = File(...)):
     clf = result["classification"]
 
     return {
-        "status":   "saved" if clf.confidence >= 0.65 else "needs_confirmation",
+        "status":   "saved",
         "filename": filename,
-        "classification": {
-            "subject":      clf.subject,
-            "subject_code": clf.subject_code,
-            "topic":        clf.topic,
-            "keywords":     clf.keywords,
-            "content_type": clf.content_type,
-            "difficulty":   clf.difficulty,
-            "language":     clf.language,
-            "confidence":   clf.confidence,
-        },
-        # Nếu confidence thấp → gửi danh sách môn cho FE hiển thị dropdown chọn lại
-        "available_subjects": (
-            [{"code": k, "name": v} for k, v in SUBJECT_MAP.items()]
-            if clf.confidence < 0.65 else None
-        ),
-        "message": (
-            f"Đã lưu tài liệu vào môn {clf.subject}"
-            if clf.confidence >= 0.65
-            else f"Không chắc chắn về môn học (confidence: {clf.confidence:.0%}). Vui lòng xác nhận."
-        ),
+        "classification": classification_to_api(clf),
+        "message": f"Đã lưu tài liệu vào môn {clf.subject}",
     }
 
 
-# ── CHAT — classify câu hỏi trước khi gửi orchestrator ──
+# ── CHAT — dùng nhãn môn học, không gọi ClassifierAgent ──
 
 @app.post("/chat")
 async def chat(msg: ChatMessage):
@@ -379,57 +664,54 @@ async def chat(msg: ChatMessage):
     sid  = msg.session_id or str(uuid.uuid4())
     history = sessions.setdefault(sid, [])
 
-    # Phân loại câu hỏi → inject context môn học vào orchestrator
-    clf            = await classify_message(msg.text)
-    subject_context = ""
-    if clf.subject_code != "other" and clf.confidence >= 0.65:
-        subject_context = (
-            f"\n\n[CONTEXT MÔN HỌC - dùng để định hướng trả lời]\n"
-            f"Môn: {clf.subject} | Chủ đề: {clf.topic}\n"
-            f"Gợi ý phong cách trả lời: {get_agent_hint(clf.subject_code)}"
-        )
+    clf = classification_from_subject(
+        subject=msg.subject,
+        subject_code=msg.subject_code,
+        topic=msg.doc_topic or msg.text[:80],
+    )
+    subject_context = build_compact_context(clf, task="chat") if clf.subject_code != "other" else ""
 
     reset_chat_metadata()
-    enriched_text = msg.text + subject_context
+    enriched_text = f"{subject_context}\n{msg.text}".strip() if subject_context else msg.text
     kb_filter     = build_kb_filter(clf)
     run_context   = {"kb_filter": kb_filter} if kb_filter else None
-    response      = await orch.run(enriched_text, context=run_context, history=history)
+    route         = _detect_chat_route(msg.text)
+    if route:
+        response, agent_name, structured, manual_sources = await _run_fast_chat_route(
+            route=route,
+            orch=orch,
+            text=enriched_text,
+            context=run_context,
+            history=history,
+        )
+    else:
+        response = await orch.run(enriched_text, context=run_context, history=history)
+        agent_name = None
+        structured = None
+        manual_sources = []
 
     meta = get_chat_metadata()
-    structured = meta.get("structured")
+    structured = structured or meta.get("structured")
     if not structured:
         quiz_items = parse_quiz(response)
         if quiz_items:
-            structured = {"type": "quiz", "items": [
-                {"question": q["question"], "options": q["options"],
-                 "correct_index": q["correctIndex"], "explanation": q.get("explanation", "")}
-                for q in quiz_items
-            ]}
+            structured = _structured_quiz(quiz_items)
         else:
             fc_items = parse_flashcards(response)
             if fc_items:
-                structured = {"type": "flashcard", "items": [
-                    {"front": c["question"], "back": c["answer"], "hint": c.get("hint", "")}
-                    for c in fc_items
-                ]}
+                structured = _structured_flashcards(fc_items)
 
     # Lưu history với text gốc (không có context inject)
-    history.append({"role": "user",      "content": msg.text})
-    history.append({"role": "assistant", "content": response})
-    if len(history) > 20:
-        sessions[sid] = history[-20:]
+    _remember_turn(sid, history, msg.text, response)
 
     return {
         "session_id": sid,
         "response":   response,
-        "agent":      meta.get("agent"),
+        "agent":      agent_name or meta.get("agent"),
+        "route":      route or "orchestrator",
         "structured": structured,
-        "classification": {
-            "subject":      clf.subject,
-            "subject_code": clf.subject_code,
-            "topic":        clf.topic,
-            "confidence":   clf.confidence,
-        } if clf.confidence >= 0.65 else None,
+        "sources":    manual_sources or meta.get("sources", []),
+        "classification": classification_to_api(clf) if clf.subject_code != "other" else None,
     }
 
 
@@ -437,20 +719,27 @@ async def chat(msg: ChatMessage):
 
 @app.post("/summary")
 async def create_summary(req: SummaryRequest):
-    orch    = get_orchestrator()
-    content = ""
+    _require_doc_labels(req.subject, req.doc_topic or req.topic, bool(req.file_url))
+
+    orch     = get_orchestrator()
+    doc_name = _resolve_document_filename(req.filename, req.file_url, req.topic)
+    chapter  = (req.doc_topic or req.topic).strip()
+    content  = ""
     if req.file_url:
-        content = await fetch_file_content(req.file_url, req.topic)
+        raw = await fetch_file_content(req.file_url, doc_name)
+        content = _require_readable_content(raw, doc_name)
 
     if content:
         task = (
-            f"Tóm tắt tài liệu '{req.topic}' "
+            f"Tóm tắt tài liệu '{doc_name}'"
+            f"{f' (chủ đề: {chapter})' if chapter and chapter != doc_name else ''} "
             f"theo style '{req.style}' với độ dài '{req.length}'.\n\n"
-            f"NỘI DUNG TÀI LIỆU (hãy tóm tắt từ nội dung này, KHÔNG dùng search_knowledge):\n"
+            f"CHỈ tóm tắt từ nội dung bên dưới — KHÔNG dùng search_knowledge.\n"
+            f"NỘI DUNG TÀI LIỆU:\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n{content}\n━━━━━━━━━━━━━━━━━━━━━━━━"
         )
     else:
-        task = f"Tóm tắt chủ đề '{req.topic}' theo style '{req.style}' với độ dài '{req.length}'"
+        task = f"Tóm tắt chủ đề '{chapter}' theo style '{req.style}' với độ dài '{req.length}'"
 
     if req.blog_context:
         task += (
@@ -465,18 +754,38 @@ async def create_summary(req: SummaryRequest):
 
 # ── FLASHCARD ──────────────────────────────────────────
 
+LANGUAGE_SUBJECT_CODES = {"english", "korean", "japanese", "chinese"}
+VOCAB_FILE_EXTENSIONS = {"xlsx", "csv", "json"}
+
+
 @app.post("/flashcard")
 async def create_flashcard(req: FlashcardRequest):
-    orch    = get_orchestrator()
-    content = ""
+    _require_doc_labels(req.subject, req.doc_topic or req.topic, bool(req.file_url))
+
+    orch     = get_orchestrator()
+    doc_name = _resolve_document_filename(req.filename, req.file_url, req.topic)
+    chapter  = (req.doc_topic or req.topic).strip()
+    content  = ""
     if req.file_url:
-        content = await fetch_file_content(req.file_url, req.topic)
+        raw = await fetch_file_content(req.file_url, doc_name)
+        content = _require_readable_content(raw, doc_name)
 
-    clf = await classify_for_generation(req.topic, content, filename=req.topic)
+    clf = classification_from_subject(
+        subject=req.subject,
+        subject_code=req.subject_code,
+        topic=chapter,
+        filename=doc_name,
+    )
 
-    if req.use_vocabulary_pipeline:
+    file_ext = _resolve_file_extension(req.file_url or "", doc_name)
+    use_vocab = req.use_vocabulary_pipeline and (
+        clf.subject_code in LANGUAGE_SUBJECT_CODES
+        or file_ext in VOCAB_FILE_EXTENSIONS
+    )
+
+    if use_vocab:
         vocab = await _resolve_vocabulary(
-            req.topic, content, req.vocabulary, max(req.num_cards * 2, 20)
+            chapter, content, req.vocabulary, max(req.num_cards * 2, 20)
         )
         if vocab:
             cards = vocab_to_flashcards(vocab[: req.num_cards])
@@ -490,27 +799,48 @@ async def create_flashcard(req: FlashcardRequest):
                 "classification": classification_to_api(clf),
             }
 
-    gen_ctx     = build_generation_context(clf, task="flashcard")
-    kb_filter   = build_kb_filter(clf)
-    run_context = {"kb_filter": kb_filter} if kb_filter else None
+    gen_ctx = build_compact_context(clf, task="flashcard")
+    lang_note = ""
+    if clf.language and clf.language != "vi":
+        lang_note = (
+            f"\nNgôn ngữ tài liệu: {clf.language}. "
+            "Giữ nguyên ngôn ngữ trong flashcard (front/back đúng ngôn ngữ tài liệu)."
+        )
 
     if content:
+        # Đã có nội dung file — không cho agent search KB (tránh lấy kiến thức môn học khác)
+        run_context = None
         task = (
             f"{gen_ctx}\n\n"
-            f"Tạo {req.num_cards} flashcard về '{req.topic}' "
-            f"loại '{req.card_type}' format '{req.format}'.\n\n"
-            f"NỘI DUNG TÀI LIỆU (tạo flashcard từ nội dung này, KHÔNG dùng search_knowledge):\n"
+            f"Tạo {req.num_cards} flashcard từ TÀI LIỆU '{doc_name}'"
+            f"{f' — chủ đề nhãn: {chapter}' if chapter and chapter != doc_name else ''} "
+            f"loại '{req.card_type}' format '{req.format}'.{lang_note}\n\n"
+            f"QUY TẮC BẮT BUỘC:\n"
+            f"- CHỈ dùng nội dung bên dưới, KHÔNG gọi search_knowledge\n"
+            f"- KHÔNG tạo flashcard từ kiến thức ngoài tài liệu\n"
+            f"- Không suy diễn theo nhãn chủ đề nếu nội dung tài liệu khác chủ đề\n\n"
+            f"NỘI DUNG TÀI LIỆU:\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━\n{content}\n━━━━━━━━━━━━━━━━━━━━━━━━"
         )
     else:
+        kb_filter   = build_kb_filter(clf)
+        run_context = {"kb_filter": kb_filter} if kb_filter else None
         task = (
             f"{gen_ctx}\n\n"
-            f"Tạo {req.num_cards} flashcard về '{req.topic}' "
-            f"loại '{req.card_type}' format '{req.format}'."
+            f"Tạo {req.num_cards} flashcard về '{chapter}' "
+            f"loại '{req.card_type}' format '{req.format}'.{lang_note}"
         )
 
     raw   = await orch.flashcard.run(message=task, context=run_context)
     cards = parse_flashcards(raw)
+    if not cards:
+        retry_task = (
+            f"{task}\n\n"
+            "Lan truoc khong parse duoc. CHI tra JSON hop le dang "
+            "{\"flashcards\":[{\"front\":\"...\",\"back\":\"...\",\"hint\":\"...\",\"type\":\"concept\"}]}."
+        )
+        raw = await orch.flashcard.run(message=retry_task, context=run_context)
+        cards = parse_flashcards(raw)
 
     if not cards:
         raise HTTPException(
@@ -538,41 +868,55 @@ def _build_quiz_task(
     offset: int = 0,
     gen_context: str = "",
 ) -> str:
-    json_fmt    = '{"questions": [{"question": "...", "options": ["A","B","C","D"], "correct_index": 0, "explanation": "..."}]}'
-    offset_note = f" (bắt đầu từ câu số {offset + 1}, không trùng câu đã có)" if offset > 0 else ""
-    prefix      = f"{gen_context}\n\n" if gen_context else ""
-    base        = (
-        f"{prefix}Tạo {n} câu quiz trắc nghiệm về '{topic}' "
-        f"ở mức Bloom's Taxonomy: {bloom_level}{offset_note}.\n\n"
-        f"Trả về JSON thuần theo format:\n{json_fmt}"
+    offset_note = f" (câu {offset + 1} trở đi, không trùng)" if offset > 0 else ""
+    header = f"{gen_context}\n" if gen_context else ""
+    core = (
+        f"{header}Tạo {n} câu quiz trắc nghiệm về '{topic}' "
+        f"(Bloom: {bloom_level}){offset_note}.\n"
+        f"CHỈ trả JSON thuần, không markdown, không giải thích thêm:\n{QUIZ_JSON_SCHEMA}"
     )
     if content:
         return (
-            f"{prefix}Tạo {n} câu quiz trắc nghiệm về '{topic}' "
-            f"ở mức Bloom's Taxonomy: {bloom_level}{offset_note}.\n\n"
-            f"NỘI DUNG TÀI LIỆU (KHÔNG dùng search_knowledge):\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━\n{content}\n━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Trả về JSON thuần theo format:\n{json_fmt}"
+            f"{core}\n\n"
+            f"QUY TẮC: CHỈ tạo câu hỏi từ nội dung tài liệu bên dưới, KHÔNG dùng kiến thức ngoài.\n"
+            f"NỘI DUNG TÀI LIỆU:\n{content}\n\n"
+            f"Trả về đúng JSON theo schema trên."
         )
-    return base
+    return core
 
 
 @app.post("/quiz")
 async def create_quiz(req: QuizRequest):
     """
-    Tối đa 15 câu/batch. Nếu num_questions > 15 → tự động chia batch và chạy song song.
+    Tối đa 15 câu/batch. Ép output JSON — không dùng ClassifierAgent.
     """
     import asyncio
-    orch    = get_orchestrator()
-    content = ""
+    _require_doc_labels(req.subject, req.doc_topic or req.topic, bool(req.file_url))
+
+    orch     = get_orchestrator()
+    doc_name = _resolve_document_filename(req.filename, req.file_url, req.topic)
+    content  = ""
     if req.file_url:
-        content = await fetch_file_content(req.file_url, req.topic)
+        raw = await fetch_file_content(req.file_url, doc_name)
+        content = _require_readable_content(raw, doc_name)
 
-    clf = await classify_for_generation(req.topic, content, filename=req.topic)
+    topic_label = (req.doc_topic or req.topic).strip()
+    clf = classification_from_subject(
+        subject=req.subject,
+        subject_code=req.subject_code,
+        topic=topic_label,
+        filename=doc_name,
+    )
 
-    if req.use_vocabulary_pipeline:
+    file_ext = _resolve_file_extension(req.file_url or "", doc_name)
+    use_vocab = req.use_vocabulary_pipeline and (
+        clf.subject_code in LANGUAGE_SUBJECT_CODES
+        or file_ext in VOCAB_FILE_EXTENSIONS
+    )
+
+    if use_vocab:
         vocab = await _resolve_vocabulary(
-            req.topic, content, req.vocabulary, max(req.num_questions * 2, 30)
+            topic_label, content, req.vocabulary, max(req.num_questions * 2, 30)
         )
         if len(vocab) >= 2:
             questions = vocab_to_quiz_questions(vocab, req.num_questions)
@@ -587,9 +931,18 @@ async def create_quiz(req: QuizRequest):
                 "classification": classification_to_api(clf),
             }
 
-    gen_ctx     = build_generation_context(clf, task="quiz")
+    gen_ctx = build_compact_context(clf, task="quiz")
     kb_filter   = build_kb_filter(clf)
-    run_context = {"kb_filter": kb_filter} if kb_filter else None
+    run_context = None if content else ({"kb_filter": kb_filter} if kb_filter else None)
+    retrieved_content = ""
+    retrieved_sources: list[dict] = []
+    if not content and kb_filter:
+        retrieved_content, retrieved_sources = await _search_kb_context(
+            query=topic_label,
+            kb_filter=kb_filter,
+            n_results=5,
+        )
+    quiz_content = content or retrieved_content
 
     # Chia batch
     batches, remaining, offset = [], req.num_questions, 0
@@ -600,9 +953,14 @@ async def create_quiz(req: QuizRequest):
         remaining -= batch_size
 
     async def run_batch(n: int, off: int) -> list:
-        task = _build_quiz_task(req.topic, req.bloom_level, n, content, off, gen_ctx)
+        task = _build_quiz_task(topic_label, req.bloom_level, n, quiz_content, off, gen_ctx)
         raw  = await orch.quiz.run(message=task, context=run_context)
-        return parse_quiz(raw)
+        parsed = parse_quiz(raw)
+        if not parsed:
+            retry_task = f"{task}\n\nLần trước không parse được. CHỈ trả JSON hợp lệ:\n{QUIZ_JSON_SCHEMA}"
+            raw = await orch.quiz.run(message=retry_task, context=run_context)
+            parsed = parse_quiz(raw)
+        return parsed
 
     results = await asyncio.gather(*[run_batch(n, off) for n, off in batches])
 
@@ -624,6 +982,7 @@ async def create_quiz(req: QuizRequest):
         "batches_used":   len(batches),
         "questions":      all_questions,
         "classification": classification_to_api(clf),
+        "sources":        retrieved_sources,
         "pipeline": "ai_direct",
     }
 
@@ -680,7 +1039,9 @@ async def vocabulary_extract(req: VocabularyExtractRequest):
     """Bước 1: AI trích xuất JSON từ vựng từ tài liệu hoặc text."""
     content = req.text or ""
     if req.file_url:
-        content = await fetch_file_content(req.file_url, req.topic)
+        doc_name = _resolve_document_filename(req.filename, req.file_url, req.topic)
+        raw = await fetch_file_content(req.file_url, doc_name)
+        content = _require_readable_content(raw, doc_name)
     if not content.strip():
         raise HTTPException(status_code=422, detail="Không có nội dung để trích xuất")
     items = await ai_extract_vocabulary(content, topic=req.topic, max_items=req.max_items)
@@ -760,7 +1121,6 @@ def list_agents():
             {"name": "SummaryAgent",     "role": "Tóm tắt tài liệu theo nhiều định dạng"},
             {"name": "FlashcardAgent",   "role": "Tạo flashcard theo spaced repetition"},
             {"name": "KepnerTregoeAgent","role": "Phân tích vấn đề theo Kepner-Tregoe"},
-            {"name": "ClassifierAgent",  "role": "Phân loại môn học tự động"},
         ]
     }
 

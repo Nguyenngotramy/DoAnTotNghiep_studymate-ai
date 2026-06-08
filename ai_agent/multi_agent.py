@@ -45,7 +45,7 @@ async_client = AsyncOpenAI(
 
 # === FALLBACK CHUNG ===
 FALLBACK_MODELS = [
-    "google/gemini-2.0-flash-001"
+    "google/gemini-2.0-flash-001",
     "deepseek/deepseek-v4-flash:free",         # Quality #1, 1M ctx, Tools ✓
     "nvidia/nemotron-3-super-120b-a12b:free",  # Quality #4, 1M ctx, Tools ✓
     "openai/gpt-oss-120b:free",                # Quality #5, 131K ctx, Tools ✓
@@ -116,6 +116,7 @@ class BaseAgent:
         self.system_prompt = system_prompt
         self.tools         = tools or []
         self.models        = models or FALLBACK_MODELS
+        self.json_mode     = False
 
     def _get_request_context(self) -> dict:
         return _request_context.get()
@@ -171,6 +172,8 @@ class BaseAgent:
             if self.tools:
                 kwargs["tools"]       = [self._convert_tool(t) for t in self.tools]
                 kwargs["tool_choice"] = "auto"
+            elif self.json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
 
             response = await async_client.chat.completions.create(**kwargs)
             choice   = response.choices[0]
@@ -195,10 +198,19 @@ class BaseAgent:
     async def _execute_tool(self, tool_call) -> dict:
         """Wrap tool execution để dùng với asyncio.gather."""
         tool_input = json.loads(tool_call.function.arguments)
+        request_context = self._get_request_context()
+
+        def call_tool_with_context():
+            ctx_token = _request_context.set(request_context)
+            try:
+                return self._handle_tool(tool_call.function.name, tool_input)
+            finally:
+                _request_context.reset(ctx_token)
         # kb_search là sync → chạy trong thread pool để không block event loop
         result = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: self._handle_tool(tool_call.function.name, tool_input)
+            None, call_tool_with_context
         )
+        _record_sources_from_tool_result(result)
         return {
             "role":        "tool",
             "tool_call_id": tool_call.id,
@@ -276,6 +288,9 @@ KHÔNG làm bài hộ. Trả lời ngắn gọn, thân thiện bằng tiếng Vi
                             "content":  r["content"],
                             "score":    r["relevance_score"],
                             "subject":  r.get("subject", ""),
+                            "subject_code": r.get("subject_code", ""),
+                            "topic":    r.get("topic", ""),
+                            "source":   r.get("source", ""),
                             "filename": r.get("filename", ""),
                         }
                         for r in results
@@ -289,66 +304,22 @@ KHÔNG làm bài hộ. Trả lời ngắn gọn, thân thiện bằng tiếng Vi
 # QUIZ AGENT
 # ════════════════════════════════════════
 
-QUIZ_TOOLS = [
-    {
-        "name": "search_knowledge",
-        "description": "Lấy nội dung tài liệu để tạo câu hỏi chính xác. CHỈ dùng khi prompt KHÔNG có phần NỘI DUNG TÀI LIỆU. Sau khi nhận kết quả, tự tạo câu hỏi ngay — không cần gọi thêm tool nào.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "query":     {"type": "string"},
-                "n_results": {"type": "integer", "default": 5},
-            },
-            "required": ["query"],
-        },
-    }
-]
-
 class QuizAgent(BaseAgent):
     def __init__(self):
         super().__init__(
             name="QuizAgent",
-            system_prompt="""Bạn là chuyên gia tạo bài kiểm tra theo Bloom's Taxonomy.
+            system_prompt="""Bạn tạo quiz trắc nghiệm theo Bloom's Taxonomy.
 
-QUY TRÌNH (2 bước, không hơn):
-1. Nếu prompt có phần "NỘI DUNG TÀI LIỆU": dùng trực tiếp nội dung đó → tạo câu hỏi ngay.
-2. Nếu KHÔNG có nội dung: gọi search_knowledge một lần → nhận kết quả → tạo câu hỏi ngay.
-   KHÔNG gọi bất kỳ tool nào khác sau search_knowledge.
+Bloom: remember=định nghĩa | understand=giải thích | apply=tính toán | analyze=so sánh/phân tích
 
-BLOOM'S TAXONOMY:
-- remember:  "Định nghĩa X là gì? Viết công thức Y."
-- understand: "Giải thích tại sao... Mô tả bằng lời..."
-- apply:     "Tính... Giải bài toán... Áp dụng X vào..."
-- analyze:   "So sánh... Tại sao... Điều gì xảy ra nếu..."
+OUTPUT (BẮT BUỘC — chỉ JSON thuần):
+{"questions":[{"question":"...","options":["A","B","C","D"],"correct_index":0,"explanation":"..."}]}
 
-OUTPUT FORMAT (BẮT BUỘC - chỉ trả về JSON thuần, không thêm bất kỳ text nào khác):
-{
-  "questions": [
-    {
-      "question": "Nội dung câu hỏi?",
-      "options": ["Lựa chọn A", "Lựa chọn B", "Lựa chọn C", "Lựa chọn D"],
-      "correct_index": 0,
-      "explanation": "Giải thích ngắn tại sao đáp án đúng"
-    }
-  ]
-}
-
-Đặt câu hỏi từ nội dung thực, không bịa.
-Nếu có [CONTEXT PHÂN LOẠI TÀI LIỆU]: tuân thủ ngôn ngữ và loại nội dung (vd. tiếng Hàn → câu hỏi Hangul).""",
-            tools=QUIZ_TOOLS,
+Dùng nội dung trong prompt nếu có. Không thêm text ngoài JSON.""",
+            tools=[],
             models=QUIZ_MODELS,
         )
-
-    def _handle_tool(self, tool_name: str, tool_input: dict) -> dict:
-        if tool_name == "search_knowledge":
-            where_filter = self._get_request_context().get("kb_filter")
-            results = kb_search(
-                query=tool_input["query"],
-                n_results=tool_input.get("n_results", 5),
-                where_filter=where_filter,
-            )
-            return {"content": "\n\n".join([r["content"] for r in results]), "num_chunks": len(results)}
-        return super()._handle_tool(tool_name, tool_input)
+        self.json_mode = True
 
 
 # ════════════════════════════════════════
@@ -433,7 +404,17 @@ Tiếng Việt, rõ ràng, dễ học.""",
             return {
                 "content":    "\n\n---\n\n".join([r["content"] for r in results]),
                 "num_chunks": len(results),
-                "sources":    [r.get("filename", "") for r in results],
+                "sources":    [
+                    {
+                        "filename": r.get("filename", ""),
+                        "source": r.get("source", ""),
+                        "subject": r.get("subject", ""),
+                        "subject_code": r.get("subject_code", ""),
+                        "topic": r.get("topic", ""),
+                        "score": r.get("relevance_score"),
+                    }
+                    for r in results
+                ],
             }
         return super()._handle_tool(tool_name, tool_input)
 
@@ -464,9 +445,11 @@ class FlashcardAgent(BaseAgent):
             system_prompt="""Bạn là chuyên gia tạo flashcard học thuật theo phương pháp spaced repetition.
 
 QUY TRÌNH (2 bước, không hơn):
-1. Nếu prompt có phần "NỘI DUNG TÀI LIỆU": dùng trực tiếp -> tạo flashcard ngay.
+1. Nếu prompt có phần "NỘI DUNG TÀI LIỆU": CHỈ dùng nội dung đó -> tạo flashcard ngay. KHÔNG gọi search_knowledge.
 2. Nếu KHÔNG có nội dung: gọi search_knowledge một lần -> nhận kết quả -> tạo flashcard ngay.
    KHÔNG gọi bất kỳ tool nào khác sau search_knowledge.
+
+Khi đã có NỘI DUNG TÀI LIỆU: tuyệt đối không bịa thêm theo nhãn chủ đề/môn học nếu nội dung file khác chủ đề.
 
 OUTPUT FORMAT (BẮT BUỘC - chỉ trả về JSON thuần, không thêm bất kỳ text nào khác):
 {
@@ -506,7 +489,21 @@ Nếu có [CONTEXT PHÂN LOẠI TÀI LIỆU]: tuân thủ ngôn ngữ (vd. từ 
                 n_results=tool_input.get("n_results", 5),
                 where_filter=where_filter,
             )
-            return {"content": "\n\n".join([r["content"] for r in results]), "num_chunks": len(results)}
+            return {
+                "content": "\n\n".join([r["content"] for r in results]),
+                "num_chunks": len(results),
+                "sources": [
+                    {
+                        "filename": r.get("filename", ""),
+                        "source": r.get("source", ""),
+                        "subject": r.get("subject", ""),
+                        "subject_code": r.get("subject_code", ""),
+                        "topic": r.get("topic", ""),
+                        "score": r.get("relevance_score"),
+                    }
+                    for r in results
+                ],
+            }
         return super()._handle_tool(tool_name, tool_input)
 
 
@@ -589,6 +586,9 @@ QUY TẮC:
                             "content":  r["content"],
                             "score":    r["relevance_score"],
                             "subject":  r.get("subject", ""),
+                            "subject_code": r.get("subject_code", ""),
+                            "topic":    r.get("topic", ""),
+                            "source":   r.get("source", ""),
                             "filename": r.get("filename", ""),
                         }
                         for r in results
@@ -601,17 +601,71 @@ QUY TẮC:
 # Theo dõi agent/structured cho /chat
 _last_delegate_agent: ContextVar[str | None] = ContextVar("last_delegate_agent", default=None)
 _last_structured: ContextVar[dict | None] = ContextVar("last_structured", default=None)
+_last_sources: ContextVar[list] = ContextVar("last_sources", default=[])
+
+
+def _normalize_source(item: dict) -> dict:
+    return {
+        "filename": item.get("filename", ""),
+        "source": item.get("source", ""),
+        "subject": item.get("subject", ""),
+        "subject_code": item.get("subject_code", ""),
+        "topic": item.get("topic", ""),
+        "score": item.get("score", item.get("relevance_score")),
+    }
+
+
+def _record_sources_from_tool_result(result: dict) -> None:
+    if not isinstance(result, dict):
+        return
+
+    raw_sources = []
+    if isinstance(result.get("results"), list):
+        raw_sources = result["results"]
+    elif isinstance(result.get("sources"), list):
+        raw_sources = result["sources"]
+
+    sources = []
+    for item in raw_sources:
+        if isinstance(item, dict):
+            sources.append(_normalize_source(item))
+        elif item:
+            sources.append({
+                "filename": str(item),
+                "source": "",
+                "subject": "",
+                "subject_code": "",
+                "topic": "",
+                "score": None,
+            })
+
+    if not sources:
+        return
+
+    current = list(_last_sources.get())
+    seen = {
+        (s.get("filename"), s.get("source"), s.get("topic"))
+        for s in current
+    }
+    for source in sources:
+        key = (source.get("filename"), source.get("source"), source.get("topic"))
+        if key not in seen:
+            seen.add(key)
+            current.append(source)
+    _last_sources.set(current[:8])
 
 
 def reset_chat_metadata() -> None:
     _last_delegate_agent.set(None)
     _last_structured.set(None)
+    _last_sources.set([])
 
 
 def get_chat_metadata() -> dict:
     return {
         "agent": _last_delegate_agent.get(),
         "structured": _last_structured.get(),
+        "sources": _last_sources.get(),
     }
 
 
@@ -795,7 +849,14 @@ class OrchestratorAgent(BaseAgent):
             return {"agent": "TutorAgent", "response": result}
 
         elif tool_name == "delegate_to_quiz":
-            task = f"Tạo {tool_input.get('num_questions', 3)} câu quiz về '{tool_input['topic']}' ở mức độ {tool_input['bloom_level']}"
+            n = tool_input.get("num_questions", 3)
+            topic = tool_input['topic']
+            bloom = tool_input['bloom_level']
+            task = (
+                f"Tạo {n} câu quiz về '{topic}' (Bloom: {bloom}). "
+                f"CHỈ trả JSON: {{\"questions\":[{{\"question\":\"...\",\"options\":[\"A\",\"B\",\"C\",\"D\"],"
+                f"\"correct_index\":0,\"explanation\":\"...\"}}]}}"
+            )
             result = await self.quiz.run(message=task, context=sub_context or None)
             _last_delegate_agent.set("QuizAgent")
             parsed = _try_parse_structured("QuizAgent", result)

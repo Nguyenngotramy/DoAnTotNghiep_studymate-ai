@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { documentApi, flashcardApi, quizApi, summaryApi, postApi } from '@/api/services'
+import { documentApi, flashcardApi, quizApi, summaryApi, postApi, groupApi } from '@/api/services'
 import type { Document, Flashcard, QuizQuestion, FlashcardFolder, QuizFolder, Post } from '@/types'
 import {
   Upload,
@@ -20,6 +20,7 @@ import {
   FileText,
   Save,
   Folder,
+  Pencil,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -67,14 +68,19 @@ async function backendSummary(
   doc: Document,
   style: string,
   length: string,
+  subject?: string,
+  docTopic?: string,
   blogContext?: string,
 ): Promise<string> {
   const res = await fetch(`${BACKEND_URL}/summary`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      topic:    doc.name,
+      topic:     docTopic || doc.name,
+      filename:  doc.name,
       file_url: doc.fileUrl,
+      subject,
+      doc_topic: docTopic,
       style,
       length,
       blog_context: blogContext || undefined,
@@ -105,13 +111,18 @@ async function backendFlashcard(
   doc: Document,
   card_type: string,
   num_cards: number,
+  subject?: string,
+  docTopic?: string,
 ): Promise<Flashcard[]> {
   const res = await fetch(`${BACKEND_URL}/flashcard`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      topic:    doc.name,
-      file_url: doc.fileUrl,   // ← backend sẽ fetch nội dung file thực từ URL này
+      topic:     docTopic || doc.name,
+      filename:  doc.name,
+      file_url: doc.fileUrl,
+      subject,
+      doc_topic: docTopic,
       card_type,
       num_cards,
       format: 'qa',
@@ -133,13 +144,18 @@ async function backendQuiz(
   doc: Document,
   bloom_level: string,
   num_questions: number,
+  subject?: string,
+  docTopic?: string,
 ): Promise<QuizQuestion[]> {
   const res = await fetch(`${BACKEND_URL}/quiz`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      topic:    doc.name,
-      file_url: doc.fileUrl,   // ← backend sẽ fetch nội dung file thực từ URL này
+      topic:     docTopic || doc.name,
+      filename:  doc.name,
+      file_url: doc.fileUrl,
+      subject,
+      doc_topic: docTopic,
       bloom_level,
       num_questions,
     }),
@@ -149,7 +165,13 @@ async function backendQuiz(
   if (data.pipeline === 'vocabulary_json' && data.vocabulary?.vocabulary?.length) {
     toast.success(`Quiz từ ${data.vocabulary.vocabulary.length} từ vựng JSON`)
   }
-  return data.questions as QuizQuestion[]
+  return (data.questions as Record<string, unknown>[]).map((q, i) => ({
+    id: String(i),
+    question: String(q.question ?? ''),
+    options: Array.isArray(q.options) ? (q.options as string[]) : [],
+    correctIndex: Number(q.correctIndex ?? q.correct_index ?? 0),
+    explanation: String(q.explanation ?? ''),
+  })) as QuizQuestion[]
 }
 
 type ChatApiResult = {
@@ -162,6 +184,8 @@ type ChatApiResult = {
 async function backendChat(
   doc: Document,
   question: string,
+  subject?: string,
+  docTopic?: string,
   sessionId?: string,
 ): Promise<ChatApiResult> {
   const res = await fetch(`${BACKEND_URL}/chat`, {
@@ -170,6 +194,8 @@ async function backendChat(
     body: JSON.stringify({
       text: `[Tài liệu: ${doc.name}]\nFile URL: ${doc.fileUrl ?? ''}\n\nCâu hỏi: ${question}`,
       session_id: sessionId,
+      subject,
+      doc_topic: docTopic,
     }),
   })
   if (!res.ok) throw new Error(await res.text())
@@ -189,6 +215,117 @@ const DOC_CHAT_PROMPTS = [
   { label: 'Tạo quiz', text: 'Tạo 5 câu quiz trắc nghiệm từ tài liệu mức understand' },
   { label: 'Flashcard', text: 'Tạo 6 flashcard từ khái niệm trong tài liệu' },
 ]
+
+function parseApiError(err: unknown): string {
+  if (err instanceof Error) return err.message
+  return 'Backend AI lỗi, thử lại sau'
+}
+
+// ─────────────────────────────────────────
+// DOC LABEL MODAL — bắt buộc trước khi AI đọc tài liệu
+// ─────────────────────────────────────────
+
+const LABEL_SUGGESTIONS = [
+  'Chương 1 — Giới thiệu',
+  'Chương 2 — Lý thuyết',
+  'Chương 3 — Bài tập',
+  'Ôn tập',
+  'Đề thi',
+  'Từ vựng',
+]
+
+function DocLabelModal({
+  doc,
+  groupSubject,
+  onClose,
+  onSave,
+  loading,
+  isEdit = false,
+}: {
+  doc: Document
+  groupSubject?: string
+  onClose: () => void
+  onSave: (label: string) => void
+  loading: boolean
+  isEdit?: boolean
+}) {
+  const [label, setLabel] = useState(doc.topicLabel || '')
+
+  return (
+    <div className="fixed inset-0 bg-black/65 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-3xl border p-5"
+        style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <div className="text-[12px]" style={{ color: 'var(--text3)' }}>
+              {isEdit ? 'Sửa nhãn tài liệu' : 'Gắn nhãn tài liệu'}
+            </div>
+            <div className="text-[15px] font-medium truncate" style={{ color: 'var(--text)' }}>{doc.name}</div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {groupSubject && (
+          <div
+            className="mb-3 px-3 py-2 rounded-xl text-[12px] border"
+            style={{ background: 'rgba(99,102,241,.08)', borderColor: 'rgba(99,102,241,.2)', color: '#818cf8' }}
+          >
+            Nhóm: {groupSubject}
+          </div>
+        )}
+
+        <p className="text-[12px] mb-2" style={{ color: 'var(--text3)' }}>
+          {isEdit
+            ? 'Chỉnh sửa hoặc thêm nhãn chủ đề/chương của tài liệu'
+            : 'Nhập chủ đề/chương của tài liệu (bắt buộc trước khi dùng AI)'}
+        </p>
+        <input
+          value={label}
+          onChange={e => setLabel(e.target.value)}
+          placeholder="VD: Chương 3 — Đạo hàm"
+          className="w-full h-11 px-4 rounded-xl outline-none text-[14px] mb-3"
+          style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        />
+
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {LABEL_SUGGESTIONS.map(suggestion => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => setLabel(suggestion)}
+              className="px-2.5 py-1 rounded-lg text-[11px] border transition-colors"
+              style={{
+                background: label === suggestion ? 'rgba(99,102,241,.12)' : 'var(--bg3)',
+                borderColor: label === suggestion ? 'rgba(99,102,241,.25)' : 'var(--border)',
+                color: label === suggestion ? '#818cf8' : 'var(--text3)',
+              }}
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => onSave(label.trim())}
+          disabled={loading || !label.trim()}
+          className="w-full h-10 rounded-xl text-[13px] font-medium disabled:opacity-60"
+          style={{ background: '#6366f1', color: '#fff' }}
+        >
+          {loading ? 'Đang lưu...' : isEdit ? 'Lưu nhãn' : 'Lưu nhãn & tiếp tục'}
+        </button>
+      </div>
+    </div>
+  )
+}
 
 // ─────────────────────────────────────────
 // AI OPTIONS MODAL
@@ -1021,10 +1158,12 @@ function DocCard({
   doc,
   onAction,
   onDelete,
+  onEditLabel,
 }: {
   doc: Document
   onAction: (type: string, doc: Document) => void
   onDelete: (doc: Document) => void
+  onEditLabel: (doc: Document) => void
 }) {
   const icon        = DOC_ICON[doc.type] ?? DOC_ICON.OTHER
   const uploader    = doc.uploaderName?.split(' ').pop() || 'Unknown'
@@ -1056,6 +1195,26 @@ function DocCard({
             <FileText size={11} />
             {sourceLabel}
           </div>
+          {doc.topicLabel ? (
+            <button
+              type="button"
+              onClick={() => onEditLabel(doc)}
+              className="mt-1.5 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] border ml-0 transition-opacity hover:opacity-80"
+              style={{ background: 'rgba(34,197,94,.1)', borderColor: 'rgba(34,197,94,.25)', color: '#22c55e' }}
+              title="Nhấn để sửa nhãn"
+            >
+              {doc.topicLabel}
+              <Pencil size={10} />
+            </button>
+          ) : (
+            <button
+              onClick={() => onEditLabel(doc)}
+              className="mt-1.5 block text-[10px] underline"
+              style={{ color: '#f59e0b' }}
+            >
+              + Gắn nhãn trước khi dùng AI
+            </button>
+          )}
         </div>
         <button
           onClick={() => onDelete(doc)}
@@ -1153,6 +1312,8 @@ export default function DocsPage() {
   // AI Options modal state
   const [aiOptionsDoc,  setAiOptionsDoc]  = useState<Document | null>(null)
   const [aiOptionsType, setAiOptionsType] = useState<'flashcard' | 'quiz' | 'summarize' | null>(null)
+  const [labelModalDoc, setLabelModalDoc] = useState<Document | null>(null)
+  const [pendingAction, setPendingAction] = useState<{ type: string; doc: Document } | null>(null)
 
   // ── Queries ─────────────────────────────────────────────────
   const { data: docs = [], isLoading } = useQuery({
@@ -1160,6 +1321,14 @@ export default function DocsPage() {
     queryFn:  () => documentApi.list(groupId),
     enabled:  !!groupId,
   })
+
+  const { data: group } = useQuery({
+    queryKey: ['group', groupId],
+    queryFn:  () => groupApi.get(groupId),
+    enabled:  !!groupId,
+  })
+
+  const groupSubject = group?.subject || undefined
 
   const { data: folders = [] } = useQuery({
     queryKey: ['flashcard-folders'],
@@ -1250,16 +1419,29 @@ export default function DocsPage() {
     onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Không thể lưu tóm tắt'),
   })
 
-  // ── Handlers ─────────────────────────────────────────────────
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 50 * 1024 * 1024) { toast.error('File tối đa 50MB'); return }
-    uploadMut.mutate(file)
-    e.target.value = ''
+  const labelMut = useMutation({
+    mutationFn: ({ docId, topicLabel }: { docId: string; topicLabel: string }) =>
+      documentApi.updateLabel(groupId, docId, topicLabel),
+    onSuccess: (updated) => {
+      qc.invalidateQueries({ queryKey: ['docs', groupId] })
+      toast.success(updated.topicLabel ? 'Đã cập nhật nhãn tài liệu' : 'Đã gắn nhãn tài liệu')
+      setLabelModalDoc(null)
+      if (pendingAction) {
+        const { type, doc } = pendingAction
+        setPendingAction(null)
+        runAction(type, { ...doc, topicLabel: updated.topicLabel })
+      }
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Không thể lưu nhãn'),
+  })
+
+  const ensureGroupSubject = () => {
+    if (groupSubject?.trim()) return true
+    toast.error('Nhóm chưa gắn nhãn môn học. Cập nhật trong cài đặt nhóm trước.')
+    return false
   }
 
-  const handleAction = (type: string, doc: Document) => {
+  const runAction = (type: string, doc: Document) => {
     if (type === 'chat') {
       setChatDoc(doc)
       setChatInput('')
@@ -1271,9 +1453,43 @@ export default function DocsPage() {
     setAiOptionsType(type as 'flashcard' | 'quiz' | 'summarize')
   }
 
+  const requireDocLabel = (type: string, doc: Document) => {
+    if (!ensureGroupSubject()) return
+    if (doc.topicLabel?.trim()) {
+      runAction(type, doc)
+      return
+    }
+    setPendingAction({ type, doc })
+    setLabelModalDoc(doc)
+  }
+
+  // ── Handlers ─────────────────────────────────────────────────
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 50 * 1024 * 1024) { toast.error('File tối đa 50MB'); return }
+    uploadMut.mutate(file)
+    e.target.value = ''
+  }
+
+  const handleAction = (type: string, doc: Document) => {
+    requireDocLabel(type, doc)
+  }
+
+  const handleEditLabel = (doc: Document) => {
+    if (!ensureGroupSubject()) return
+    setPendingAction(null)
+    setLabelModalDoc(doc)
+  }
+
   const handleAiSubmit = async (opts: Record<string, string | number>) => {
     if (!aiOptionsDoc || !aiOptionsType) return
     const doc = aiOptionsDoc
+    const docTopic = doc.topicLabel?.trim()
+    if (!docTopic) {
+      toast.error('Tài liệu chưa có nhãn chủ đề')
+      return
+    }
 
     setAiLoading(`${aiOptionsType}-${doc.id}`)
     try {
@@ -1285,7 +1501,9 @@ export default function DocsPage() {
           blogMeta = await fetchBlogContext(tag)
           blogCtx = blogMeta.text
         }
-        const summary = await backendSummary(doc, String(opts.style), String(opts.length), blogCtx || undefined)
+        const summary = await backendSummary(
+          doc, String(opts.style), String(opts.length), groupSubject, docTopic, blogCtx || undefined,
+        )
         setSummaryDocName(doc.name)
         setSummaryText(summary)
         setSummarySourceDoc(doc)
@@ -1296,21 +1514,25 @@ export default function DocsPage() {
         setAiOptionsType(null)
 
       } else if (aiOptionsType === 'flashcard') {
-        const cards = await backendFlashcard(doc, String(opts.card_type), Number(opts.num_cards))
+        const cards = await backendFlashcard(
+          doc, String(opts.card_type), Number(opts.num_cards), groupSubject, docTopic,
+        )
         setFlashcards(cards)
         setFlashcardDoc(doc)
         setAiOptionsDoc(null)
         setAiOptionsType(null)
 
       } else if (aiOptionsType === 'quiz') {
-        const questions = await backendQuiz(doc, String(opts.bloom_level), Number(opts.num_questions))
+        const questions = await backendQuiz(
+          doc, String(opts.bloom_level), Number(opts.num_questions), groupSubject, docTopic,
+        )
         setQuiz(questions)
         setQuizDoc(doc)
         setAiOptionsDoc(null)
         setAiOptionsType(null)
       }
-    } catch (e: any) {
-      toast.error(e?.message ?? 'Backend AI lỗi, thử lại sau')
+    } catch (e: unknown) {
+      toast.error(parseApiError(e))
     } finally {
       setAiLoading(null)
     }
@@ -1318,12 +1540,19 @@ export default function DocsPage() {
 
   const sendChatQuestion = async () => {
     if (!chatDoc || !chatInput.trim()) return
+    const docTopic = chatDoc.topicLabel?.trim()
+    if (!docTopic) {
+      toast.error('Gắn nhãn tài liệu trước khi hỏi AI')
+      setLabelModalDoc(chatDoc)
+      setPendingAction({ type: 'chat', doc: chatDoc })
+      return
+    }
     const question = chatInput.trim()
     setChatInput('')
     setChatMessages(prev => [...prev, { role: 'user', text: question }])
     setAiLoading('chat')
     try {
-      const data = await backendChat(chatDoc, question, chatSessionId)
+      const data = await backendChat(chatDoc, question, groupSubject, docTopic, chatSessionId)
       if (data.session_id) setChatSessionId(data.session_id)
       setChatMessages(prev => [...prev, {
         role: 'assistant',
@@ -1331,8 +1560,8 @@ export default function DocsPage() {
         agent: data.agent,
         structured: data.structured,
       }])
-    } catch (e: any) {
-      toast.error(e?.message ?? 'Lỗi kết nối AI')
+    } catch (e: unknown) {
+      toast.error(parseApiError(e))
     } finally {
       setAiLoading(null)
     }
@@ -1383,8 +1612,20 @@ export default function DocsPage() {
               Tài liệu nhóm
             </h1>
             <p className="text-[12px] mt-1" style={{ color: 'var(--text3)' }}>
-              Upload tài liệu để cả nhóm lưu trữ, đọc file và dùng AI học tập
+              Upload tài liệu — gắn nhãn chủ đề trước khi dùng AI
             </p>
+            {groupSubject ? (
+              <span
+                className="inline-block mt-2 px-2.5 py-1 rounded-lg text-[11px] border"
+                style={{ background: 'rgba(99,102,241,.1)', borderColor: 'rgba(99,102,241,.25)', color: '#818cf8' }}
+              >
+                Môn nhóm: {groupSubject}
+              </span>
+            ) : (
+              <span className="inline-block mt-2 text-[11px]" style={{ color: '#f59e0b' }}>
+                Nhóm chưa gắn môn học — cập nhật trong cài đặt nhóm
+              </span>
+            )}
           </div>
 
           <div>
@@ -1511,6 +1752,7 @@ export default function DocsPage() {
               <DocCard
                 doc={doc}
                 onAction={handleAction}
+                onEditLabel={handleEditLabel}
                 onDelete={docItem => {
                   if (window.confirm(`Xoá tài liệu "${docItem.name}"?`)) deleteMut.mutate(docItem)
                 }}
@@ -1518,6 +1760,18 @@ export default function DocsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* ── Doc Label Modal ── */}
+      {labelModalDoc && (
+        <DocLabelModal
+          doc={labelModalDoc}
+          groupSubject={groupSubject}
+          isEdit={!!labelModalDoc.topicLabel?.trim() && !pendingAction}
+          loading={labelMut.isPending}
+          onClose={() => { setLabelModalDoc(null); setPendingAction(null) }}
+          onSave={(topicLabel) => labelMut.mutate({ docId: labelModalDoc.id, topicLabel })}
+        />
       )}
 
       {/* ── AI Options Modal ── */}
@@ -1622,7 +1876,7 @@ export default function DocsPage() {
               questions: quiz.map(q => ({
                 question: q.question,
                 options: q.options,
-                correctIndex: q.correctIndex,
+                correctIndex: q.correctIndex ?? (q as { correct_index?: number }).correct_index ?? 0,
                 explanation: q.explanation ?? '',
               })),
             })

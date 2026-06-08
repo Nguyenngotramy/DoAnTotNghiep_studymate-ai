@@ -6,14 +6,22 @@ const API_URL = "http://localhost:3000";
 const SESSION_KEY = "studymind_chat_session";
 
 const AGENT_MAP = {
-  Orchestrator: "Orchestrator",
   TutorAgent: "Tutor",
   QuizAgent: "Quiz",
   GroupAgent: "Group",
   SummaryAgent: "Summary",
   FlashcardAgent: "Flashcard",
-  KepnerTregoeAgent: "KT Analysis",
+  KepnerTregoeAgent: "KT",
 };
+
+const ACTIVE_AGENTS = [
+  "TutorAgent",
+  "QuizAgent",
+  "GroupAgent",
+  "SummaryAgent",
+  "FlashcardAgent",
+  "KepnerTregoeAgent",
+];
 
 const QUICK_PROMPTS = [
   { icon: "📐", label: "Giải thích tích phân", text: "Giải thích tích phân cho tôi" },
@@ -34,23 +42,13 @@ function formatText(text) {
     .replace(/\n/g, "<br/>");
 }
 
-// Robot icon SVG
+// StudyMind icon — spark + book (gọn, dễ nhận diện)
 function AIIcon({ size = 22, color = "#0f0f0f" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      {/* Đầu robot */}
-      <rect x="5" y="8" width="14" height="10" rx="2"/>
-      {/* Ăng-ten */}
-      <line x1="12" y1="8" x2="12" y2="4"/>
-      <circle cx="12" cy="3.5" r="1"/>
-      {/* Mắt */}
-      <circle cx="9" cy="13" r="1.2" fill={color}/>
-      <circle cx="15" cy="13" r="1.2" fill={color}/>
-      {/* Miệng */}
-      <path d="M9 16.5h6"/>
-      {/* Tay */}
-      <line x1="5" y1="11" x2="3" y2="13"/>
-      <line x1="19" y1="11" x2="21" y2="13"/>
+      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" fill={color} stroke="none" opacity="0.9"/>
+      <path d="M5 19c0-2.2 3.1-4 7-4s7 1.8 7 4"/>
+      <path d="M12 15v4"/>
     </svg>
   );
 }
@@ -169,7 +167,7 @@ export default function FloatingAgent() {
     setInput("");
     setShowQuick(false);
     setLoading(true);
-    setActiveAgent("Orchestrator");
+    setActiveAgent(null);
 
     setMessages((prev) => [
       ...prev,
@@ -414,19 +412,17 @@ export default function FloatingAgent() {
                 fontFamily: "'IBM Plex Mono', monospace",
                 fontSize: 10, color: "#444", marginTop: 1,
               }}>
-                multi-agent · v2.0
+                multi-agent · nhãn môn học
               </div>
             </div>
 
-            {/* Agent dots */}
+            {/* Agent dots — 6 chuyên gia, không hiển thị Orchestrator/Classifier */}
             <div style={{ display: "flex", gap: 5 }}>
-              {Object.values(AGENT_MAP).map((name) => (
-                <div key={name} title={name} style={{
+              {ACTIVE_AGENTS.map((key) => (
+                <div key={key} title={AGENT_MAP[key]} style={{
                   width: 7, height: 7, borderRadius: "50%",
-                  background: activeAgent && (AGENT_MAP[activeAgent] === name || activeAgent === name)
-                    ? "#7c3aed" : "#2a2a2a",
-                  boxShadow: activeAgent && (AGENT_MAP[activeAgent] === name || activeAgent === name)
-                    ? "0 0 6px #7c3aed" : "none",
+                  background: activeAgent === key ? "#7c3aed" : "#2a2a2a",
+                  boxShadow: activeAgent === key ? "0 0 6px #7c3aed" : "none",
                   transition: "all 0.3s",
                 }} />
               ))}

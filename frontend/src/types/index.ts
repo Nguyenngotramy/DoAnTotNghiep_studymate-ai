@@ -374,6 +374,7 @@ export interface Document {
   id: string
   groupId: string
   name: string
+  topicLabel?: string
   type: DocType
   sizeKb: number
   fileUrl: string

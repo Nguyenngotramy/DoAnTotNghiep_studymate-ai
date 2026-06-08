@@ -108,6 +108,8 @@ public class AuthController {
             return ResponseEntity.status(401).body(ApiResponse.error(accountLockService.blockMessage(user)));
         }
 
+        user = authService.applyDailyStreak(user);
+
         System.out.println("[AUTH/ME] User ID: " + user.getId());
         System.out.println("[AUTH/ME] Membership Tier: " + user.getMembershipTier());
         System.out.println("[AUTH/ME] Membership Expires: " + user.getMembershipExpiresAt());

@@ -169,6 +169,7 @@ public class AuthService {
                 .build();
 
         newUser = userRepo.save(newUser);
+        newUser = applyDailyStreak(newUser);
         return tokens(newUser);
     }
 
@@ -277,7 +278,8 @@ public class AuthService {
         return new AuthResponse(user, access, refresh);
     }
 
-    private User applyDailyStreak(User user) {
+    /** Cập nhật streak đăng nhập hàng ngày — gọi khi login hoặc /auth/me. */
+    public User applyDailyStreak(User user) {
         User normalized = normalizeBannerFields(user);
 
         Instant now = Instant.now();

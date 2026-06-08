@@ -75,6 +75,22 @@ public class DocumentController {
         );
     }
 
+    @PatchMapping("/groups/{groupId}/documents/{docId}/label")
+    public ResponseEntity<?> updateLabel(
+            @PathVariable String groupId,
+            @PathVariable String docId,
+            Authentication auth,
+            @RequestBody Map<String, String> body
+    ) {
+        String topicLabel = body.get("topicLabel");
+        return ResponseEntity.ok(
+                ApiResponse.ok(
+                        docService.updateTopicLabel(groupId, docId, auth.getName(), topicLabel),
+                        "Đã gắn nhãn tài liệu"
+                )
+        );
+    }
+
     @DeleteMapping("/groups/{groupId}/documents/{docId}")
     public ResponseEntity<?> delete(
             @PathVariable String groupId,

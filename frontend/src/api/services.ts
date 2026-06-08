@@ -693,6 +693,9 @@ export const documentApi = {
   delete: (groupId: string, docId: string) =>
     api.delete(`/groups/${groupId}/documents/${docId}`),
 
+  updateLabel: (groupId: string, docId: string, topicLabel: string) =>
+    api.patch(`/groups/${groupId}/documents/${docId}/label`, { topicLabel }).then(r => d<Document>(r)),
+
   generateFlashcards: (docId: string) =>
     api.post(`/documents/${docId}/flashcards`).then(r => d<Flashcard[]>(r)),
 

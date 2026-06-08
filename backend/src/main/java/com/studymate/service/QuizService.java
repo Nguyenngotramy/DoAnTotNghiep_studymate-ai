@@ -255,6 +255,9 @@ public class QuizService {
             String question = safeString(item.get("question"));
             String explanation = safeString(item.get("explanation"));
             Integer correctIndex = safeInteger(item.get("correctIndex"));
+            if (correctIndex == null) {
+                correctIndex = safeInteger(item.get("correct_index"));
+            }
 
             List<String> options = new ArrayList<>();
             Object rawOptions = item.get("options");

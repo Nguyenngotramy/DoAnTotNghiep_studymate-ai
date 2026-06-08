@@ -26,6 +26,7 @@ import {
 import toast from 'react-hot-toast'
 import { quizApi } from '@/api/services'
 import QuizPracticeSession from '@/components/quiz/QuizPracticeSession'
+import { parseQuizJson, QUIZ_JSON_EXAMPLE } from '@/utils/quizImport'
 import type { QuizFolder, QuizSet, QuizSetItem } from '@/types'
 
 const LABELS = ['A', 'B', 'C', 'D']
@@ -125,6 +126,8 @@ function CreateQuizModal({
   initialData?: QuizSet | null
   submitLabel?: string
 }) {
+  const [mode, setMode] = useState<'form' | 'json'>('form')
+  const [jsonInput, setJsonInput] = useState('')
   const [title, setTitle] = useState(initialData?.title ?? '')
   const [description, setDescription] = useState(initialData?.description ?? '')
   const [folderId, setFolderId] = useState(initialData?.folderId ?? '')
@@ -188,6 +191,17 @@ function CreateQuizModal({
     setQuestions(prev => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)))
   }
 
+  const importFromJson = () => {
+    try {
+      const parsed = parseQuizJson(jsonInput)
+      setQuestions(parsed)
+      setMode('form')
+      toast.success(`Đã nhập ${parsed.length} câu hỏi từ JSON`)
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'JSON quiz không hợp lệ')
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div
@@ -207,6 +221,29 @@ function CreateQuizModal({
             ✕
           </button>
         </div>
+
+        {!initialData && (
+          <div className="flex gap-2 mb-4">
+            {[
+              { key: 'form' as const, label: 'Nhập tay' },
+              { key: 'json' as const, label: 'Nhập JSON' },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setMode(tab.key)}
+                className="px-4 h-10 rounded-2xl text-[12px] font-medium border"
+                style={{
+                  background: mode === tab.key ? 'rgba(99,102,241,.12)' : 'var(--bg3)',
+                  borderColor: mode === tab.key ? 'rgba(99,102,241,.24)' : 'var(--border)',
+                  color: mode === tab.key ? '#818cf8' : 'var(--text2)',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="grid gap-3 mb-4">
           <input
@@ -238,6 +275,39 @@ function CreateQuizModal({
           </select>
         </div>
 
+        {mode === 'json' && !initialData ? (
+          <div className="space-y-3 mb-4">
+            <p className="text-[12px]" style={{ color: 'var(--text3)' }}>
+              Dán JSON có mảng <code>questions</code> — hỗ trợ <code>correct_index</code> hoặc <code>correctIndex</code>
+            </p>
+            <textarea
+              value={jsonInput}
+              onChange={e => setJsonInput(e.target.value)}
+              placeholder={QUIZ_JSON_EXAMPLE}
+              className="w-full min-h-[220px] rounded-2xl px-4 py-3 outline-none resize-none font-mono text-[12px]"
+              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setJsonInput(QUIZ_JSON_EXAMPLE)}
+                className="px-4 h-10 rounded-2xl text-[12px] border"
+                style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
+              >
+                Xem mẫu
+              </button>
+              <button
+                type="button"
+                onClick={importFromJson}
+                disabled={!jsonInput.trim()}
+                className="flex-1 h-10 rounded-2xl text-[12px] font-medium disabled:opacity-60"
+                style={{ background: '#6366f1', color: '#fff' }}
+              >
+                Nhập từ JSON
+              </button>
+            </div>
+          </div>
+        ) : (
         <div className="space-y-4">
           {questions.map((q, index) => (
             <div
@@ -300,10 +370,12 @@ function CreateQuizModal({
             </div>
           ))}
         </div>
+        )}
 
         <div className="flex gap-3 mt-4">
           <button
             onClick={addQuestion}
+            disabled={mode === 'json' && !initialData}
             className="px-4 h-12 rounded-2xl text-[13px] font-medium border"
             style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
           >
@@ -325,6 +397,7 @@ function CreateQuizModal({
             }
             disabled={
               loading ||
+              mode === 'json' ||
               !title.trim() ||
               questions.some(q => !q.question.trim() || q.options.some(opt => !opt.trim()))
             }

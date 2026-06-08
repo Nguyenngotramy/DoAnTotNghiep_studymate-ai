@@ -20,6 +20,8 @@ public class StudyDocument {
 
     private String groupId;
     private String name;
+    /** Nhãn chủ đề do người dùng gắn trước khi dùng AI đọc tài liệu */
+    private String topicLabel;
     private String fileUrl;
     private String type;
     private String uploaderId;

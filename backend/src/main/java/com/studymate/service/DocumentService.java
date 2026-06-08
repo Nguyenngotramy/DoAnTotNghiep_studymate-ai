@@ -39,6 +39,20 @@ public class DocumentService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài liệu"));
     }
 
+    public StudyDocument updateTopicLabel(String groupId, String docId, String userId, String topicLabel) {
+        validateMember(groupId, userId);
+
+        if (topicLabel == null || topicLabel.isBlank()) {
+            throw new RuntimeException("Nhãn tài liệu không được để trống");
+        }
+
+        StudyDocument doc = docRepo.findByIdAndGroupId(docId, groupId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài liệu"));
+
+        doc.setTopicLabel(topicLabel.trim());
+        return docRepo.save(doc);
+    }
+
     public StudyDocument upload(String groupId, String uploaderId, String uploaderName, MultipartFile file) {
         validateMember(groupId, uploaderId);
 

@@ -8,14 +8,15 @@ Chạy để test:       python knowledge_base.py --search "đạo hàm"
 """
 
 import argparse
-import asyncio
 import os
+import re
 from pathlib import Path
 
 import chromadb
 from chromadb.utils import embedding_functions
 
-from classifier_agent import classify_document as clf_doc, enrich_kb_metadata
+from classifier_agent import enrich_kb_metadata
+from subject_metadata import classification_from_subject
 
 
 DB_PATH = "./studymind_db"          # Thư mục lưu ChromaDB
@@ -51,7 +52,7 @@ def ingest_text(text: str, metadata: dict, doc_id: str):
     print(f"✅ Đã nạp '{doc_id}': {len(chunks)} chunks")
 
 
-def ingest_pdf(pdf_path: str):
+def ingest_pdf(pdf_path: str, subject: str = None, subject_code: str = None):
     """Nạp file PDF vào ChromaDB (có tự động phân loại môn học)"""
     try:
         from pypdf import PdfReader
@@ -68,7 +69,12 @@ def ingest_pdf(pdf_path: str):
 
     # ── Classify môn học trước khi lưu ──
     print(f"🔍 Đang phân loại tài liệu '{filename}'...")
-    classification = asyncio.run(clf_doc(text, filename=filename))
+    classification = classification_from_subject(
+        subject=subject,
+        subject_code=subject_code,
+        topic=filename,
+        filename=filename,
+    )
     print(f"  📚 Môn:        {classification.subject} ({classification.subject_code})")
     print(f"  📌 Chủ đề:     {classification.topic}")
     print(f"  🏷️  Keywords:   {', '.join(classification.keywords)}")
@@ -84,7 +90,13 @@ def ingest_pdf(pdf_path: str):
     ingest_text(text=text, metadata=enriched_metadata, doc_id=filename)
 
 
-async def ingest_pdf_async(pdf_path: str, text: str = None, filename: str = None) -> dict:
+async def ingest_pdf_async(
+    pdf_path: str,
+    text: str = None,
+    filename: str = None,
+    subject: str = None,
+    subject_code: str = None,
+) -> dict:
     """
     Async version — dùng trong FastAPI /upload endpoint.
     Trả về classification để FE hiển thị xác nhận.
@@ -98,7 +110,12 @@ async def ingest_pdf_async(pdf_path: str, text: str = None, filename: str = None
                 text += page.extract_text() + "\n"
 
         fname = filename or Path(pdf_path).stem
-        classification = await clf_doc(text, filename=fname)
+        classification = classification_from_subject(
+            subject=subject,
+            subject_code=subject_code,
+            topic=fname,
+            filename=fname,
+        )
 
         base_metadata     = {"source": pdf_path or fname, "type": "pdf", "filename": fname}
         enriched_metadata = enrich_kb_metadata(base_metadata, classification)
@@ -121,12 +138,63 @@ def ingest_folder(folder_path: str):
 
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
     """Chia text thành chunks có overlap"""
+    text = re.sub(r"\s+\n", "\n", text or "").strip()
+    if not text:
+        return []
+
+    paragraphs = [p.strip() for p in re.split(r"\n{2,}", text) if p.strip()]
+    if not paragraphs:
+        paragraphs = [text]
+
     chunks = []
-    start  = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunks.append(text[start:end].strip())
-        start += chunk_size - overlap
+    current = ""
+
+    def flush_current():
+        nonlocal current
+        if current.strip():
+            chunks.append(current.strip())
+            current = ""
+
+    for paragraph in paragraphs:
+        if len(paragraph) > chunk_size:
+            flush_current()
+            sentences = re.split(r"(?<=[.!?])\s+", paragraph)
+            buffer = ""
+            for sentence in sentences:
+                if len(sentence) > chunk_size:
+                    if buffer.strip():
+                        chunks.append(buffer.strip())
+                        buffer = ""
+                    start = 0
+                    while start < len(sentence):
+                        end = start + chunk_size
+                        chunks.append(sentence[start:end].strip())
+                        start += max(chunk_size - overlap, 1)
+                    continue
+                if len(buffer) + len(sentence) + 1 <= chunk_size:
+                    buffer = f"{buffer} {sentence}".strip()
+                else:
+                    if buffer.strip():
+                        chunks.append(buffer.strip())
+                    buffer = sentence
+            if buffer.strip():
+                chunks.append(buffer.strip())
+            continue
+
+        if len(current) + len(paragraph) + 2 <= chunk_size:
+            current = f"{current}\n\n{paragraph}".strip()
+        else:
+            flush_current()
+            current = paragraph
+
+    flush_current()
+
+    if overlap > 0 and len(chunks) > 1:
+        overlapped = [chunks[0]]
+        for i in range(1, len(chunks)):
+            prev_tail = chunks[i - 1][-overlap:].strip()
+            overlapped.append(f"{prev_tail}\n{chunks[i]}".strip())
+        chunks = overlapped
     return [c for c in chunks if len(c) > 50]
 
 
