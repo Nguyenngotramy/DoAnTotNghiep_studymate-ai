@@ -30,22 +30,22 @@ public class MoMoPaymentService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${payment.momo.partner-code:MOMOBKUN20180529}")
+    @Value("${payment.momo.partner-code}")
     private String partnerCode;
 
-    @Value("${payment.momo.access-key:klm05TvNBzhg7h7h}")
+    @Value("${payment.momo.access-key}")
     private String accessKey;
 
-    @Value("${payment.momo.secret-key:at67qH6MK8W4ANvX9LvLJmZ6LhENAUh5GGejv85n4TjB6XNEfB3m8L5bY6N9Q2P4}")
+    @Value("${payment.momo.secret-key}")
     private String secretKey;
 
-    @Value("${payment.momo.api-endpoint:https://test-payment.momo.vn/v2/gateway/api/create}")
+    @Value("${payment.momo.api-endpoint}")
     private String apiEndpoint;
 
-    @Value("${payment.momo.redirect-url:http://localhost:5174/payment/result/momo}")
+    @Value("${payment.momo.redirect-url}")
     private String redirectUrl;
 
-    @Value("${payment.momo.ipn-url:http://localhost:8080/api/payment/momo/callback}")
+    @Value("${payment.momo.ipn-url}")
     private String ipnUrl;
 
     public Payment createPayment(String userId, long amountVnd) {

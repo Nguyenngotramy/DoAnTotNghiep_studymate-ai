@@ -81,3 +81,89 @@ Hiện Tại Admin chưa làm
 | `types/index.ts`      | tất cả model/backend response     | type User, Task, Group, Flashcard, Quiz, StudyTerm... |
 | `utils/gradeUtils.ts` | study/predict logic               | GPA, quy đổi điểm, xếp loại                           |
 | `utils/helpers.ts`    | không phụ thuộc backend trực tiếp | helper format date/text                               |
+# Docker va production deployment
+
+He thong gom Caddy HTTPS gateway, React/Nginx, Spring Boot, MongoDB, ML service,
+AI agent va hai dich vu backup. Chi Caddy mo cong `80` va `443`; database va API
+noi bo khong bi public ra Internet.
+
+## Chay local
+
+Yeu cau Docker Desktop hoac Docker Engine kem Compose plugin.
+
+```powershell
+Copy-Item .env.example .env
+Copy-Item backend/.env.example backend/.env
+Copy-Item ai_agent/.env.example ai_agent/.env
+```
+
+Thay tat ca gia tri mau trong ba file `.env`, sau do:
+
+```powershell
+docker compose up -d --build
+```
+
+Ung dung local: `http://localhost`.
+
+## Deploy VPS Ubuntu
+
+1. Chuan bi VPS toi thieu 4 vCPU, 8 GB RAM, 40 GB SSD.
+2. Tro ban ghi DNS `A` cua domain ve IP VPS.
+3. Mo firewall TCP `22`, `80`, `443` va UDP `443`.
+4. Cai Docker Engine va Docker Compose plugin.
+5. Clone repository, tao ba file `.env` tu cac file `.env.example`.
+
+Vi du `.env` production:
+
+```dotenv
+SITE_ADDRESS=studymate.example.com
+FRONTEND_URL=https://studymate.example.com
+APP_PUBLIC_BASE_URL=https://studymate.example.com/api
+MONGO_ROOT_USERNAME=studymate_admin
+MONGO_ROOT_PASSWORD=use_a_long_url_safe_password
+AI_AGENT_WORKERS=1
+APP_LOG_LEVEL=INFO
+BACKUP_INTERVAL_SECONDS=86400
+BACKUP_RETENTION_DAYS=7
+```
+
+Mat khau Mongo chi nen dung chu, so va cac ky tu `_ . ~ -` de URI khong bi loi.
+
+Chay deployment:
+
+```bash
+chmod +x deploy/*.sh
+./deploy/deploy.sh
+```
+
+Caddy tu dong xin va gia han chung chi HTTPS. DNS phai tro dung VPS va cong
+`80/443` phai truy cap duoc tu Internet.
+
+## Cau hinh dich vu ngoai
+
+- Google OAuth redirect URI:
+  `https://studymate.example.com/api/login/oauth2/code/google`
+- Cloudinary: cap nhat cloud name, API key va secret trong `backend/.env`.
+- Gmail: dung App Password, khong dung mat khau Gmail thong thuong.
+- OpenRouter/OpenAI: cap nhat key trong ca `backend/.env` va `ai_agent/.env`.
+- MoMo/VNPay: de trong neu chua su dung; neu bat thanh toan, dien credential that
+  va callback theo domain production.
+
+## Van hanh
+
+```bash
+docker compose ps
+docker compose logs -f
+docker compose pull
+docker compose up -d --build
+docker compose down
+```
+
+Backup duoc ghi vao `./backups`: MongoDB archive va file uploads/AI volumes.
+Khong chay `docker compose down -v` tren production vi lenh do xoa volume du lieu.
+
+Khoi phuc Mongo:
+
+```bash
+./deploy/restore-mongo.sh backups/studymate-YYYYMMDDTHHMMSSZ.archive.gz
+```

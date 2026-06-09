@@ -732,7 +732,7 @@ async function seed() {
   console.log(`🔔 ${notifications.length} notifications`)
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('Tất cả user password: Demo@2024!')
-  console.log('Admin: admin@studymate.com / Admin@2024!')
+  console.log('Admin account is configured through backend environment variables.')
 }
 
 seed().catch(err => {

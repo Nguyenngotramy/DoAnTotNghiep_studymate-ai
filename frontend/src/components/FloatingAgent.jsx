@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import { quizApi, flashcardApi } from "@/api/services";
 
-const API_URL = "http://localhost:3000";
+const API_URL = "/ai-agent";
 const SESSION_KEY = "studymind_chat_session";
 const USER_API_KEY_STORAGE = "studymind_user_openrouter_key";
 

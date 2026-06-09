@@ -18,7 +18,7 @@ import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
-const BACKEND_URL = 'http://localhost:8080/api'
+const BACKEND_URL = '/api'
 
 const COLORS: Record<string, string> = {
   'Nguyễn Văn A': '#6366f1',

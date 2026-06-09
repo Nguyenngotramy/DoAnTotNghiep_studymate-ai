@@ -4,7 +4,7 @@ import SockJS from 'sockjs-client'
 import { useAuthStore } from '@/store/authStore'
 
 const WS_URL =
-  (import.meta as any)?.env?.VITE_WS_URL || 'http://localhost:8080/api/ws'
+  (import.meta as any)?.env?.VITE_WS_URL || '/api/ws'
 
 function normalizeId(id: any): string {
   if (!id) return ''

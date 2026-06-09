@@ -42,7 +42,7 @@ export default function OAuth2CallbackPage() {
         console.log('[OAuth2] refreshToken valid shape:', refreshToken.split('.').length === 3)
 
         // Gọi /auth/me với Bearer token vừa lấy được
-        const res = await axios.get('http://localhost:8080/api/auth/me', {
+        const res = await axios.get('/api/auth/me', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             Accept: 'application/json',

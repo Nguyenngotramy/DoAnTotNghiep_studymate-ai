@@ -37,9 +37,15 @@ from vocabulary import (
 
 app = FastAPI(title="StudyMind API", version="3.2.0")
 
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -111,7 +117,7 @@ async def fetch_file_content(file_url: str, filename: str) -> str:
         return ""
 
     if not file_url.startswith('http'):
-        base = "http://localhost:8080/api"
+        base = os.getenv("BACKEND_API_URL", "http://localhost:8080/api").rstrip("/")
         file_url = base + (file_url if file_url.startswith('/') else '/' + file_url)
 
     try:

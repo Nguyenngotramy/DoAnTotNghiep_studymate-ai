@@ -34,7 +34,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import type { ChatAttachment, ChatMessage, ChatReplyPreview, GroupMember, Task, TaskStatus } from '@/types'
 
-const API_BASE = 'http://localhost:8080/api'
+const API_BASE = '/api'
 const COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#22c55e', '#ec4899', '#f97316', '#3b82f6', '#8b5cf6']
 const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡']
 const EXTRA_EMOJIS = ['😀', '🥹', '😍', '😎', '🔥', '👏', '🎉', '📚', '📝', '✅']

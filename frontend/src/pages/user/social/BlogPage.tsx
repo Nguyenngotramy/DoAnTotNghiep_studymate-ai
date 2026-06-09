@@ -69,7 +69,7 @@ function toMediaUrl(url?: string) {
   ) {
     return cleanUrl
   }
-  const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/$/, '')
+  const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
   const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api$/, '')
   if (cleanUrl.startsWith('http://localhost:8080/api')) {
     return cleanUrl.replace('http://localhost:8080/api', API_BASE_URL)
@@ -81,7 +81,7 @@ function toMediaUrl(url?: string) {
     return cleanUrl
   }
   if (cleanUrl.startsWith('/api/')) {
-    return `${BACKEND_ORIGIN}${cleanUrl}`
+    return cleanUrl.replace('/api', API_BASE_URL)
   }
   if (cleanUrl.startsWith('/uploads/')) {
     return `${API_BASE_URL}${cleanUrl}`
@@ -102,7 +102,7 @@ function normalizeUploadedUrl(url?: string) {
   ) {
     return cleanUrl
   }
-  const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/$/, '')
+  const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
   const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api$/, '')
   if (cleanUrl.startsWith('http://localhost:8080/api')) {
     return cleanUrl.replace('http://localhost:8080/api', API_BASE_URL)

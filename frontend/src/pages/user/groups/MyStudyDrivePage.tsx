@@ -32,7 +32,7 @@ import { studyDriveApi, studyDriveFolderApi } from '@/api/services'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
-const BACKEND = 'http://localhost:8080/api'
+const BACKEND = '/api'
 
 function toAbs(url?: string | null) {
   if (!url) return ''

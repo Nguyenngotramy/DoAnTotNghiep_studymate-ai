@@ -50,12 +50,12 @@ const SKILL_COLORS: Record<string, string> = {
   IELTS: '#f59e0b',
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 const toAbsUrl = (url?: string | null): string => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  if (url.startsWith('/api')) return `http://localhost:8080${url}`
+  if (url.startsWith('/api')) return `${url}`
   return `${API_BASE}${url}`
 }
 

@@ -51,7 +51,7 @@ const PRIORITY_OPTIONS: { value: TaskPriority; label: string; color: string; bg:
   { value: 'HIGH', label: 'Cao', color: '#ef4444', bg: 'rgba(239,68,68,.10)' },
 ]
 
-const API_BASE = 'http://localhost:8080/api'
+const API_BASE = '/api'
 
 function fmtDate(v?: string) {
   if (!v) return 'Chưa có'

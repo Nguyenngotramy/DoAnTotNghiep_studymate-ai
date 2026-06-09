@@ -19,7 +19,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 type NavItemProps = { to: string; icon: React.ElementType; label: string; badge?: number }
 
-const BACKEND = 'http://localhost:8080/api'
+const BACKEND = '/api'
 
 function NavItem({ to, icon: Icon, label, badge }: NavItemProps) {
   return (

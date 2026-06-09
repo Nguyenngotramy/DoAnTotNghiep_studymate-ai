@@ -27,7 +27,7 @@ const SKILL_COLORS: Record<string, string> = {
   'AI/ML': '#a855f7',
 }
 
-const BACKEND = 'http://localhost:8080/api'
+const BACKEND = '/api'
 const toAbsUrl = (url?: string) => {
   if (!url) return ''
   if (url.startsWith('http')) return url

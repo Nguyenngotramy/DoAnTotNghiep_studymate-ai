@@ -40,7 +40,7 @@ import type {
 const COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#ec4899', '#3b82f6', '#22c55e', '#f97316', '#8b5cf6']
 const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡']
 const EXTRA_EMOJIS = ['😀', '🥹', '😍', '😎', '🔥', '👏', '🎉', '📚', '📝', '✅']
-const BACKEND = 'http://localhost:8080/api'
+const BACKEND = '/api'
 
 type InboxTab = 'dm' | 'group'
 type DmSideTab = 'pinned' | 'files' | 'media'

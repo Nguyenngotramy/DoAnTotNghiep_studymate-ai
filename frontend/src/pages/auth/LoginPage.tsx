@@ -135,7 +135,7 @@ export default function LoginPage() {
   }
 
   const handleGoogle = () => {
-    window.location.href = 'http://localhost:8080/api/oauth2/authorization/google'
+    window.location.href = '/api/oauth2/authorization/google'
   }
 
   const inp = (err?: boolean) =>

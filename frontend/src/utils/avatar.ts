@@ -2,7 +2,7 @@
 export const DEFAULT_AVATAR_URL = '/default-avatar.png'
 
 export function getApiBaseUrl(): string {
-  return (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/$/, '')
+  return (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 }
 
 export function getBackendOrigin(): string {
@@ -45,12 +45,13 @@ export function resolveUserAvatar(avatar?: string | null): string {
   if (cleanUrl.startsWith('http://localhost:8080')) {
     return cleanUrl.replace('http://localhost:8080', BACKEND_ORIGIN)
   }
+
   if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
     return cleanUrl
   }
 
   if (cleanUrl.startsWith('/api/')) {
-    return `${BACKEND_ORIGIN}${cleanUrl}`
+    return cleanUrl.replace('/api', API_BASE_URL)
   }
   if (cleanUrl.startsWith('/uploads/')) {
     return `${API_BASE_URL}${cleanUrl}`

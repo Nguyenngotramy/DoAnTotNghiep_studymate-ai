@@ -27,16 +27,16 @@ public class VNPayPaymentService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${payment.vnpay.tmn-code:VNPAYTEST}")
+    @Value("${payment.vnpay.tmn-code}")
     private String tmnCode;
 
-    @Value("${payment.vnpay.hash-secret:TEST_SECRET_KEY_FOR_VNPAY}")
+    @Value("${payment.vnpay.hash-secret}")
     private String hashSecret;
 
-    @Value("${payment.vnpay.api-url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
+    @Value("${payment.vnpay.api-url}")
     private String apiUrl;
 
-    @Value("${payment.vnpay.return-url:http://localhost:5174/payment/result/vnpay}")
+    @Value("${payment.vnpay.return-url}")
     private String returnUrl;
 
     public Payment createPayment(String userId, long amountVnd) {

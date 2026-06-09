@@ -13,7 +13,7 @@ import type {
   StudyProfile, StudyTermRecord, StudySubjectRecord, StudyPrediction
 } from '@/types'
 
-const AI_AGENT_URL = 'http://localhost:3000'
+const AI_AGENT_URL = '/ai-agent'
 
 const d = <T = any>(r: { data: ApiResponse<T> }) => r.data.data
 

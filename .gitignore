@@ -3,6 +3,7 @@ target/
 node_modules/
 frontend/node_modules/
 backend/uploads/
+backups/
 .env
 *.env
 ml_service/__pycache__/
@@ -20,8 +21,9 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
-backend/src/main/resources/application.yml
 backend/src/main/resources/application.local.backup.yml
 backend/src/main/resources/application-local.yml
 ai_agent/__pycache__/
+ai_agent/data/
+ai_agent/studymind_db/
 backend/.env.example

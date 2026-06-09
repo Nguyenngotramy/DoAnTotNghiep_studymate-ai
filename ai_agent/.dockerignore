@@ -9,5 +9,3 @@ studymind_db/
 data/
 *.sqlite3
 *.db
-Dockerfile
-.dockerignore

@@ -28,7 +28,7 @@ import toast from 'react-hot-toast'
 // CONSTANTS
 // ─────────────────────────────────────────
 
-const BACKEND_URL = 'http://localhost:3000'
+const BACKEND_URL = '/ai-agent'
 
 const DOC_ICON: Record<string, { label: string; bg: string; color: string }> = {
   PDF:   { label: 'PDF',  bg: 'rgba(239,68,68,.12)',   color: '#ef4444' },
@@ -55,7 +55,7 @@ const fmtSize = (kb: number) => {
 const resolveDocUrl = (fileUrl?: string) => {
   if (!fileUrl) return '#'
   if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) return fileUrl
-  return `http://localhost:8080/api${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`
+  return `/api${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`
 }
 
 // ─────────────────────────────────────────

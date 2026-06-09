@@ -28,7 +28,7 @@ function validSummary(post: Post) {
 function toMediaUrl(url?: string) {
   if (!url) return ''
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:')) return url
-  const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/$/, '')
+  const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
   const clean = url.startsWith('/') ? url : `/${url}`
   if (clean.startsWith('/uploads/')) return `${API_BASE}${clean}`
   if (clean.startsWith('/api/uploads/')) return `${API_BASE}${clean.replace(/^\/api/, '')}`

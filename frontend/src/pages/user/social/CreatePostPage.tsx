@@ -52,7 +52,7 @@ const AVATAR_COLORS = [
   '#8b5cf6',
 ]
 
-const BACKEND_URL = 'http://localhost:8080/api'
+const BACKEND_URL = '/api'
 
 function initials(n: string) {
   return (n ?? 'U')

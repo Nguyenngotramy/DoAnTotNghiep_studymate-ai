@@ -73,10 +73,15 @@ public class SecurityConfig {
                                 "/login/oauth2/**",
                                 "/oauth2/**"
                         ).permitAll()
+                        .requestMatchers(
+                                "/payment/momo/callback",
+                                "/payment/vnpay/callback"
+                        ).permitAll()
 
                         // Public static/upload/ws
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
                         // Admin
                         .requestMatchers("/admin/**").hasRole("ADMIN")

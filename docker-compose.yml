@@ -1,87 +1,81 @@
-version: '3.9'
+name: studymate
 
 services:
-
-  # ── MongoDB ───────────────────────────────────────────
   mongodb:
     image: mongo:7.0
-    container_name: studymate-mongo
     restart: unless-stopped
     environment:
       MONGO_INITDB_DATABASE: studymate
-    ports:
-      - "27017:27017"
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in .env}
     volumes:
       - mongo_data:/data/db
     networks:
-      - studymate-net
+      - studymate
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --username \"$${MONGO_INITDB_ROOT_USERNAME}\" --password \"$${MONGO_INITDB_ROOT_PASSWORD}\" --authenticationDatabase admin --eval \"db.adminCommand('ping').ok\"",
+        ]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 10
+      start_period: 10s
 
-  # ── Python ML Service ─────────────────────────────────
   ml-service:
     build:
-      context: ./ml_service # Tên thư mục chứa Python agent của bạn (đổi lại nếu thư mục tên là ai_agent)
-      dockerfile: Dockerfile
-    container_name: studymate-ml
+      context: ./ml_service
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     networks:
-      - studymate-net
-    # Đổi cách check dùng lệnh python trực tiếp để không phụ thuộc vào curl
+      - studymate
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 20s
 
-  # AI Agent Service
   ai-agent:
     build:
       context: ./ai_agent
-      dockerfile: Dockerfile
-    container_name: studymate-ai-agent
     restart: unless-stopped
+    env_file:
+      - ./ai_agent/.env
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - MODEL=${AI_AGENT_MODEL:-anthropic/claude-haiku-4-5}
-      - STUDYMIND_DB_PATH=/app/studymind_db
-      - CHAT_DB_PATH=/app/data/chat_history.sqlite3
-      - MAX_SESSION_MESSAGES=${MAX_SESSION_MESSAGES:-40}
-      - CHAT_HISTORY_FOR_LLM=${CHAT_HISTORY_FOR_LLM:-8}
-      - MAX_PROMPT_CHARS=${MAX_PROMPT_CHARS:-14000}
-      - MAX_MESSAGE_CHARS=${MAX_MESSAGE_CHARS:-3500}
-      - DEFAULT_KB_RESULTS=${DEFAULT_KB_RESULTS:-3}
-      - MAX_KB_CONTEXT_CHARS=${MAX_KB_CONTEXT_CHARS:-4500}
-      - MAX_KB_SOURCE_CHARS=${MAX_KB_SOURCE_CHARS:-1200}
-      - LLM_MAX_OUTPUT_TOKENS=${LLM_MAX_OUTPUT_TOKENS:-900}
-      - LLM_CONCURRENCY_LIMIT=${LLM_CONCURRENCY_LIMIT:-12}
-      - LLM_REQUEST_TIMEOUT=${LLM_REQUEST_TIMEOUT:-60}
-      - UVICORN_WORKERS=${AI_AGENT_WORKERS:-2}
-    ports:
-      - "8001:8001"
+      STUDYMIND_DB_PATH: /app/studymind_db
+      CHAT_DB_PATH: /app/data/chat_history.sqlite3
+      BACKEND_API_URL: http://backend:8080/api
+      ALLOWED_ORIGINS: ${FRONTEND_URL:-http://localhost}
+      UVICORN_WORKERS: ${AI_AGENT_WORKERS:-1}
     volumes:
       - ai_agent_db:/app/studymind_db
       - ai_agent_data:/app/data
     networks:
-      - studymate-net
+      - studymate
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 60s
 
-  # Spring Boot Backend
   backend:
     build:
-      context: ./backend  # 🛠 SỬA LỖI: Trỏ đúng vào thư mục chứa dự án backend
-      dockerfile: Dockerfile
-    container_name: studymate-backend
+      context: ./backend
     restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/studymate?authSource=admin
+      ML_SERVICE_URL: http://ml-service:8000
+      AI_AGENT_URL: http://ai-agent:8001
+      UPLOAD_DIR: /app/uploads
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      APP_PUBLIC_BASE_URL: ${APP_PUBLIC_BASE_URL:-http://localhost/api}
+      LOGGING_LEVEL_COM_STUDYMATE: ${APP_LOG_LEVEL:-INFO}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_MULTIPART: ${APP_LOG_LEVEL:-INFO}
+      LOGGING_LEVEL_ORG_APACHE_CATALINA_CONNECTOR_REQUEST: ${APP_LOG_LEVEL:-INFO}
     depends_on:
       mongodb:
         condition: service_healthy
@@ -89,43 +83,101 @@ services:
         condition: service_healthy
       ai-agent:
         condition: service_healthy
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017/studymate
-      - ML_SERVICE_URL=http://ml-service:8000
-      - AI_AGENT_URL=http://ai-agent:8001
-      - JWT_SECRET=StudyMateAI_SuperSecretKey_2024_MustBe256BitsLong_DoNotUseInProd
-      - ADMIN_EMAIL=admin@studymate.com
-      - ADMIN_PASSWORD=Admin@2024!
-      - UPLOAD_DIR=/app/uploads
-    ports:
-      - "8080:8080"
     volumes:
       - uploads_data:/app/uploads
     networks:
-      - studymate-net
-    # Loại bỏ healthcheck bằng curl của backend để tránh lỗi sập container vòng lặp
-    # Dùng tính năng tự check nội bộ của Spring nếu bạn có cài thư viện Actuator, nếu không thì tạm bỏ qua healthcheck này.
+      - studymate
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
-  # ── React Frontend ────────────────────────────────────
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    container_name: studymate-frontend
     restart: unless-stopped
-    ports:
-      - "80:80"  # Chạy production trên port 80 luôn cho tiện truy cập
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
-      - studymate-net
+      - studymate
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  gateway:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-http://localhost}
+    depends_on:
+      frontend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - studymate
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:2019/config/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  mongodb-backup:
+    image: mongo:7.0
+    restart: unless-stopped
+    environment:
+      MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME in .env}
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in .env}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    command: ["sh", "/scripts/mongo-backup.sh"]
+    volumes:
+      - ./deploy/mongo-backup.sh:/scripts/mongo-backup.sh:ro
+      - ./backups:/backups
+    networks:
+      - studymate
+
+  volume-backup:
+    image: alpine:3.20
+    restart: unless-stopped
+    environment:
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+    command: ["sh", "/scripts/volume-backup.sh"]
+    volumes:
+      - ./deploy/volume-backup.sh:/scripts/volume-backup.sh:ro
+      - ./backups:/backups
+      - uploads_data:/data/uploads:ro
+      - ai_agent_data:/data/ai-agent-data:ro
+      - ai_agent_db:/data/ai-agent-db:ro
+    depends_on:
+      ai-agent:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
 
 volumes:
   mongo_data:
   uploads_data:
   ai_agent_db:
   ai_agent_data:
+  caddy_data:
+  caddy_config:
 
 networks:
-  studymate-net:
+  studymate:
     driver: bridge

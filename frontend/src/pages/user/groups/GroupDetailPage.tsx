@@ -90,7 +90,7 @@ type GroupPost = {
   }[]
 }
 
-const BACKEND = 'http://localhost:8080/api'
+const BACKEND = '/api'
 
 function resolveAvatarUrl(avatar?: string | null) {
   if (!avatar) return ''
@@ -546,7 +546,7 @@ export default function GroupDetailPage() {
         '',
         preview || 'Bài viết nhóm',
         '',
-        `Mở nhóm: http://localhost:5173/groups/${groupId}`,
+        `Mở nhóm: ${window.location.origin}/groups/${groupId}`,
       ]
       return dmApi.send(userId, lines.join('\n'), 'TEXT')
     },
