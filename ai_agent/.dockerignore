@@ -1,0 +1,13 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+studymind-env/
+studymind_db/
+data/
+*.sqlite3
+*.db
+Dockerfile
+.dockerignore

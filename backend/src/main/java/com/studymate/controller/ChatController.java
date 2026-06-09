@@ -11,7 +11,9 @@ import com.studymate.repository.GroupRepository;
 import com.studymate.repository.NotificationRepository;
 import com.studymate.repository.UserRepository;
 import com.studymate.service.DocumentService;
+import com.studymate.service.FlashcardService;
 import com.studymate.service.NotificationService;
+import com.studymate.service.QuizService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -47,9 +49,11 @@ public class ChatController {
     private final WebClient.Builder webClientBuilder;
     private final NotificationService notifService;
     private final DocumentService documentService;
+    private final FlashcardService flashcardService;
+    private final QuizService quizService;
 
-    @Value("${app.ml-service.url}")
-    private String mlUrl;
+    @Value("${app.ai-agent.url}")
+    private String aiAgentUrl;
 
     @GetMapping("/groups/{groupId}/chat")
     public ResponseEntity<?> history(
@@ -309,16 +313,28 @@ public class ChatController {
 
         String aiAnswer;
         try {
+            Group group = validateMember(groupId, auth.getName());
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("text", question);
+            payload.put("session_id", "group:" + groupId);
+            if (group.getSubject() != null && !group.getSubject().isBlank()) {
+                payload.put("subject", group.getSubject());
+            }
+            if (body.getApiKey() != null && !body.getApiKey().isBlank()) {
+                payload.put("api_key", body.getApiKey().trim());
+            }
+
             var res = webClientBuilder.build()
                     .post()
-                    .uri(mlUrl + "/chat")
-                    .bodyValue(Map.of("question", question, "groupId", groupId))
+                    .uri(aiAgentUrl + "/chat")
+                    .bodyValue(payload)
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
 
+            autoSaveStructuredStudyMaterial(auth.getName(), question, res);
             aiAnswer = res != null
-                    ? String.valueOf(res.get("answer"))
+                    ? String.valueOf(res.getOrDefault("response", res.getOrDefault("answer", "")))
                     : "Tính năng AI đang được hoàn thiện, bạn hãy dùng chat nhóm cơ bản trước nhé.";
         } catch (Exception e) {
             aiAnswer = "Tính năng AI đang được hoàn thiện, bạn hãy dùng chat nhóm cơ bản trước nhé.";
@@ -549,6 +565,125 @@ public class ChatController {
                 .build();
     }
 
+    private void autoSaveStructuredStudyMaterial(
+            String userId,
+            String question,
+            Map<?, ?> aiResponse
+    ) {
+        if (aiResponse == null || !(aiResponse.get("structured") instanceof Map<?, ?> structured)) {
+            return;
+        }
+
+        String type = safeString(structured.get("type")).toLowerCase(Locale.ROOT);
+        if (!(structured.get("items") instanceof List<?> items) || items.isEmpty()) {
+            return;
+        }
+
+        try {
+            if ("flashcard".equals(type)) {
+                List<Map<String, String>> cards = normalizeFlashcards(items);
+                if (cards.isEmpty()) return;
+
+                flashcardService.createAiDeckFromChat(
+                        userId,
+                        buildGeneratedTitle("Flashcard AI", question),
+                        "Tu dong tao va luu tu StudyMate AI chat",
+                        cards
+                );
+                return;
+            }
+
+            if ("quiz".equals(type)) {
+                List<Map<String, Object>> questions = normalizeQuizQuestions(items);
+                if (questions.isEmpty()) return;
+
+                quizService.createAiQuizFromChat(
+                        userId,
+                        buildGeneratedTitle("Quiz AI", question),
+                        "Tu dong tao va luu tu StudyMate AI chat",
+                        questions
+                );
+            }
+        } catch (Exception ignored) {
+            // Keep chat available even if persistence fails.
+        }
+    }
+
+    private List<Map<String, String>> normalizeFlashcards(List<?> items) {
+        List<Map<String, String>> cards = new ArrayList<>();
+        for (Object item : items) {
+            if (!(item instanceof Map<?, ?> map)) continue;
+
+            String question = firstNonBlank(map.get("question"), map.get("front"));
+            String answer = firstNonBlank(map.get("answer"), map.get("back"));
+            if (question.isBlank() || answer.isBlank()) continue;
+
+            Map<String, String> card = new LinkedHashMap<>();
+            card.put("question", question);
+            card.put("answer", answer);
+            cards.add(card);
+        }
+        return cards;
+    }
+
+    private List<Map<String, Object>> normalizeQuizQuestions(List<?> items) {
+        List<Map<String, Object>> questions = new ArrayList<>();
+        for (Object item : items) {
+            if (!(item instanceof Map<?, ?> map)) continue;
+
+            String question = safeString(map.get("question"));
+            if (question.isBlank() || !(map.get("options") instanceof List<?> rawOptions)) continue;
+
+            List<String> options = rawOptions.stream()
+                    .map(this::safeString)
+                    .filter(option -> !option.isBlank())
+                    .collect(Collectors.toList());
+            Integer correctIndex = parseIntegerSafe(
+                    map.containsKey("correctIndex") ? map.get("correctIndex") : map.get("correct_index")
+            );
+            if (options.size() < 2 || correctIndex == null
+                    || correctIndex < 0 || correctIndex >= options.size()) {
+                continue;
+            }
+
+            Map<String, Object> normalized = new LinkedHashMap<>();
+            normalized.put("question", question);
+            normalized.put("options", options);
+            normalized.put("correctIndex", correctIndex);
+            normalized.put("explanation", safeString(map.get("explanation")));
+            questions.add(normalized);
+        }
+        return questions;
+    }
+
+    private String buildGeneratedTitle(String prefix, String question) {
+        String topic = safeString(question).replaceAll("\\s+", " ");
+        if (topic.length() > 60) {
+            topic = topic.substring(0, 60).trim() + "...";
+        }
+        return topic.isBlank() ? prefix : prefix + " - " + topic;
+    }
+
+    private String firstNonBlank(Object first, Object second) {
+        String firstValue = safeString(first);
+        return firstValue.isBlank() ? safeString(second) : firstValue;
+    }
+
+    private String safeString(Object value) {
+        return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    private Integer parseIntegerSafe(Object value) {
+        if (value == null) return null;
+        try {
+            return value instanceof Number number
+                    ? number.intValue()
+                    : Integer.parseInt(String.valueOf(value).trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private long parseLongSafe(Object value) {
         if (value == null) return 0L;
         try {
@@ -605,6 +740,7 @@ public class ChatController {
     @AllArgsConstructor
     public static class AskAIRequest {
         private String question;
+        private String apiKey;
     }
 
     @Data

@@ -27,8 +27,8 @@ public class DirectMessageService {
     private final WebClient.Builder webClient;
     private final NotificationService notificationService;
 
-    @Value("${app.ml-service.url}")
-    private String mlUrl;
+    @Value("${app.ai-agent.url}")
+    private String aiAgentUrl;
 
     public Page<DirectMessage> getConversation(String u1, String u2, int page) {
         return dmRepo.findConversation(
@@ -123,13 +123,18 @@ public class DirectMessageService {
         try {
             var res = webClient.build()
                     .post()
-                    .uri(mlUrl + "/chat")
-                    .bodyValue(Map.of("question", question))
+                    .uri(aiAgentUrl + "/chat")
+                    .bodyValue(Map.of(
+                            "text", question,
+                            "session_id", "dm:" + senderId + ":" + receiverId
+                    ))
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
 
-            answer = res != null ? String.valueOf(res.get("answer")) : "AI đang bận, thử lại sau!";
+            answer = res != null
+                    ? String.valueOf(res.getOrDefault("response", res.getOrDefault("answer", "")))
+                    : "AI đang bận, thử lại sau!";
         } catch (Exception e) {
             answer = "AI đang bận, thử lại sau!";
         }

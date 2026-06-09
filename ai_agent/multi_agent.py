@@ -40,8 +40,63 @@ logger = logging.getLogger(__name__)
 
 async_client = AsyncOpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
-    base_url="https://openrouter.ai/api/v1",
+    base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
+    timeout=float(os.getenv("LLM_REQUEST_TIMEOUT", "60")),
 )
+
+LLM_CONCURRENCY_LIMIT = max(1, int(os.getenv("LLM_CONCURRENCY_LIMIT", "12")))
+_llm_semaphore = asyncio.Semaphore(LLM_CONCURRENCY_LIMIT)
+MAX_PROMPT_CHARS = max(2000, int(os.getenv("MAX_PROMPT_CHARS", "14000")))
+MAX_MESSAGE_CHARS = max(800, int(os.getenv("MAX_MESSAGE_CHARS", "3500")))
+DEFAULT_MAX_OUTPUT_TOKENS = max(256, int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "900")))
+
+
+def _is_rate_limit_error(e: Exception) -> bool:
+    msg = str(e).lower()
+    return "429" in msg or "rate-limit" in msg or "rate limit" in msg or "temporarily rate-limited" in msg
+
+
+def _client_for_context(context: dict | None) -> AsyncOpenAI:
+    api_key = (context or {}).get("api_key") or (context or {}).get("byok_api_key")
+    if api_key:
+        return AsyncOpenAI(
+            api_key=api_key,
+            base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
+            timeout=float(os.getenv("LLM_REQUEST_TIMEOUT", "60")),
+        )
+    return async_client
+
+
+def _safe_context_for_prompt(context: dict | None) -> dict:
+    if not context:
+        return {}
+    secret_keys = {"api_key", "byok_api_key", "openai_api_key", "authorization"}
+    return {k: v for k, v in context.items() if k not in secret_keys}
+
+
+def _compact_content(content: str) -> str:
+    text = content or ""
+    if len(text) <= MAX_MESSAGE_CHARS:
+        return text
+    head = text[: int(MAX_MESSAGE_CHARS * 0.65)]
+    tail = text[-int(MAX_MESSAGE_CHARS * 0.25):]
+    return f"{head}\n\n...[rut gon de tiet kiem token]...\n\n{tail}"
+
+
+def _trim_messages_for_budget(messages: list[dict]) -> list[dict]:
+    compacted = []
+    for msg in messages:
+        item = dict(msg)
+        if isinstance(item.get("content"), str):
+            item["content"] = _compact_content(item["content"])
+        compacted.append(item)
+
+    def total_chars(items: list[dict]) -> int:
+        return sum(len(str(m.get("content", ""))) for m in items)
+
+    while len(compacted) > 2 and total_chars(compacted) > MAX_PROMPT_CHARS:
+        compacted.pop(1)
+    return compacted
 
 # === FALLBACK CHUNG ===
 FALLBACK_MODELS = [
@@ -111,12 +166,13 @@ class BaseAgent:
     → An toàn khi nhiều user gọi đồng thời.
     """
 
-    def __init__(self, name: str, system_prompt: str, tools: list = None, models: list = None):
+    def __init__(self, name: str, system_prompt: str, tools: list = None, models: list = None, max_tokens: int | None = None):
         self.name          = name
         self.system_prompt = system_prompt
         self.tools         = tools or []
         self.models        = models or FALLBACK_MODELS
         self.json_mode     = False
+        self.max_tokens    = max_tokens or DEFAULT_MAX_OUTPUT_TOKENS
 
     def _get_request_context(self) -> dict:
         return _request_context.get()
@@ -131,17 +187,18 @@ class BaseAgent:
             _request_context.reset(ctx_token)
 
     async def _run_impl(self, message: str, context: dict = None, history: list = None) -> str:
-        if context:
+        safe_context = _safe_context_for_prompt(context)
+        if safe_context:
             full_message = (
                 f"[Context từ Orchestrator]\n"
-                f"{json.dumps(context, ensure_ascii=False)}\n\n"
+                f"{json.dumps(safe_context, ensure_ascii=False)}\n\n"
                 f"[Yêu cầu]\n{message}"
             )
         else:
             full_message = message
 
         # Mỗi request có messages riêng → stateless, thread-safe
-        messages = (
+        messages = _trim_messages_for_budget(
             [{"role": "system", "content": self.system_prompt}]
             + (history or [])
             + [{"role": "user", "content": full_message}]
@@ -166,7 +223,7 @@ class BaseAgent:
         for _ in range(5):
             kwargs = dict(
                 model=model,
-                max_tokens=1800,
+                max_tokens=self.max_tokens,
                 messages=messages,
             )
             if self.tools:
@@ -175,7 +232,9 @@ class BaseAgent:
             elif self.json_mode:
                 kwargs["response_format"] = {"type": "json_object"}
 
-            response = await async_client.chat.completions.create(**kwargs)
+            client = _client_for_context(self._get_request_context())
+            async with _llm_semaphore:
+                response = await client.chat.completions.create(**kwargs)
             choice   = response.choices[0]
 
             # Không có tool call → trả về text
@@ -269,6 +328,7 @@ Nếu có [CONTEXT MÔN HỌC] trong message: điều chỉnh phong cách theo g
 KHÔNG làm bài hộ. Trả lời ngắn gọn, thân thiện bằng tiếng Việt.""",
             tools=TUTOR_TOOLS,
             models=TUTOR_MODELS,
+            max_tokens=int(os.getenv("TUTOR_MAX_TOKENS", "900")),
         )
 
     def _handle_tool(self, tool_name: str, tool_input: dict) -> dict:
@@ -318,6 +378,7 @@ OUTPUT (BẮT BUỘC — chỉ JSON thuần):
 Dùng nội dung trong prompt nếu có. Không thêm text ngoài JSON.""",
             tools=[],
             models=QUIZ_MODELS,
+            max_tokens=int(os.getenv("QUIZ_MAX_TOKENS", "1400")),
         )
         self.json_mode = True
 
@@ -391,6 +452,7 @@ NGUYÊN TẮC:
 Tiếng Việt, rõ ràng, dễ học.""",
             tools=SUMMARY_TOOLS,
             models=SUMMARY_MODELS,
+            max_tokens=int(os.getenv("SUMMARY_MAX_TOKENS", "900")),
         )
 
     def _handle_tool(self, tool_name: str, tool_input: dict) -> dict:
@@ -479,6 +541,7 @@ Chính xác, dễ nhớ.
 Nếu có [CONTEXT PHÂN LOẠI TÀI LIỆU]: tuân thủ ngôn ngữ (vd. từ vựng Hàn → front Hangul, back tiếng Việt + romanization).""",
             tools=FLASHCARD_TOOLS,
             models=FLASHCARD_MODELS,
+            max_tokens=int(os.getenv("FLASHCARD_MAX_TOKENS", "1200")),
         )
 
     def _handle_tool(self, tool_name: str, tool_input: dict) -> dict:
@@ -568,6 +631,7 @@ QUY TẮC:
 - Tiếng Việt, logic, dễ theo dõi""",
             tools=KT_TOOLS,
             models=KEPNER_TREGOE_MODELS,
+            max_tokens=int(os.getenv("KT_MAX_TOKENS", "1100")),
         )
 
     def _handle_tool(self, tool_name: str, tool_input: dict) -> dict:
@@ -817,6 +881,7 @@ class OrchestratorAgent(BaseAgent):
             name="Orchestrator",
             system_prompt=ORCHESTRATOR_PROMPT,
             tools=ORCHESTRATOR_TOOLS,
+            max_tokens=int(os.getenv("ORCHESTRATOR_MAX_TOKENS", "700")),
         )
 
     async def _execute_tool(self, tool_call) -> dict:

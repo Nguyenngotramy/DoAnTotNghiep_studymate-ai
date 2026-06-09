@@ -4,6 +4,7 @@ import { quizApi, flashcardApi } from "@/api/services";
 
 const API_URL = "http://localhost:3000";
 const SESSION_KEY = "studymind_chat_session";
+const USER_API_KEY_STORAGE = "studymind_user_openrouter_key";
 
 const AGENT_MAP = {
   TutorAgent: "Tutor",
@@ -119,7 +120,7 @@ function Message({ msg, onSaveStructured }) {
         }}
         dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}
       />
-      {msg.structured && onSaveStructured && (
+      {msg.structured && !msg.autoSaved && onSaveStructured && (
         <button
           onClick={() => onSaveStructured(msg)}
           style={{
@@ -135,6 +136,42 @@ function Message({ msg, onSaveStructured }) {
   );
 }
 
+async function persistStructured(structured, showSuccess = true) {
+  if (!structured?.items?.length) return false;
+
+  if (structured.type === "quiz") {
+    const questions = structured.items.map((item) => ({
+      question: item.question ?? "",
+      options: item.options ?? [],
+      correctIndex: item.correctIndex ?? item.correct_index ?? 0,
+      explanation: item.explanation ?? "",
+    }));
+    await quizApi.createPersonalQuizSet({
+      title: `Quiz chat ${new Date().toLocaleDateString("vi")}`,
+      description: "Tu dong tao va luu tu StudyMate AI chat",
+      questions,
+    });
+    if (showSuccess) toast.success("Da tu dong luu quiz");
+    return true;
+  }
+
+  if (structured.type === "flashcard") {
+    const cards = structured.items.map((item) => ({
+      question: item.question ?? item.front ?? "",
+      answer: item.answer ?? item.back ?? "",
+    }));
+    await flashcardApi.createPersonalDeck({
+      title: `Flashcard chat ${new Date().toLocaleDateString("vi")}`,
+      description: "Tu dong tao va luu tu StudyMate AI chat",
+      cards,
+    });
+    if (showSuccess) toast.success("Da tu dong luu flashcard");
+    return true;
+  }
+
+  return false;
+}
+
 export default function FloatingAgent() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -143,6 +180,8 @@ export default function FloatingAgent() {
   const [activeAgent, setActiveAgent] = useState(null);
   const [unread, setUnread] = useState(0);
   const [showQuick, setShowQuick] = useState(true);
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem(USER_API_KEY_STORAGE) || "");
+  const [showApiKey, setShowApiKey] = useState(false);
 
   const [sessionId, setSessionId] = useState(() => localStorage.getItem(SESSION_KEY) || "");
 
@@ -178,12 +217,25 @@ export default function FloatingAgent() {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: msg, session_id: sessionId || undefined }),
+        body: JSON.stringify({
+          text: msg,
+          session_id: sessionId || undefined,
+          api_key: apiKey.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (data.session_id) {
         setSessionId(data.session_id);
         localStorage.setItem(SESSION_KEY, data.session_id);
+      }
+
+      let autoSaved = false;
+      if (data.structured?.type === "quiz" || data.structured?.type === "flashcard") {
+        try {
+          autoSaved = await persistStructured(data.structured);
+        } catch (error) {
+          toast.error(error?.response?.data?.message ?? "Khong the tu dong luu. Hay dang nhap va thu lai.");
+        }
       }
 
       setMessages((prev) => [
@@ -194,6 +246,7 @@ export default function FloatingAgent() {
           text: data.response ?? "Không có phản hồi.",
           badge: data.agent ? AGENT_MAP[data.agent] ?? data.agent : null,
           structured: data.structured ?? null,
+          autoSaved,
           time: timeNow(),
         },
       ]);
@@ -215,7 +268,18 @@ export default function FloatingAgent() {
 
     setLoading(false);
     setTimeout(() => setActiveAgent(null), 2000);
-  }, [input, loading, open, sessionId]);
+  }, [apiKey, input, loading, open, sessionId]);
+
+  const saveApiKey = () => {
+    const value = apiKey.trim();
+    if (value) {
+      localStorage.setItem(USER_API_KEY_STORAGE, value);
+      toast.success("Đã lưu API key trên trình duyệt của bạn");
+    } else {
+      localStorage.removeItem(USER_API_KEY_STORAGE);
+      toast.success("Đã xóa API key cá nhân");
+    }
+  };
 
   const saveStructured = async (msg) => {
     if (!msg.structured) return;
@@ -429,6 +493,19 @@ export default function FloatingAgent() {
             </div>
 
             <button
+              onClick={() => setShowApiKey((v) => !v)}
+              title="API key cá nhân"
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: apiKey.trim() ? "#7c3aed" : "#444", padding: 4, borderRadius: 6,
+                transition: "color 0.15s", display: "flex", alignItems: "center",
+                fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
+              }}
+            >
+              KEY
+            </button>
+
+            <button
               onClick={clearHistory}
               title="Xóa lịch sử"
               style={{
@@ -444,6 +521,49 @@ export default function FloatingAgent() {
               </svg>
             </button>
           </div>
+
+          {showApiKey && (
+            <div style={{
+              padding: "10px 14px",
+              borderBottom: "1px solid #1e1e1e",
+              background: "#101010",
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+            }}>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="OpenRouter API key cá nhân"
+                style={{
+                  flex: 1,
+                  background: "#0b0b0b",
+                  border: "1px solid #2a2a2a",
+                  borderRadius: 8,
+                  color: "#ddd",
+                  padding: "8px 10px",
+                  fontSize: 11,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                }}
+              />
+              <button
+                onClick={saveApiKey}
+                style={{
+                  background: "#7c3aed",
+                  border: "none",
+                  color: "#fff",
+                  borderRadius: 8,
+                  padding: "8px 10px",
+                  fontSize: 11,
+                  cursor: "pointer",
+                  fontFamily: "'IBM Plex Mono', monospace",
+                }}
+              >
+                Lưu
+              </button>
+            </div>
+          )}
 
           {/* Messages */}
           <div

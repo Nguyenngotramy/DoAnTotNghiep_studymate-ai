@@ -19,7 +19,7 @@ from classifier_agent import enrich_kb_metadata
 from subject_metadata import classification_from_subject
 
 
-DB_PATH = "./studymind_db"          # Thư mục lưu ChromaDB
+DB_PATH = os.getenv("STUDYMIND_DB_PATH", "./studymind_db")  # Thư mục lưu ChromaDB
 COLLECTION_NAME = "knowledge"
 EMBED_MODEL = "all-MiniLM-L6-v2"   # Model embedding nhẹ, chạy offline
 

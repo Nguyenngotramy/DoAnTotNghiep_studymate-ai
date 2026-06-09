@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Literal, Optional
 from multi_agent import get_orchestrator, reset_chat_metadata, get_chat_metadata
+from chat_store import chat_store
 from classifier_agent import (
     build_kb_filter,
     classification_to_api,
@@ -21,6 +22,7 @@ import re as re_module
 import json
 import uuid
 import httpx
+import os
 
 from vocabulary import (
     parse_vocabulary_file,
@@ -42,12 +44,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Session store (mỗi user/tab có history riêng) ─────────────
-sessions: dict[str, list] = {}
-MAX_SESSIONS = 500
-MAX_SESSION_MESSAGES = 20
-
-
+# ── Persistent chat history lives in chat_store.py ─────────────
+CHAT_HISTORY_FOR_LLM = max(2, int(os.getenv("CHAT_HISTORY_FOR_LLM", "8")))
+DEFAULT_KB_RESULTS = max(1, int(os.getenv("DEFAULT_KB_RESULTS", "3")))
+MAX_KB_CONTEXT_CHARS = max(1000, int(os.getenv("MAX_KB_CONTEXT_CHARS", "4500")))
+MAX_KB_SOURCE_CHARS = max(400, int(os.getenv("MAX_KB_SOURCE_CHARS", "1200")))
 # ════════════════════════════════════════════════════════
 # FILE FETCHER — lấy nội dung file thực từ URL
 # ════════════════════════════════════════════════════════
@@ -334,6 +335,7 @@ class ChatMessage(BaseModel):
     subject: Optional[str] = None
     subject_code: Optional[str] = None
     doc_topic: Optional[str] = None
+    api_key: Optional[str] = None
 
 
 class SummaryRequest(BaseModel):
@@ -446,7 +448,7 @@ async def _resolve_vocabulary(
     return []
 
 
-async def _search_kb_context(query: str, kb_filter: dict | None, n_results: int = 5) -> tuple[str, list[dict]]:
+async def _search_kb_context(query: str, kb_filter: dict | None, n_results: int = DEFAULT_KB_RESULTS) -> tuple[str, list[dict]]:
     if not kb_filter:
         return "", []
 
@@ -460,7 +462,19 @@ async def _search_kb_context(query: str, kb_filter: dict | None, n_results: int 
     if not results:
         return "", []
 
-    content = "\n\n---\n\n".join(r["content"] for r in results)
+    clipped_chunks = []
+    total = 0
+    for r in results:
+        chunk = (r["content"] or "")[:MAX_KB_SOURCE_CHARS]
+        if total + len(chunk) > MAX_KB_CONTEXT_CHARS:
+            chunk = chunk[: max(0, MAX_KB_CONTEXT_CHARS - total)]
+        if chunk.strip():
+            clipped_chunks.append(chunk)
+            total += len(chunk)
+        if total >= MAX_KB_CONTEXT_CHARS:
+            break
+
+    content = "\n\n---\n\n".join(clipped_chunks)
     sources = [
         {
             "filename": r.get("filename", ""),
@@ -475,17 +489,22 @@ async def _search_kb_context(query: str, kb_filter: dict | None, n_results: int 
     return content, sources
 
 
-def _trim_session_store() -> None:
-    while len(sessions) > MAX_SESSIONS:
-        oldest = next(iter(sessions))
-        sessions.pop(oldest, None)
+def _remember_turn(session_id: str, user_text: str, assistant_text: str) -> None:
+    chat_store.remember_turn(session_id, user_text, assistant_text)
 
 
-def _remember_turn(session_id: str, history: list, user_text: str, assistant_text: str) -> None:
-    history.append({"role": "user", "content": user_text})
-    history.append({"role": "assistant", "content": assistant_text})
-    sessions[session_id] = history[-MAX_SESSION_MESSAGES:]
-    _trim_session_store()
+def _friendly_ai_error(e: Exception, used_user_key: bool = False) -> str:
+    msg = str(e).lower()
+    if "429" in msg or "rate-limit" in msg or "rate limit" in msg or "temporarily rate-limited" in msg:
+        if used_user_key:
+            return "Provider đang giới hạn tốc độ với API key của bạn. Hãy thử lại sau vài phút hoặc kiểm tra quota/key."
+        return (
+            "Model miễn phí đang bị giới hạn tạm thời. Bạn có thể thử lại sau vài phút "
+            "hoặc nhập API key OpenRouter của riêng bạn để dùng quota riêng."
+        )
+    if "api key" in msg or "authentication" in msg or "401" in msg:
+        return "API key không hợp lệ hoặc thiếu quyền truy cập model. Vui lòng kiểm tra lại key."
+    return "AI service đang bận hoặc provider tạm thời không phản hồi. Vui lòng thử lại sau."
 
 
 def _extract_requested_count(text: str, default: int, max_value: int) -> int:
@@ -520,6 +539,7 @@ def _structured_quiz(questions: list[dict]) -> dict | None:
             {
                 "question": q["question"],
                 "options": q["options"],
+                "correctIndex": q["correctIndex"],
                 "correct_index": q["correctIndex"],
                 "explanation": q.get("explanation", ""),
             }
@@ -537,12 +557,24 @@ def _structured_flashcards(cards: list[dict]) -> dict | None:
             {
                 "front": c["question"],
                 "back": c["answer"],
+                "question": c["question"],
+                "answer": c["answer"],
                 "hint": c.get("hint", ""),
                 "type": c.get("type", "mixed"),
             }
             for c in cards
         ],
     }
+
+
+def _json_response_from_structured(structured: dict | None) -> str | None:
+    if not structured:
+        return None
+    if structured.get("type") == "quiz":
+        return json.dumps({"type": "quiz", "questions": structured.get("items", [])}, ensure_ascii=False)
+    if structured.get("type") == "flashcard":
+        return json.dumps({"type": "flashcard", "flashcards": structured.get("items", [])}, ensure_ascii=False)
+    return json.dumps(structured, ensure_ascii=False)
 
 
 async def _run_fast_chat_route(route: str, orch, text: str, context: dict | None, history: list) -> tuple[str, str, dict | None, list[dict]]:
@@ -552,7 +584,7 @@ async def _run_fast_chat_route(route: str, orch, text: str, context: dict | None
         kb_content, manual_sources = await _search_kb_context(
             query=text,
             kb_filter=(context or {}).get("kb_filter"),
-            n_results=5,
+            n_results=DEFAULT_KB_RESULTS,
         )
         kb_note = (
             f"\n\nNOI DUNG TU KNOWLEDGE BASE:\n{kb_content}\n\n"
@@ -570,7 +602,12 @@ async def _run_fast_chat_route(route: str, orch, text: str, context: dict | None
             retry = f"{task}\n\nOutput trước chưa hợp lệ. Chỉ trả JSON hợp lệ theo schema: {QUIZ_JSON_SCHEMA}"
             raw = await orch.quiz.run(message=retry, context=context)
             questions = parse_quiz(raw)
-        return raw, "QuizAgent", _structured_quiz(questions), manual_sources
+        structured = _structured_quiz(questions)
+        response = _json_response_from_structured(structured) or json.dumps(
+            {"type": "quiz", "questions": [], "error": "invalid_model_output"},
+            ensure_ascii=False,
+        )
+        return response, "QuizAgent", structured, manual_sources
 
     if route == "flashcard":
         n = _extract_requested_count(text, default=5, max_value=20)
@@ -585,7 +622,12 @@ async def _run_fast_chat_route(route: str, orch, text: str, context: dict | None
             retry = f"{task}\n\nOutput trước chưa hợp lệ. Chỉ trả JSON hợp lệ."
             raw = await orch.flashcard.run(message=retry, context=context)
             cards = parse_flashcards(raw)
-        return raw, "FlashcardAgent", _structured_flashcards(cards), manual_sources
+        structured = _structured_flashcards(cards)
+        response = _json_response_from_structured(structured) or json.dumps(
+            {"type": "flashcard", "flashcards": [], "error": "invalid_model_output"},
+            ensure_ascii=False,
+        )
+        return response, "FlashcardAgent", structured, manual_sources
 
     if route == "summary":
         task = f"Tóm tắt/rút ý chính theo yêu cầu sau, trình bày ngắn gọn, dễ học:\n{text}"
@@ -610,6 +652,15 @@ def index():
 
 
 # ── UPLOAD — dùng nhãn môn học từ nhóm, không classify bằng AI ──
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "service": "studymind-ai-agent",
+        "chat_store": chat_store.stats(),
+    }
+
 
 @app.post("/upload")
 async def upload_document(
@@ -662,7 +713,7 @@ async def chat(msg: ChatMessage):
     """Orchestrator routing — mỗi session có history riêng."""
     orch = get_orchestrator()
     sid  = msg.session_id or str(uuid.uuid4())
-    history = sessions.setdefault(sid, [])
+    history = chat_store.get_history(sid, limit=CHAT_HISTORY_FOR_LLM)
 
     clf = classification_from_subject(
         subject=msg.subject,
@@ -674,19 +725,30 @@ async def chat(msg: ChatMessage):
     reset_chat_metadata()
     enriched_text = f"{subject_context}\n{msg.text}".strip() if subject_context else msg.text
     kb_filter     = build_kb_filter(clf)
-    run_context   = {"kb_filter": kb_filter} if kb_filter else None
+    run_context   = {}
+    if kb_filter:
+        run_context["kb_filter"] = kb_filter
+    if msg.api_key and msg.api_key.strip():
+        run_context["api_key"] = msg.api_key.strip()
+    run_context = run_context or None
     route         = _detect_chat_route(msg.text)
-    if route:
-        response, agent_name, structured, manual_sources = await _run_fast_chat_route(
-            route=route,
-            orch=orch,
-            text=enriched_text,
-            context=run_context,
-            history=history,
-        )
-    else:
-        response = await orch.run(enriched_text, context=run_context, history=history)
-        agent_name = None
+    try:
+        if route:
+            response, agent_name, structured, manual_sources = await _run_fast_chat_route(
+                route=route,
+                orch=orch,
+                text=enriched_text,
+                context=run_context,
+                history=history,
+            )
+        else:
+            response = await orch.run(enriched_text, context=run_context, history=history)
+            agent_name = None
+            structured = None
+            manual_sources = []
+    except Exception as e:
+        response = _friendly_ai_error(e, used_user_key=bool(msg.api_key and msg.api_key.strip()))
+        agent_name = "System"
         structured = None
         manual_sources = []
 
@@ -701,8 +763,12 @@ async def chat(msg: ChatMessage):
             if fc_items:
                 structured = _structured_flashcards(fc_items)
 
+    normalized_response = _json_response_from_structured(structured)
+    if normalized_response:
+        response = normalized_response
+
     # Lưu history với text gốc (không có context inject)
-    _remember_turn(sid, history, msg.text, response)
+    _remember_turn(sid, msg.text, response)
 
     return {
         "session_id": sid,
@@ -940,7 +1006,7 @@ async def create_quiz(req: QuizRequest):
         retrieved_content, retrieved_sources = await _search_kb_context(
             query=topic_label,
             kb_filter=kb_filter,
-            n_results=5,
+            n_results=DEFAULT_KB_RESULTS,
         )
     quiz_content = content or retrieved_content
 
@@ -1103,10 +1169,18 @@ def list_subjects():
 @app.delete("/history")
 def clear_history(session_id: Optional[str] = None):
     if session_id:
-        sessions.pop(session_id, None)
-        return {"message": f"Đã xóa session {session_id}"}
-    sessions.clear()
-    return {"message": "Đã xóa tất cả sessions"}
+        deleted = chat_store.clear(session_id)
+        return {"message": f"Đã xóa session {session_id}", "deleted": deleted}
+    deleted = chat_store.clear()
+    return {"message": "Đã xóa tất cả sessions", "deleted": deleted}
+
+
+@app.get("/history/{session_id}")
+def get_history(session_id: str, limit: int = 100):
+    return {
+        "session_id": session_id,
+        "messages": chat_store.get_messages(session_id, limit=limit),
+    }
 
 
 # ── AGENTS ─────────────────────────────────────────────

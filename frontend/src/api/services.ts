@@ -648,8 +648,8 @@ export const chatApi = {
   recall: (groupId: string, messageId: string) =>
     api.post(`/groups/${groupId}/chat/${messageId}/recall`).then(r => d<ChatMessage>(r)),
 
-  askAI: (groupId: string, question: string) =>
-    api.post(`/groups/${groupId}/chat/ai`, { question }).then(r => d<ChatMessage>(r)),
+  askAI: (groupId: string, question: string, apiKey?: string) =>
+    api.post(`/groups/${groupId}/chat/ai`, { question, apiKey }).then(r => d<ChatMessage>(r)),
 
   uploadImage: (file: File) => {
     const fd = new FormData()

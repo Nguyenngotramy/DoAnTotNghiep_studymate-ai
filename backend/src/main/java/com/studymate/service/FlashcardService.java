@@ -126,6 +126,38 @@ public class FlashcardService {
         return deckRepo.save(deck);
     }
 
+    public FlashcardDeck createAiDeckFromChat(
+            String userId,
+            String title,
+            String description,
+            List<Map<String, String>> cardsInput
+    ) {
+        if (title == null || title.isBlank()) {
+            throw new RuntimeException("Ten bo the khong duoc de trong");
+        }
+
+        List<FlashcardDeck.Card> cards = mapCards(cardsInput);
+        if (cards.isEmpty()) {
+            throw new RuntimeException("JSON flashcard khong co the hop le");
+        }
+
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay nguoi dung"));
+
+        FlashcardDeck deck = FlashcardDeck.builder()
+                .title(title.trim())
+                .description(description == null ? "" : description.trim())
+                .folderId(null)
+                .createdById(userId)
+                .createdByName(user.getFullName())
+                .aiGenerated(true)
+                .sourceType(FlashcardDeck.SourceType.PERSONAL)
+                .cards(cards)
+                .build();
+
+        return deckRepo.save(deck);
+    }
+
     public FlashcardDeck saveAiDeckFromDocument(
             String userId,
             String docId,

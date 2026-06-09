@@ -39,7 +39,43 @@ services:
       timeout: 10s
       retries: 3
 
-  # ── Spring Boot Backend ───────────────────────────────
+  # AI Agent Service
+  ai-agent:
+    build:
+      context: ./ai_agent
+      dockerfile: Dockerfile
+    container_name: studymate-ai-agent
+    restart: unless-stopped
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MODEL=${AI_AGENT_MODEL:-anthropic/claude-haiku-4-5}
+      - STUDYMIND_DB_PATH=/app/studymind_db
+      - CHAT_DB_PATH=/app/data/chat_history.sqlite3
+      - MAX_SESSION_MESSAGES=${MAX_SESSION_MESSAGES:-40}
+      - CHAT_HISTORY_FOR_LLM=${CHAT_HISTORY_FOR_LLM:-8}
+      - MAX_PROMPT_CHARS=${MAX_PROMPT_CHARS:-14000}
+      - MAX_MESSAGE_CHARS=${MAX_MESSAGE_CHARS:-3500}
+      - DEFAULT_KB_RESULTS=${DEFAULT_KB_RESULTS:-3}
+      - MAX_KB_CONTEXT_CHARS=${MAX_KB_CONTEXT_CHARS:-4500}
+      - MAX_KB_SOURCE_CHARS=${MAX_KB_SOURCE_CHARS:-1200}
+      - LLM_MAX_OUTPUT_TOKENS=${LLM_MAX_OUTPUT_TOKENS:-900}
+      - LLM_CONCURRENCY_LIMIT=${LLM_CONCURRENCY_LIMIT:-12}
+      - LLM_REQUEST_TIMEOUT=${LLM_REQUEST_TIMEOUT:-60}
+      - UVICORN_WORKERS=${AI_AGENT_WORKERS:-2}
+    ports:
+      - "8001:8001"
+    volumes:
+      - ai_agent_db:/app/studymind_db
+      - ai_agent_data:/app/data
+    networks:
+      - studymate-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Spring Boot Backend
   backend:
     build:
       context: ./backend  # 🛠 SỬA LỖI: Trỏ đúng vào thư mục chứa dự án backend
@@ -48,16 +84,19 @@ services:
     restart: unless-stopped
     depends_on:
       mongodb:
-        condition: service_healthy # Chỉ chạy backend khi DB đã SẴN SÀNG
+        condition: service_healthy
       ml-service:
-        condition: service_healthy # Chỉ chạy backend khi ML Service đã SẴN SÀNG
+        condition: service_healthy
+      ai-agent:
+        condition: service_healthy
     environment:
-      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/studymate # 🛠 SỬA LỖI: Đúng chuẩn Spring Boot
+      - MONGO_URI=mongodb://mongodb:27017/studymate
       - ML_SERVICE_URL=http://ml-service:8000
+      - AI_AGENT_URL=http://ai-agent:8001
       - JWT_SECRET=StudyMateAI_SuperSecretKey_2024_MustBe256BitsLong_DoNotUseInProd
       - ADMIN_EMAIL=admin@studymate.com
       - ADMIN_PASSWORD=Admin@2024!
-      - APP_UPLOAD_DIR=/app/uploads # 🛠 SỬA LỖI: Khớp với tên @Value("${app.upload.dir}") trong code Java của bạn
+      - UPLOAD_DIR=/app/uploads
     ports:
       - "8080:8080"
     volumes:
@@ -84,6 +123,8 @@ services:
 volumes:
   mongo_data:
   uploads_data:
+  ai_agent_db:
+  ai_agent_data:
 
 networks:
   studymate-net:

@@ -122,6 +122,38 @@ public class QuizService {
         return quizSetRepo.save(quizSet);
     }
 
+    public QuizSet createAiQuizFromChat(
+            String userId,
+            String title,
+            String description,
+            List<Map<String, Object>> questionsInput
+    ) {
+        if (title == null || title.isBlank()) {
+            throw new RuntimeException("Ten bo quiz khong duoc de trong");
+        }
+
+        List<QuizSet.Question> questions = mapQuestions(questionsInput);
+        if (questions.isEmpty()) {
+            throw new RuntimeException("JSON quiz khong co cau hoi hop le");
+        }
+
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay nguoi dung"));
+
+        QuizSet quizSet = QuizSet.builder()
+                .title(title.trim())
+                .description(description == null ? "" : description.trim())
+                .folderId(null)
+                .createdById(userId)
+                .createdByName(user.getFullName())
+                .aiGenerated(true)
+                .sourceType(QuizSet.SourceType.PERSONAL)
+                .questions(questions)
+                .build();
+
+        return quizSetRepo.save(quizSet);
+    }
+
     public QuizSet saveAiQuizFromDocument(
             String userId,
             String docId,
