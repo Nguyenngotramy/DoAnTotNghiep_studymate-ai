@@ -80,6 +80,8 @@ app:
 
   ai-agent:
     url: ${AI_AGENT_URL:${ML_SERVICE_URL}}
+    service-key: ${AI_AGENT_SERVICE_KEY:}
+    timeout-seconds: ${AI_AGENT_TIMEOUT_SECONDS:45}
 
   upload:
     dir: ${UPLOAD_DIR:./uploads}
@@ -133,6 +135,9 @@ logging:
     org.apache.catalina.connector.Request: DEBUG
 
 management:
+  health:
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:

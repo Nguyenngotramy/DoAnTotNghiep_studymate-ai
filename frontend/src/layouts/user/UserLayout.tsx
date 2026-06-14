@@ -65,7 +65,7 @@ const QUICK_LINKS = [
   { label: 'Nhóm của tôi', to: '/groups', icon: UsersRound, color: '#14b8a6' },
   { label: 'Flashcard', to: '/flashcard', icon: Layers, color: '#f59e0b' },
   { label: 'Học tập cá nhân', to: '/study-drive', icon: FolderOpen, color: '#22c55e' },
-  { label: 'Dự đoán học lực', to: '/predict', icon: BrainCircuit, color: '#8b5cf6' },
+  { label: 'Đề xuất ngành học', to: '/predict', icon: BrainCircuit, color: '#8b5cf6' },
 ]
 
 function SearchModal({ onClose }: { onClose: () => void }) {
@@ -480,7 +480,7 @@ export default function UserLayout() {
           <NavItem to="/flashcard" icon={Layers} label="Flashcard" />
           <NavItem to="/quiz" icon={HelpCircle} label="Quiz" />
           <NavItem to="/statistics" icon={BarChart2} label="Thống kê" />
-          <NavItem to="/predict" icon={BrainCircuit} label="Dự đoán học lực" />
+          <NavItem to="/predict" icon={BrainCircuit} label="Đề xuất ngành học" />
 
           <NavSection title="Tài khoản" />
           <NavItem to="/profile" icon={User} label="Hồ sơ cá nhân" />

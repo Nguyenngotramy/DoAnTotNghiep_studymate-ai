@@ -29,6 +29,7 @@ public class QuizService {
     private final StudyDocumentRepository docRepo;
     private final GroupRepository groupRepo;
     private final UserRepository userRepo;
+    private final StreakService streakService;
 
     public List<QuizSet> listQuizSets(
             String userId,
@@ -254,6 +255,7 @@ public class QuizService {
         }
 
         mistakeRepo.save(mistake);
+        streakService.applyStudyStreak(userId);
     }
 
     public List<String> getWeakQuestionIds(String userId, String quizId) {

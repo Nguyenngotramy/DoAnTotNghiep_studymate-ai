@@ -53,6 +53,8 @@ public class ChatMessage {
     private Instant recalledAt;
     private String recalledBy;
 
+    private TaskProposal taskProposal;
+
     @CreatedDate
     private Instant createdAt;
 
@@ -95,5 +97,42 @@ public class ChatMessage {
 
         @Builder.Default
         private List<Attachment> attachments = new ArrayList<>();
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TaskProposal {
+        private String summary;
+
+        @Builder.Default
+        private ProposalStatus status = ProposalStatus.PENDING;
+
+        @Builder.Default
+        private List<ProposedTask> tasks = new ArrayList<>();
+
+        @Builder.Default
+        private List<String> createdTaskIds = new ArrayList<>();
+
+        private String approvedBy;
+        private Instant approvedAt;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ProposedTask {
+        private String title;
+        private String description;
+        private String priority;
+        private String assigneeId;
+        private String assigneeName;
+        private Instant deadline;
+    }
+
+    public enum ProposalStatus {
+        PENDING, APPROVED
     }
 }

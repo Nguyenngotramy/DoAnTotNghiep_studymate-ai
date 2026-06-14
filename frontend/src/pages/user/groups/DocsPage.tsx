@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { documentApi, flashcardApi, quizApi, summaryApi, postApi, groupApi } from '@/api/services'
+import { documentApi, flashcardApi, quizApi, postApi, groupApi } from '@/api/services'
 import type { Document, Flashcard, QuizQuestion, FlashcardFolder, QuizFolder, Post } from '@/types'
 import {
   Upload,
@@ -23,6 +23,8 @@ import {
   Pencil,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { withAiConfig } from '@/utils/aiConfig'
+import { addNote } from '@/utils/notesStorage'
 
 // ─────────────────────────────────────────
 // CONSTANTS
@@ -75,7 +77,7 @@ async function backendSummary(
   const res = await fetch(`${BACKEND_URL}/summary`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    body: JSON.stringify(withAiConfig({
       topic:     docTopic || doc.name,
       filename:  doc.name,
       file_url: doc.fileUrl,
@@ -84,7 +86,7 @@ async function backendSummary(
       style,
       length,
       blog_context: blogContext || undefined,
-    }),
+    })),
   })
   if (!res.ok) throw new Error(await res.text())
   const data = await res.json()
@@ -117,7 +119,7 @@ async function backendFlashcard(
   const res = await fetch(`${BACKEND_URL}/flashcard`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    body: JSON.stringify(withAiConfig({
       topic:     docTopic || doc.name,
       filename:  doc.name,
       file_url: doc.fileUrl,
@@ -126,7 +128,7 @@ async function backendFlashcard(
       card_type,
       num_cards,
       format: 'qa',
-    }),
+    })),
   })
   if (!res.ok) throw new Error(await res.text())
   const data = await res.json()
@@ -150,7 +152,7 @@ async function backendQuiz(
   const res = await fetch(`${BACKEND_URL}/quiz`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    body: JSON.stringify(withAiConfig({
       topic:     docTopic || doc.name,
       filename:  doc.name,
       file_url: doc.fileUrl,
@@ -158,12 +160,15 @@ async function backendQuiz(
       doc_topic: docTopic,
       bloom_level,
       num_questions,
-    }),
+    })),
   })
   if (!res.ok) throw new Error(await res.text())
   const data = await res.json()
   if (data.pipeline === 'vocabulary_json' && data.vocabulary?.vocabulary?.length) {
     toast.success(`Quiz từ ${data.vocabulary.vocabulary.length} từ vựng JSON`)
+  }
+  if (Number(data.num_questions) < num_questions) {
+    toast(`AI tạo được ${data.num_questions}/${num_questions} câu hợp lệ; câu trùng hoặc lỗi đã được loại bỏ.`)
   }
   return (data.questions as Record<string, unknown>[]).map((q, i) => ({
     id: String(i),
@@ -191,12 +196,12 @@ async function backendChat(
   const res = await fetch(`${BACKEND_URL}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    body: JSON.stringify(withAiConfig({
       text: `[Tài liệu: ${doc.name}]\nFile URL: ${doc.fileUrl ?? ''}\n\nCâu hỏi: ${question}`,
       session_id: sessionId,
       subject,
       doc_topic: docTopic,
-    }),
+    })),
   })
   if (!res.ok) throw new Error(await res.text())
   return res.json()
@@ -207,12 +212,13 @@ type DocChatMessage = {
   text: string
   agent?: string
   structured?: ChatApiResult['structured']
+  autoSaved?: boolean
 }
 
 const DOC_CHAT_PROMPTS = [
   { label: 'Giải thích', text: 'Giải thích nội dung chính của tài liệu này' },
   { label: 'Phân tích KT', text: 'Phân tích vấn đề trong tài liệu theo Kepner-Tregoe (IS/IS NOT)' },
-  { label: 'Tạo quiz', text: 'Tạo 5 câu quiz trắc nghiệm từ tài liệu mức understand' },
+  { label: 'Tạo quiz', text: 'Tạo 20 câu quiz trắc nghiệm từ tài liệu mức understand' },
   { label: 'Flashcard', text: 'Tạo 6 flashcard từ khái niệm trong tài liệu' },
 ]
 
@@ -349,7 +355,7 @@ function AiOptionsModal({
   const [cardType,  setCardType]  = useState('mixed')
   const [numCards,  setNumCards]  = useState(6)
   const [bloom,     setBloom]     = useState('understand')
-  const [numQ,      setNumQ]      = useState(5)
+  const [numQ,      setNumQ]      = useState(20)
   const [includeBlogs, setIncludeBlogs] = useState(false)
   const [blogTag,   setBlogTag]   = useState('')
 
@@ -498,7 +504,7 @@ function AiOptionsModal({
                   className="w-full h-10 rounded-xl px-3 outline-none text-[13px]"
                   style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
                 >
-                  {[3, 5, 7, 10, 12, 15].map(n => (
+                  {[5, 10, 15, 20, 25, 30].map(n => (
                     <option key={n} value={n}>{n} câu</option>
                   ))}
                 </select>
@@ -582,7 +588,7 @@ function SummaryModal({
               style={{ background: '#6366f1', color: '#fff' }}
             >
               <Save size={14} />
-              {saving ? 'Đang lưu...' : 'Lưu bản tóm tắt'}
+              {saving ? 'Đang lưu...' : 'Lưu vào Ghi chú'}
             </button>
           )}
           <button
@@ -1109,13 +1115,22 @@ function ChatDocModal({
               >
                 {m.text}
               </div>
-              {m.structured && (
+              {m.structured && !m.autoSaved && (
                 <button
                   onClick={() => onSaveStructured(m)}
                   className="block mt-1.5 text-[11px] px-2 py-1 rounded-lg"
                   style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}
                 >
                   💾 Lưu {m.structured.type === 'quiz' ? 'quiz' : 'flashcard'}
+                </button>
+              )}
+              {m.structured?.type === 'quiz' && m.autoSaved && (
+                <button
+                  onClick={() => { window.location.href = '/quiz' }}
+                  className="block mt-1.5 text-[11px] px-2 py-1 rounded-lg"
+                  style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80' }}
+                >
+                  ✓ Đã lưu · Mở Quiz
                 </button>
               )}
             </div>
@@ -1410,15 +1425,6 @@ export default function DocsPage() {
     onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Không thể lưu quiz'),
   })
 
-  const saveSummaryMut = useMutation({
-    mutationFn: summaryApi.saveFromDocument,
-    onSuccess: () => {
-      toast.success('Đã lưu bản tóm tắt')
-      qc.invalidateQueries({ queryKey: ['saved-summaries'] })
-    },
-    onError: (e: any) => toast.error(e?.response?.data?.message ?? 'Không thể lưu tóm tắt'),
-  })
-
   const labelMut = useMutation({
     mutationFn: ({ docId, topicLabel }: { docId: string; topicLabel: string }) =>
       documentApi.updateLabel(groupId, docId, topicLabel),
@@ -1554,11 +1560,25 @@ export default function DocsPage() {
     try {
       const data = await backendChat(chatDoc, question, groupSubject, docTopic, chatSessionId)
       if (data.session_id) setChatSessionId(data.session_id)
+      let autoSaved = false
+      if (data.structured) {
+        try {
+          autoSaved = await saveChatStructured({
+            role: 'assistant',
+            text: data.response,
+            agent: data.agent,
+            structured: data.structured,
+          })
+        } catch {
+          autoSaved = false
+        }
+      }
       setChatMessages(prev => [...prev, {
         role: 'assistant',
         text: data.response,
         agent: data.agent,
         structured: data.structured,
+        autoSaved,
       }])
     } catch (e: unknown) {
       toast.error(parseApiError(e))
@@ -1567,8 +1587,8 @@ export default function DocsPage() {
     }
   }
 
-  const saveChatStructured = (msg: DocChatMessage) => {
-    if (!chatDoc || !msg.structured) return
+  const saveChatStructured = async (msg: DocChatMessage): Promise<boolean> => {
+    if (!chatDoc || !msg.structured) return false
     if (msg.structured.type === 'quiz') {
       const questions = msg.structured.items.map((item: Record<string, unknown>) => ({
         question: String(item.question ?? ''),
@@ -1576,7 +1596,7 @@ export default function DocsPage() {
         correctIndex: Number(item.correct_index ?? item.correctIndex ?? 0),
         explanation: String(item.explanation ?? ''),
       }))
-      saveQuizMut.mutate({
+      await saveQuizMut.mutateAsync({
         docId: chatDoc.id,
         title: `Quiz chat - ${chatDoc.name}`,
         questions,
@@ -1586,12 +1606,13 @@ export default function DocsPage() {
         question: String(item.front ?? item.question ?? ''),
         answer: String(item.back ?? item.answer ?? ''),
       }))
-      saveFlashcardMut.mutate({
+      await saveFlashcardMut.mutateAsync({
         docId: chatDoc.id,
         title: `Flashcard chat - ${chatDoc.name}`,
         cards,
       })
     }
+    return true
   }
 
   // ── Render ───────────────────────────────────────────────────
@@ -1804,18 +1825,14 @@ export default function DocsPage() {
         <SummaryModal
           docName={summaryDocName}
           summary={summaryText}
-          saving={saveSummaryMut.isPending}
-          onSave={summarySourceDoc ? () =>
-            saveSummaryMut.mutate({
-              docId: summarySourceDoc.id,
+          saving={false}
+          onSave={summarySourceDoc ? () => {
+            addNote({
               title: `Tóm tắt - ${summarySourceDoc.name}`,
               content: summaryText,
-              style: summaryStyle,
-              length: summaryLength,
-              blogAppendix: summaryBlogMeta.appendix,
-              relatedBlogTitles: summaryBlogMeta.titles,
             })
-          : undefined}
+            toast.success('Đã lưu bản tóm tắt vào Ghi chú')
+          } : undefined}
           onClose={() => {
             setSummaryDocName('')
             setSummaryText('')

@@ -55,7 +55,7 @@ function Logo() {
 }
 
 const FEATURES = [
-  { icon: Brain, text: 'AI dự đoán học lực & lập kế hoạch cá nhân', color: '#8b5cf6' },
+  { icon: Brain, text: 'Gợi ý ngành học theo điểm số & sở thích', color: '#8b5cf6' },
   { icon: Users, text: 'Học nhóm thông minh với Kanban & Chat AI', color: '#14b8a6' },
   { icon: BookOpen, text: 'Flashcard, Quiz tự động từ tài liệu', color: '#f59e0b' },
   { icon: Trophy, text: 'Bảng xếp hạng XP & streak hàng ngày', color: '#ec4899' },

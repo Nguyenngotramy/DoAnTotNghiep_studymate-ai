@@ -1,10 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import { quizApi, flashcardApi } from "@/api/services";
+import {
+  clearAiConfig,
+  getAiConfig,
+  loadAiProviders,
+  saveAiConfig,
+  validateAiConfig,
+  withAiConfig,
+} from "@/utils/aiConfig";
+import { useAuthStore } from "@/store/authStore";
 
 const API_URL = "/ai-agent";
 const SESSION_KEY = "studymind_chat_session";
-const USER_API_KEY_STORAGE = "studymind_user_openrouter_key";
 
 const AGENT_MAP = {
   TutorAgent: "Tutor",
@@ -12,6 +20,7 @@ const AGENT_MAP = {
   GroupAgent: "Group",
   SummaryAgent: "Summary",
   FlashcardAgent: "Flashcard",
+  VocabularyAgent: "Vocabulary",
   KepnerTregoeAgent: "KT",
 };
 
@@ -83,6 +92,61 @@ function ThinkingBubble() {
   );
 }
 
+function StructuredPreview({ structured }) {
+  if (!structured?.items?.length) return null;
+
+  if (structured.type === "flashcard") {
+    return (
+      <div style={{ display: "grid", gap: 7 }}>
+        {structured.items.map((item, index) => (
+          <div key={`${item.front || item.question}-${index}`} style={{
+            padding: "9px 10px",
+            borderRadius: 8,
+            background: "#101010",
+            border: "1px solid #2a2a2a",
+          }}>
+            <div style={{ color: "#a78bfa", fontWeight: 600, marginBottom: 3 }}>
+              {index + 1}. {item.front || item.question}
+            </div>
+            <div style={{ color: "#ddd", whiteSpace: "pre-line" }}>
+              {item.back || item.answer}
+            </div>
+            {item.hint && (
+              <div style={{ color: "#666", fontSize: 11, marginTop: 3 }}>
+                Gợi ý: {item.hint}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (structured.type === "quiz") {
+    return (
+      <div style={{ display: "grid", gap: 7 }}>
+        {structured.items.map((item, index) => (
+          <div key={`${item.question}-${index}`} style={{
+            padding: "9px 10px",
+            borderRadius: 8,
+            background: "#101010",
+            border: "1px solid #2a2a2a",
+          }}>
+            <div style={{ color: "#a78bfa", fontWeight: 600 }}>
+              {index + 1}. {item.question}
+            </div>
+            <div style={{ color: "#aaa", fontSize: 11, marginTop: 3 }}>
+              {(item.options || []).join(" · ")}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return null;
+}
+
 function Message({ msg, onSaveStructured }) {
   const isUser = msg.role === "user";
   return (
@@ -109,17 +173,25 @@ function Message({ msg, onSaveStructured }) {
           {msg.badge}
         </div>
       )}
-      <div
-        style={{
-          padding: "10px 14px", fontSize: 13, lineHeight: 1.7,
-          borderRadius: isUser ? "10px 10px 2px 10px" : "2px 10px 10px 10px",
-          background: isUser ? "#1a1525" : "#141414",
-          border: isUser ? "1px solid #2d1f4e" : "1px solid #2a2a2a",
-          color: "#e8e0d0",
-          wordBreak: "break-word",
-        }}
-        dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}
-      />
+      <div style={{
+        padding: "10px 14px", fontSize: 13, lineHeight: 1.7,
+        borderRadius: isUser ? "10px 10px 2px 10px" : "2px 10px 10px 10px",
+        background: isUser ? "#1a1525" : "#141414",
+        border: isUser ? "1px solid #2d1f4e" : "1px solid #2a2a2a",
+        color: "#e8e0d0",
+        wordBreak: "break-word",
+      }}>
+        {msg.structured ? (
+          <>
+            <div style={{ marginBottom: 8 }}>
+              Đã tạo {msg.structured.items?.length || 0} {msg.structured.type === "quiz" ? "câu quiz" : "flashcard"}.
+            </div>
+            <StructuredPreview structured={msg.structured} />
+          </>
+        ) : (
+          <div dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
+        )}
+      </div>
       {msg.structured && !msg.autoSaved && onSaveStructured && (
         <button
           onClick={() => onSaveStructured(msg)}
@@ -132,27 +204,52 @@ function Message({ msg, onSaveStructured }) {
           💾 Lưu {msg.structured.type === "quiz" ? "quiz" : "flashcard"}
         </button>
       )}
+      {msg.savedResource?.type === "quiz" && (
+        <button
+          onClick={() => { window.location.href = "/quiz"; }}
+          style={{
+            marginTop: 6, marginLeft: 6, fontSize: 11, padding: "4px 10px", borderRadius: 6,
+            background: "rgba(34,197,94,0.12)", color: "#4ade80",
+            border: "1px solid rgba(34,197,94,0.3)", cursor: "pointer",
+          }}
+        >
+          ✓ Da luu · Mo Quiz
+        </button>
+      )}
     </div>
   );
 }
 
-async function persistStructured(structured, showSuccess = true) {
-  if (!structured?.items?.length) return false;
+async function persistStructured(structured, sourceText = "", showSuccess = true) {
+  if (!structured?.items?.length) return null;
 
   if (structured.type === "quiz") {
-    const questions = structured.items.map((item) => ({
-      question: item.question ?? "",
-      options: item.options ?? [],
-      correctIndex: item.correctIndex ?? item.correct_index ?? 0,
-      explanation: item.explanation ?? "",
-    }));
-    await quizApi.createPersonalQuizSet({
-      title: `Quiz chat ${new Date().toLocaleDateString("vi")}`,
+    const questions = structured.items
+      .map((item) => ({
+        question: String(item.question ?? "").trim(),
+        options: Array.isArray(item.options)
+          ? item.options.map((option) => String(option).trim()).filter(Boolean)
+          : [],
+        correctIndex: Number(item.correctIndex ?? item.correct_index ?? 0),
+        explanation: String(item.explanation ?? "").trim(),
+      }))
+      .filter((item) => (
+        item.question
+        && item.options.length >= 2
+        && Number.isInteger(item.correctIndex)
+        && item.correctIndex >= 0
+        && item.correctIndex < item.options.length
+      ));
+    if (!questions.length) throw new Error("Quiz khong co cau hoi hop le de luu.");
+
+    const topic = sourceText.replace(/\s+/g, " ").trim().slice(0, 60);
+    const saved = await quizApi.saveFromChat({
+      title: topic ? `Quiz AI - ${topic}` : `Quiz AI ${new Date().toLocaleDateString("vi")}`,
       description: "Tu dong tao va luu tu StudyMate AI chat",
       questions,
     });
     if (showSuccess) toast.success("Da tu dong luu quiz");
-    return true;
+    return { type: "quiz", id: saved.id };
   }
 
   if (structured.type === "flashcard") {
@@ -160,19 +257,20 @@ async function persistStructured(structured, showSuccess = true) {
       question: item.question ?? item.front ?? "",
       answer: item.answer ?? item.back ?? "",
     }));
-    await flashcardApi.createPersonalDeck({
+    const saved = await flashcardApi.createPersonalDeck({
       title: `Flashcard chat ${new Date().toLocaleDateString("vi")}`,
       description: "Tu dong tao va luu tu StudyMate AI chat",
       cards,
     });
     if (showSuccess) toast.success("Da tu dong luu flashcard");
-    return true;
+    return { type: "flashcard", id: saved.id };
   }
 
-  return false;
+  return null;
 }
 
 export default function FloatingAgent() {
+  const user = useAuthStore((state) => state.user);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -180,7 +278,9 @@ export default function FloatingAgent() {
   const [activeAgent, setActiveAgent] = useState(null);
   const [unread, setUnread] = useState(0);
   const [showQuick, setShowQuick] = useState(true);
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem(USER_API_KEY_STORAGE) || "");
+  const [aiConfig, setAiConfig] = useState(() => getAiConfig());
+  const [providers, setProviders] = useState([]);
+  const [validatingKey, setValidatingKey] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
 
   const [sessionId, setSessionId] = useState(() => localStorage.getItem(SESSION_KEY) || "");
@@ -198,6 +298,10 @@ export default function FloatingAgent() {
       setTimeout(() => textareaRef.current?.focus(), 300);
     }
   }, [open]);
+
+  useEffect(() => {
+    loadAiProviders().then(setProviders).catch(() => setProviders([]));
+  }, []);
 
   const sendMessage = useCallback(async (text) => {
     const msg = (text ?? input).trim();
@@ -217,11 +321,12 @@ export default function FloatingAgent() {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: JSON.stringify(withAiConfig({
           text: msg,
           session_id: sessionId || undefined,
-          api_key: apiKey.trim() || undefined,
-        }),
+          account_id: user?.id || undefined,
+          tenant_id: user?.id ? `user:${user.id}` : undefined,
+        })),
       });
       const data = await res.json();
       if (data.session_id) {
@@ -229,10 +334,10 @@ export default function FloatingAgent() {
         localStorage.setItem(SESSION_KEY, data.session_id);
       }
 
-      let autoSaved = false;
+      let savedResource = null;
       if (data.structured?.type === "quiz" || data.structured?.type === "flashcard") {
         try {
-          autoSaved = await persistStructured(data.structured);
+          savedResource = await persistStructured(data.structured, msg);
         } catch (error) {
           toast.error(error?.response?.data?.message ?? "Khong the tu dong luu. Hay dang nhap va thu lai.");
         }
@@ -246,7 +351,8 @@ export default function FloatingAgent() {
           text: data.response ?? "Không có phản hồi.",
           badge: data.agent ? AGENT_MAP[data.agent] ?? data.agent : null,
           structured: data.structured ?? null,
-          autoSaved,
+          autoSaved: Boolean(savedResource),
+          savedResource,
           time: timeNow(),
         },
       ]);
@@ -268,18 +374,30 @@ export default function FloatingAgent() {
 
     setLoading(false);
     setTimeout(() => setActiveAgent(null), 2000);
-  }, [apiKey, input, loading, open, sessionId]);
+  }, [input, loading, open, sessionId, user?.id]);
 
-  const saveApiKey = () => {
-    const value = apiKey.trim();
-    if (value) {
-      localStorage.setItem(USER_API_KEY_STORAGE, value);
+  const saveProviderConfig = async () => {
+    if (!aiConfig.api_key.trim()) {
+      clearAiConfig();
+      setAiConfig(getAiConfig());
+      toast.success("Đã dùng lại hạn mức AI miễn phí của hệ thống");
+      return;
+    }
+    setValidatingKey(true);
+    try {
+      const validated = await validateAiConfig({ ...aiConfig, validated: false });
+      saveAiConfig(validated);
+      setAiConfig(validated);
       toast.success("Đã lưu API key trên trình duyệt của bạn");
-    } else {
-      localStorage.removeItem(USER_API_KEY_STORAGE);
-      toast.success("Đã xóa API key cá nhân");
+    } catch (error) {
+      setAiConfig((current) => ({ ...current, validated: false }));
+      toast.error(error instanceof Error ? error.message : "Không xác thực được API key");
+    } finally {
+      setValidatingKey(false);
     }
   };
+
+  const selectedProvider = providers.find((item) => item.id === aiConfig.provider);
 
   const saveStructured = async (msg) => {
     if (!msg.structured) return;
@@ -497,7 +615,8 @@ export default function FloatingAgent() {
               title="API key cá nhân"
               style={{
                 background: "none", border: "none", cursor: "pointer",
-                color: apiKey.trim() ? "#7c3aed" : "#444", padding: 4, borderRadius: 6,
+                color: aiConfig.validated ? "#22c55e" : aiConfig.api_key ? "#f59e0b" : "#444",
+                padding: 4, borderRadius: 6,
                 transition: "color 0.15s", display: "flex", alignItems: "center",
                 fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
               }}
@@ -527,41 +646,78 @@ export default function FloatingAgent() {
               padding: "10px 14px",
               borderBottom: "1px solid #1e1e1e",
               background: "#101010",
-              display: "flex",
+              display: "grid",
               gap: 8,
-              alignItems: "center",
             }}>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="OpenRouter API key cá nhân"
-                style={{
-                  flex: 1,
-                  background: "#0b0b0b",
-                  border: "1px solid #2a2a2a",
-                  borderRadius: 8,
-                  color: "#ddd",
-                  padding: "8px 10px",
-                  fontSize: 11,
-                  fontFamily: "'IBM Plex Mono', monospace",
-                }}
-              />
-              <button
-                onClick={saveApiKey}
-                style={{
-                  background: "#7c3aed",
-                  border: "none",
-                  color: "#fff",
-                  borderRadius: 8,
-                  padding: "8px 10px",
-                  fontSize: 11,
-                  cursor: "pointer",
-                  fontFamily: "'IBM Plex Mono', monospace",
-                }}
-              >
-                Lưu
-              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <select
+                  value={aiConfig.provider}
+                  onChange={(e) => {
+                    const provider = providers.find((item) => item.id === e.target.value);
+                    setAiConfig((current) => ({
+                      ...current,
+                      provider: e.target.value,
+                      model: provider?.default_model || "",
+                      validated: false,
+                    }));
+                  }}
+                  style={{ flex: 1, background: "#0b0b0b", color: "#ddd", border: "1px solid #2a2a2a", borderRadius: 8, padding: 8 }}
+                >
+                  {providers.map((provider) => (
+                    <option key={provider.id} value={provider.id}>{provider.name}</option>
+                  ))}
+                </select>
+                <select
+                  value={aiConfig.model}
+                  onChange={(e) => setAiConfig((current) => ({ ...current, model: e.target.value, validated: false }))}
+                  style={{ flex: 1.4, background: "#0b0b0b", color: "#ddd", border: "1px solid #2a2a2a", borderRadius: 8, padding: 8 }}
+                >
+                  {(selectedProvider?.models || []).map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.name}{model.tier === "free" ? " (free)" : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="password"
+                  value={aiConfig.api_key}
+                  onChange={(e) => setAiConfig((current) => ({ ...current, api_key: e.target.value, validated: false }))}
+                  placeholder={aiConfig.provider === "anthropic" ? "Anthropic key (sk-ant-...)" : "OpenRouter key (sk-or-...)"}
+                  style={{
+                    flex: 1,
+                    background: "#0b0b0b",
+                    border: "1px solid #2a2a2a",
+                    borderRadius: 8,
+                    color: "#ddd",
+                    padding: "8px 10px",
+                    fontSize: 11,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                  }}
+                />
+                <button
+                  onClick={saveProviderConfig}
+                  disabled={validatingKey}
+                  style={{
+                    background: "#7c3aed",
+                    border: "none",
+                    color: "#fff",
+                    borderRadius: 8,
+                    padding: "8px 10px",
+                    fontSize: 11,
+                    cursor: validatingKey ? "wait" : "pointer",
+                    fontFamily: "'IBM Plex Mono', monospace",
+                  }}
+                >
+                  {validatingKey ? "Kiểm tra..." : "Lưu"}
+                </button>
+              </div>
+              <div style={{ color: aiConfig.validated ? "#22c55e" : "#666", fontSize: 10 }}>
+                {aiConfig.validated
+                  ? "Đã xác thực. Key này được dùng cho chat, tài liệu, quiz, flashcard và từ vựng."
+                  : "Để trống key để dùng hạn mức free của hệ thống."}
+              </div>
             </div>
           )}
 

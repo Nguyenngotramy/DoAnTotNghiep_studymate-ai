@@ -1,52 +1,58 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
 import path from 'path'
+import react from '@vitejs/plugin-react'
+import { defineConfig, loadEnv } from 'vite'
 
-export default defineConfig({
-  plugins: [react()],
-  define: {
-    global: 'globalThis',
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+export default defineConfig(({ mode }) => {
+  const rootEnv = loadEnv(mode, path.resolve(__dirname, '..'), '')
+  const aiAgentDevUrl = rootEnv.AI_AGENT_DEV_URL || 'http://localhost:3000'
+
+  return {
+    plugins: [react()],
+    define: {
+      global: 'globalThis',
     },
-  },
-
-  server: {
-    port: 5174,
-    proxy: {
-      // REST API → Spring Boot backend
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      // WebSocket STOMP + SockJS
-      '/ws': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        ws: true,
-        rewriteWsOrigin: true,
-        secure: false,
-      },
-      // Static uploads từ backend
-      '/uploads': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      // OAuth2 Google flow — Spring Security xử lý TẠI BACKEND
-      // CHỈ proxy /login/oauth2 (bắt đầu flow Google)
-      // KHÔNG proxy /oauth2/callback (React Router xử lý trang này)
-      '/login/oauth2': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-  },
-
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
-    chunkSizeWarningLimit: 2000,
-  },
+    server: {
+      port: 5174,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+        },
+        // Keep the service key in the Vite server, never in browser code.
+        '/ai-agent': {
+          target: aiAgentDevUrl,
+          changeOrigin: true,
+          headers: {
+            'X-AI-Service-Key': rootEnv.AI_AGENT_SERVICE_KEY || '',
+          },
+          rewrite: (requestPath) => requestPath.replace(/^\/ai-agent/, ''),
+        },
+        '/ws': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          ws: true,
+          rewriteWsOrigin: true,
+          secure: false,
+        },
+        '/uploads': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+        },
+        '/login/oauth2': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+        },
+      },
+    },
+    build: {
+      outDir: 'dist',
+      sourcemap: false,
+      chunkSizeWarningLimit: 2000,
+    },
+  }
 })

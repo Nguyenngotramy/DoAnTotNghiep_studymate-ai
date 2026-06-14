@@ -19,9 +19,20 @@ import os
 import json
 import asyncio
 import logging
+from types import SimpleNamespace
 from contextvars import ContextVar
+from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
+from llm_capacity import llm_capacity_slot
+from llm_runtime import (
+    LLM_MAX_RETRIES,
+    LLM_REQUEST_TIMEOUT_SECONDS,
+    LLM_TURN_TIMEOUT_SECONDS,
+    LLMTurnTimeoutError,
+    record_provider_failure,
+    record_provider_success,
+)
 
 # Context theo request — tránh race khi nhiều user dùng chung singleton agent
 _request_context: ContextVar[dict] = ContextVar("request_context", default={})
@@ -32,6 +43,22 @@ from knowledge_base import search as kb_search
 
 logger = logging.getLogger(__name__)
 
+
+def _parse_tool_arguments(raw_arguments: str) -> tuple[dict | None, str | None]:
+    try:
+        data = json.loads(raw_arguments or "{}")
+        if isinstance(data, dict):
+            return data, None
+    except (TypeError, json.JSONDecodeError) as exc:
+        return None, str(exc)
+    return None, "Tool arguments must be a JSON object."
+
+
+def _kb_access_denied(where_filter: dict | None) -> bool:
+    if not where_filter:
+        return True
+    return "__no_tenant_access__" in json.dumps(where_filter, ensure_ascii=False)
+
 # ════════════════════════════════════════
 # CLIENT & MODEL CONFIG
 # Danh sách đã xác minh còn hoạt động: 29/05/2026
@@ -41,11 +68,10 @@ logger = logging.getLogger(__name__)
 async_client = AsyncOpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
     base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
-    timeout=float(os.getenv("LLM_REQUEST_TIMEOUT", "60")),
+    timeout=LLM_REQUEST_TIMEOUT_SECONDS,
+    max_retries=LLM_MAX_RETRIES,
 )
 
-LLM_CONCURRENCY_LIMIT = max(1, int(os.getenv("LLM_CONCURRENCY_LIMIT", "12")))
-_llm_semaphore = asyncio.Semaphore(LLM_CONCURRENCY_LIMIT)
 MAX_PROMPT_CHARS = max(2000, int(os.getenv("MAX_PROMPT_CHARS", "14000")))
 MAX_MESSAGE_CHARS = max(800, int(os.getenv("MAX_MESSAGE_CHARS", "3500")))
 DEFAULT_MAX_OUTPUT_TOKENS = max(256, int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "900")))
@@ -62,9 +88,19 @@ def _client_for_context(context: dict | None) -> AsyncOpenAI:
         return AsyncOpenAI(
             api_key=api_key,
             base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
-            timeout=float(os.getenv("LLM_REQUEST_TIMEOUT", "60")),
+            timeout=LLM_REQUEST_TIMEOUT_SECONDS,
+            max_retries=LLM_MAX_RETRIES,
         )
     return async_client
+
+
+def _provider_for_context(context: dict | None) -> str:
+    return str((context or {}).get("provider") or "openrouter").strip().lower()
+
+
+def _selected_model(context: dict | None) -> str | None:
+    value = str((context or {}).get("model") or "").strip()
+    return value or None
 
 
 def _safe_context_for_prompt(context: dict | None) -> dict:
@@ -99,55 +135,24 @@ def _trim_messages_for_budget(messages: list[dict]) -> list[dict]:
     return compacted
 
 # === FALLBACK CHUNG ===
-FALLBACK_MODELS = [
-    "google/gemini-2.0-flash-001",
-    "deepseek/deepseek-v4-flash:free",         # Quality #1, 1M ctx, Tools ✓
-    "nvidia/nemotron-3-super-120b-a12b:free",  # Quality #4, 1M ctx, Tools ✓
-    "openai/gpt-oss-120b:free",                # Quality #5, 131K ctx, Tools ✓
-    "meta-llama/llama-3.3-70b-instruct:free",  # Ổn định lâu dài, Tools ✓
-    "z-ai/glm-4.5-air:free",                   # Agent-centric MoE, Tools ✓
-    "meta-llama/llama-3.2-3b-instruct:free",   # Nhỏ nhất, fallback cuối
-]
+SYSTEM_MODEL = os.getenv("AI_AGENT_MODEL", "openrouter/free").strip() or "openrouter/free"
+
+FALLBACK_MODELS = [SYSTEM_MODEL]
 
 # === TUTOR AGENT (Socratic reasoning — cần CoT tốt) ===
-TUTOR_MODELS = [
-    "deepseek/deepseek-v4-flash:free",         # ★ Reasoning tốt nhất, 1M ctx
-    "nvidia/nemotron-3-super-120b-a12b:free",  # Multi-step planning, 1M ctx
-    "openai/gpt-oss-120b:free",                # Chain-of-thought tốt
-    "meta-llama/llama-3.3-70b-instruct:free",
-]
+TUTOR_MODELS = [SYSTEM_MODEL]
 
 # === QUIZ AGENT (JSON output nghiêm ngặt — cần tool-calling ổn định) ===
-QUIZ_MODELS = [
-    "openai/gpt-oss-120b:free",                # ★ Structured output / JSON tốt nhất
-    "deepseek/deepseek-v4-flash:free",         # Tools + JSON ổn định
-    "nvidia/nemotron-3-super-120b-a12b:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-]
+QUIZ_MODELS = [SYSTEM_MODEL]
 
 # === SUMMARY AGENT (nhanh, nhẹ, throughput cao) ===
-SUMMARY_MODELS = [
-    "meta-llama/llama-3.2-3b-instruct:free",   # ★ Nhanh nhất cho tóm tắt đơn giản
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "z-ai/glm-4.5-air:free",
-    "deepseek/deepseek-v4-flash:free",
-]
+SUMMARY_MODELS = [SYSTEM_MODEL]
 
 # === FLASHCARD AGENT (JSON có cấu trúc) ===
-FLASHCARD_MODELS = [
-    "openai/gpt-oss-120b:free",                # ★ JSON structure tốt nhất
-    "deepseek/deepseek-v4-flash:free",
-    "nvidia/nemotron-3-super-120b-a12b:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-]
+FLASHCARD_MODELS = [SYSTEM_MODEL]
 
 # === KEPNER-TREGOE AGENT (phân tích logic phức tạp — cần reasoning nặng) ===
-KEPNER_TREGOE_MODELS = [
-    "deepseek/deepseek-v4-flash:free",         # ★ Reasoning + 1M context
-    "nvidia/nemotron-3-super-120b-a12b:free",  # Multi-agent reasoning tốt
-    "openai/gpt-oss-120b:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-]
+KEPNER_TREGOE_MODELS = [SYSTEM_MODEL]
 
 
 def _is_credit_error(e: Exception) -> bool:
@@ -182,7 +187,15 @@ class BaseAgent:
 
         ctx_token = _request_context.set(context or {})
         try:
-            return await self._run_impl(message, context, history)
+            try:
+                return await asyncio.wait_for(
+                    self._run_impl(message, context, history),
+                    timeout=LLM_TURN_TIMEOUT_SECONDS,
+                )
+            except asyncio.TimeoutError as exc:
+                raise LLMTurnTimeoutError(
+                    f"Agent turn exceeded {LLM_TURN_TIMEOUT_SECONDS:.0f} seconds."
+                ) from exc
         finally:
             _request_context.reset(ctx_token)
 
@@ -204,8 +217,10 @@ class BaseAgent:
             + [{"role": "user", "content": full_message}]
         )
 
+        selected_model = _selected_model(context)
+        models = [selected_model] if selected_model else self.models
         last_error = None
-        for model in self.models:
+        for model in models:
             try:
                 logger.info(f"  🤖 [{self.name}] dùng model: {model}")
                 result = await self._run_with_model(model, list(messages))
@@ -220,21 +235,41 @@ class BaseAgent:
         raise last_error or RuntimeError("Tất cả các model đều không khả dụng.")
 
     async def _run_with_model(self, model: str, messages: list) -> str:
+        if _provider_for_context(self._get_request_context()) == "anthropic":
+            return await self._run_with_anthropic(model, messages)
+
         for _ in range(5):
             kwargs = dict(
                 model=model,
                 max_tokens=self.max_tokens,
                 messages=messages,
             )
-            if self.tools:
+            tools_enabled = self.tools and not _kb_access_denied(
+                self._get_request_context().get("kb_filter")
+            )
+            if tools_enabled:
                 kwargs["tools"]       = [self._convert_tool(t) for t in self.tools]
                 kwargs["tool_choice"] = "auto"
-            elif self.json_mode:
+            elif self.json_mode and model != "openrouter/free":
                 kwargs["response_format"] = {"type": "json_object"}
 
             client = _client_for_context(self._get_request_context())
-            async with _llm_semaphore:
-                response = await client.chat.completions.create(**kwargs)
+            try:
+                async with llm_capacity_slot(self._get_request_context()):
+                    response = await client.chat.completions.create(**kwargs)
+                record_provider_success()
+            except Exception as exc:
+                record_provider_failure(exc)
+                raise
+            usage = getattr(response, "usage", None)
+            logger.info(
+                "[%s] model=%s prompt_tokens=%s completion_tokens=%s total_tokens=%s",
+                self.name,
+                model,
+                getattr(usage, "prompt_tokens", None),
+                getattr(usage, "completion_tokens", None),
+                getattr(usage, "total_tokens", None),
+            )
             choice   = response.choices[0]
 
             # Không có tool call → trả về text
@@ -254,9 +289,100 @@ class BaseAgent:
 
         return "Agent không phản hồi."
 
+    async def _run_with_anthropic(self, model: str, messages: list) -> str:
+        context = self._get_request_context()
+        api_key = (context or {}).get("api_key") or (context or {}).get("byok_api_key")
+        if not api_key:
+            raise ValueError("Anthropic API key is required.")
+
+        client = AsyncAnthropic(
+            api_key=api_key,
+            timeout=LLM_REQUEST_TIMEOUT_SECONDS,
+            max_retries=LLM_MAX_RETRIES,
+        )
+        anthropic_messages = [
+            {"role": item["role"], "content": item.get("content", "")}
+            for item in messages[1:]
+            if item.get("role") in {"user", "assistant"}
+        ]
+        tools = [
+            {
+                "name": tool["name"],
+                "description": tool["description"],
+                "input_schema": tool["input_schema"],
+            }
+            for tool in self.tools
+        ] if not _kb_access_denied((context or {}).get("kb_filter")) else []
+
+        for _ in range(5):
+            kwargs = {
+                "model": model,
+                "max_tokens": self.max_tokens,
+                "system": self.system_prompt,
+                "messages": anthropic_messages,
+            }
+            if tools:
+                kwargs["tools"] = tools
+
+            try:
+                async with llm_capacity_slot(context):
+                    response = await client.messages.create(**kwargs)
+                record_provider_success()
+            except Exception as exc:
+                record_provider_failure(exc)
+                raise
+
+            text_parts = [
+                block.text
+                for block in response.content
+                if getattr(block, "type", "") == "text"
+            ]
+            tool_blocks = [
+                block
+                for block in response.content
+                if getattr(block, "type", "") == "tool_use"
+            ]
+            if not tool_blocks:
+                return "\n".join(text_parts).strip()
+
+            anthropic_messages.append({"role": "assistant", "content": response.content})
+            tool_results = []
+            for block in tool_blocks:
+                tool_call = SimpleNamespace(
+                    id=block.id,
+                    function=SimpleNamespace(
+                        name=block.name,
+                        arguments=json.dumps(block.input, ensure_ascii=False),
+                    ),
+                )
+                result = await self._execute_tool(tool_call)
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": block.id,
+                    "content": result["content"],
+                })
+            anthropic_messages.append({"role": "user", "content": tool_results})
+
+        return "Agent did not respond."
+
     async def _execute_tool(self, tool_call) -> dict:
         """Wrap tool execution để dùng với asyncio.gather."""
-        tool_input = json.loads(tool_call.function.arguments)
+        tool_input, parse_error = _parse_tool_arguments(tool_call.function.arguments)
+        if parse_error:
+            logger.warning(
+                "[%s] invalid tool arguments for %s: %s",
+                self.name,
+                tool_call.function.name,
+                parse_error,
+            )
+            return {
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": json.dumps({
+                    "error": "invalid_tool_arguments",
+                    "message": "Arguments must be valid JSON. Retry the tool call.",
+                }),
+            }
         request_context = self._get_request_context()
 
         def call_tool_with_context():
@@ -335,6 +461,8 @@ KHÔNG làm bài hộ. Trả lời ngắn gọn, thân thiện bằng tiếng Vi
         if tool_name == "search_knowledge":
             # Lấy kb_filter từ context nếu có (inject từ /chat endpoint)
             where_filter = self._get_request_context().get("kb_filter")
+            if _kb_access_denied(where_filter):
+                return {"found": False, "message": "Khong co knowledge base cho pham vi hien tai."}
             results = kb_search(
                 query=tool_input["query"],
                 n_results=tool_input.get("n_results", 3),
@@ -403,6 +531,10 @@ NGUYÊN TẮC:
 - Học sinh giỏi hơn giải thích cho học sinh yếu hơn (Feynman Technique)
 - Xoay vai trò để tất cả đều được học qua giảng dạy
 - Nhóm 3-4 người là tối ưu
+- Chỉ sử dụng thông tin thành viên và công việc được cung cấp
+- Không tự suy diễn điểm mạnh, điểm yếu hoặc thời gian rảnh nếu dữ liệu chưa có
+- Nếu thiếu dữ liệu, ghi rõ giả định cần nhóm xác nhận
+- Chỉ đưa ra đề xuất; không tuyên bố đã tự động tạo, sửa hoặc giao công việc
 
 Trả lời cụ thể, có thể làm được ngay. Tiếng Việt.""",
         )
@@ -458,6 +590,8 @@ Tiếng Việt, rõ ràng, dễ học.""",
     def _handle_tool(self, tool_name: str, tool_input: dict) -> dict:
         if tool_name == "search_knowledge":
             where_filter = self._get_request_context().get("kb_filter")
+            if _kb_access_denied(where_filter):
+                return {"found": False, "message": "Khong co knowledge base cho pham vi hien tai."}
             results = kb_search(
                 query=tool_input["query"],
                 n_results=tool_input.get("n_results", 5),
@@ -547,6 +681,8 @@ Nếu có [CONTEXT PHÂN LOẠI TÀI LIỆU]: tuân thủ ngôn ngữ (vd. từ 
     def _handle_tool(self, tool_name: str, tool_input: dict) -> dict:
         if tool_name == "search_knowledge":
             where_filter = self._get_request_context().get("kb_filter")
+            if _kb_access_denied(where_filter):
+                return {"found": False, "message": "Khong co knowledge base cho pham vi hien tai."}
             results = kb_search(
                 query=tool_input["query"],
                 n_results=tool_input.get("n_results", 5),
@@ -637,6 +773,8 @@ QUY TẮC:
     def _handle_tool(self, tool_name: str, tool_input: dict) -> dict:
         if tool_name == "search_knowledge":
             where_filter = self._get_request_context().get("kb_filter")
+            if _kb_access_denied(where_filter):
+                return {"found": False, "message": "Khong co knowledge base cho pham vi hien tai."}
             results = kb_search(
                 query=tool_input["query"],
                 n_results=tool_input.get("n_results", 4),
@@ -886,23 +1024,44 @@ class OrchestratorAgent(BaseAgent):
 
     async def _execute_tool(self, tool_call) -> dict:
         """Override để delegate async sang sub-agents, truyền kb_filter xuống."""
-        tool_input = json.loads(tool_call.function.arguments)
+        tool_input, parse_error = _parse_tool_arguments(tool_call.function.arguments)
+        if parse_error:
+            logger.warning(
+                "[Orchestrator] invalid tool arguments for %s: %s",
+                tool_call.function.name,
+                parse_error,
+            )
+            return {
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": json.dumps({
+                    "error": "invalid_tool_arguments",
+                    "message": "Arguments must be valid JSON. Retry the tool call.",
+                }),
+            }
         tool_name  = tool_call.function.name
         logger.info(f"\n  🎯 Orchestrator → {tool_name}")
 
-        # Lấy kb_filter từ context của orchestrator (inject từ /chat)
-        kb_filter = self._get_request_context().get("kb_filter")
-
-        result = await self._handle_tool_async(tool_name, tool_input, kb_filter=kb_filter)
+        parent_context = self._get_request_context()
+        result = await self._handle_tool_async(
+            tool_name,
+            tool_input,
+            request_context=parent_context,
+        )
         return {
             "role":        "tool",
             "tool_call_id": tool_call.id,
             "content":     json.dumps(result, ensure_ascii=False),
         }
 
-    async def _handle_tool_async(self, tool_name: str, tool_input: dict, kb_filter: dict = None) -> dict:
-        # Context chứa kb_filter để sub-agent dùng khi search KB
-        sub_context = {"kb_filter": kb_filter} if kb_filter else {}
+    async def _handle_tool_async(
+        self,
+        tool_name: str,
+        tool_input: dict,
+        request_context: dict | None = None,
+    ) -> dict:
+        # Forward provider/model/key and the scoped KB filter to sub-agents.
+        sub_context = dict(request_context or {})
 
         if tool_name == "delegate_to_tutor":
             merged_context = {**tool_input.get("context", {}), **sub_context}
@@ -933,7 +1092,7 @@ class OrchestratorAgent(BaseAgent):
             task = tool_input["task"]
             if "members" in tool_input:
                 task += f"\nThành viên: {', '.join(tool_input['members'])}"
-            result = await self.group.run(message=task)
+            result = await self.group.run(message=task, context=sub_context or None)
             _last_delegate_agent.set("GroupAgent")
             return {"agent": "GroupAgent", "response": result}
 

@@ -8,33 +8,138 @@ Chạy để test:       python knowledge_base.py --search "đạo hàm"
 """
 
 import argparse
+import hashlib
+import json
+import logging
 import os
 import re
+import shutil
+import sqlite3
+import threading
+from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 
 import chromadb
+from chromadb.api.configuration import CollectionConfigurationInternal
+from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 
 from classifier_agent import enrich_kb_metadata
 from subject_metadata import classification_from_subject
 
 
+logger = logging.getLogger(__name__)
+
 DB_PATH = os.getenv("STUDYMIND_DB_PATH", "./studymind_db")  # Thư mục lưu ChromaDB
-COLLECTION_NAME = "knowledge"
-EMBED_MODEL = "all-MiniLM-L6-v2"   # Model embedding nhẹ, chạy offline
+COLLECTION_NAME = os.getenv("KB_COLLECTION_NAME", "knowledge_v2")
+LEGACY_COLLECTION_NAME = "knowledge"
+EMBED_MODEL = os.getenv("EMBED_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
+KB_CHUNK_SIZE = max(300, int(os.getenv("KB_CHUNK_SIZE", "900")))
+KB_CHUNK_OVERLAP = max(0, int(os.getenv("KB_CHUNK_OVERLAP", "120")))
+MIN_KB_RELEVANCE = min(1.0, max(-1.0, float(os.getenv("MIN_KB_RELEVANCE", "0.25"))))
 
 
+def _migrate_legacy_collection_config() -> None:
+    db_file = Path(DB_PATH) / "chroma.sqlite3"
+    if not db_file.exists():
+        return
+
+    with sqlite3.connect(db_file) as conn:
+        rows = conn.execute(
+            """
+            SELECT id, config_json_str
+            FROM collections
+            WHERE name = ?
+            """,
+            (COLLECTION_NAME,),
+        ).fetchall()
+        legacy_ids = []
+        for collection_id, raw_config in rows:
+            try:
+                parsed = json.loads(raw_config or "{}")
+            except json.JSONDecodeError:
+                continue
+            if parsed == {}:
+                legacy_ids.append(collection_id)
+
+        if not legacy_ids:
+            return
+
+        backup = db_file.with_name(
+            f"{db_file.name}.pre-config-migration-{datetime.now():%Y%m%d-%H%M%S}.bak"
+        )
+        shutil.copy2(db_file, backup)
+
+        config_json_map = CollectionConfigurationInternal().to_json()
+        config_json_map["hnsw_configuration"]["space"] = "cosine"
+        config = CollectionConfigurationInternal.from_json(config_json_map)
+        config_json = config.to_json_str()
+        conn.executemany(
+            """
+            UPDATE collections
+            SET config_json_str = ?
+            WHERE id = ?
+            """,
+            [(config_json, collection_id) for collection_id in legacy_ids],
+        )
+        conn.commit()
+
+
+_collection_lock = threading.Lock()
+
+
+def _migrate_legacy_documents(client, target_collection) -> None:
+    if COLLECTION_NAME == LEGACY_COLLECTION_NAME or target_collection.count() > 0:
+        return
+
+    try:
+        legacy = client.get_collection(name=LEGACY_COLLECTION_NAME)
+    except Exception:
+        return
+
+    total = legacy.count()
+    if total == 0:
+        return
+
+    batch_size = 100
+    for offset in range(0, total, batch_size):
+        batch = legacy.get(
+            limit=batch_size,
+            offset=offset,
+            include=["documents", "metadatas"],
+        )
+        if batch["ids"]:
+            target_collection.upsert(
+                ids=batch["ids"],
+                documents=batch["documents"],
+                metadatas=batch["metadatas"],
+            )
+    logger.info(
+        "Migrated legacy Chroma collection source=%s target=%s documents=%s",
+        LEGACY_COLLECTION_NAME,
+        COLLECTION_NAME,
+        total,
+    )
+
+
+@lru_cache(maxsize=1)
 def get_collection():
-    client = chromadb.PersistentClient(path=DB_PATH)
-    embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-        model_name=EMBED_MODEL
-    )
-    collection = client.get_or_create_collection(
-        name=COLLECTION_NAME,
-        embedding_function=embed_fn,
-        metadata={"hnsw:space": "cosine"}
-    )
-    return collection
+    with _collection_lock:
+        client = chromadb.PersistentClient(
+            path=DB_PATH,
+            settings=Settings(anonymized_telemetry=False),
+        )
+        embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name=EMBED_MODEL
+        )
+        collection = client.get_or_create_collection(
+            name=COLLECTION_NAME,
+            embedding_function=embed_fn,
+            metadata={"hnsw:space": "cosine"},
+        )
+        _migrate_legacy_documents(client, collection)
+        return collection
 
 
 # ── Nạp tài liệu vào DB ───────────────────────────────
@@ -43,16 +148,31 @@ def ingest_text(text: str, metadata: dict, doc_id: str):
     """Nạp 1 đoạn text vào ChromaDB"""
     collection = get_collection()
 
-    chunks = chunk_text(text, chunk_size=500, overlap=50)
+    chunks = chunk_text(text, chunk_size=KB_CHUNK_SIZE, overlap=KB_CHUNK_OVERLAP)
+    if not chunks:
+        raise ValueError("Tai lieu khong co noi dung hop le de ingest.")
 
-    ids       = [f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
-    metadatas = [{**metadata, "chunk_index": i} for i in range(len(chunks))]
+    tenant_id = str(metadata.get("tenant_id") or "").strip()
+    if not tenant_id:
+        raise ValueError("tenant_id la bat buoc khi ingest knowledge base.")
+    doc_key = hashlib.sha256(f"{tenant_id}:{doc_id}".encode("utf-8")).hexdigest()[:24]
+    ids = [f"{doc_key}_chunk_{i}" for i in range(len(chunks))]
+    metadatas = [
+        {**metadata, "doc_key": doc_key, "chunk_index": i}
+        for i in range(len(chunks))
+    ]
 
-    collection.add(documents=chunks, metadatas=metadatas, ids=ids)
-    print(f"✅ Đã nạp '{doc_id}': {len(chunks)} chunks")
+    collection.delete(where={"doc_key": {"$eq": doc_key}})
+    collection.upsert(documents=chunks, metadatas=metadatas, ids=ids)
+    logger.info("Ingested document=%s chunks=%s", doc_id, len(chunks))
 
 
-def ingest_pdf(pdf_path: str, subject: str = None, subject_code: str = None):
+def ingest_pdf(
+    pdf_path: str,
+    subject: str = None,
+    subject_code: str = None,
+    tenant_id: str = "cli",
+):
     """Nạp file PDF vào ChromaDB (có tự động phân loại môn học)"""
     try:
         from pypdf import PdfReader
@@ -84,7 +204,12 @@ def ingest_pdf(pdf_path: str, subject: str = None, subject_code: str = None):
         print(f"  ⚠️  Confidence thấp — lưu với subject_code='other'")
     # ────────────────────────────────────
 
-    base_metadata    = {"source": pdf_path, "type": "pdf", "filename": filename}
+    base_metadata = {
+        "source": pdf_path,
+        "type": "pdf",
+        "filename": filename,
+        "tenant_id": tenant_id,
+    }
     enriched_metadata = enrich_kb_metadata(base_metadata, classification)
 
     ingest_text(text=text, metadata=enriched_metadata, doc_id=filename)
@@ -96,6 +221,7 @@ async def ingest_pdf_async(
     filename: str = None,
     subject: str = None,
     subject_code: str = None,
+    tenant_id: str = None,
 ) -> dict:
     """
     Async version — dùng trong FastAPI /upload endpoint.
@@ -117,7 +243,14 @@ async def ingest_pdf_async(
             filename=fname,
         )
 
-        base_metadata     = {"source": pdf_path or fname, "type": "pdf", "filename": fname}
+        if not (tenant_id or "").strip():
+            raise ValueError("tenant_id la bat buoc khi ingest knowledge base.")
+        base_metadata = {
+            "source": pdf_path or fname,
+            "type": "pdf",
+            "filename": fname,
+            "tenant_id": tenant_id.strip(),
+        }
         enriched_metadata = enrich_kb_metadata(base_metadata, classification)
 
         ingest_text(text=text, metadata=enriched_metadata, doc_id=fname)
@@ -213,10 +346,13 @@ def search(query: str, n_results: int = 3, where_filter: dict = None) -> list[di
                       None = tìm toàn bộ KB không filter.
     """
     collection = get_collection()
+    count = collection.count()
+    if count == 0:
+        return []
 
     kwargs = dict(
         query_texts=[query],
-        n_results=min(n_results, collection.count() or 1),
+        n_results=min(max(n_results, 1), count),
         include=["documents", "metadatas", "distances"],
     )
     if where_filter:
@@ -227,6 +363,9 @@ def search(query: str, n_results: int = 3, where_filter: dict = None) -> list[di
     output = []
     for i, doc in enumerate(results["documents"][0]):
         meta = results["metadatas"][0][i]
+        relevance_score = round(1 - results["distances"][0][i], 3)
+        if relevance_score < MIN_KB_RELEVANCE:
+            continue
         output.append({
             "content":      doc,
             "source":       meta.get("source", "unknown"),
@@ -234,7 +373,8 @@ def search(query: str, n_results: int = 3, where_filter: dict = None) -> list[di
             "subject":      meta.get("subject", ""),
             "subject_code": meta.get("subject_code", ""),
             "topic":        meta.get("topic", ""),
-            "relevance_score": round(1 - results["distances"][0][i], 3),
+            "tenant_id":    meta.get("tenant_id", ""),
+            "relevance_score": relevance_score,
         })
 
     return output

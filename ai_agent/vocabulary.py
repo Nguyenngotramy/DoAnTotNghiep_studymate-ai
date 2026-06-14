@@ -25,13 +25,18 @@ import re
 from typing import Any
 
 from dotenv import load_dotenv
+from anthropic import AsyncAnthropic
 from openai import AsyncOpenAI
+from llm_capacity import LLMCapacityError, llm_capacity_slot
+from llm_runtime import LLM_MAX_RETRIES, LLM_REQUEST_TIMEOUT_SECONDS
 
 load_dotenv()
 
 _vocab_client = AsyncOpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
-    base_url="https://openrouter.ai/api/v1",
+    base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
+    timeout=LLM_REQUEST_TIMEOUT_SECONDS,
+    max_retries=LLM_MAX_RETRIES,
 )
 
 _VOCAB_MODELS = [
@@ -63,6 +68,23 @@ QUY TẮC:
 - Tối đa theo yêu cầu số lượng trong message
 - Tiếng Hàn: tu_vung = Hangul, phat_am = romanization
 - Tiếng Anh: phat_am = IPA hoặc phiên âm đơn giản"""
+
+VOCABULARY_GENERATE_PROMPT = """Bạn là chuyên gia biên soạn từ vựng ngoại ngữ.
+
+Tạo đúng số lượng từ/cụm từ theo ngôn ngữ, chủ đề và trình độ người dùng yêu cầu.
+Chỉ trả JSON thuần:
+{"vocabulary":[{"tu_vung":"...","nghia":"...","vi_du":"...","phat_am":"..."}]}
+
+QUY TẮC:
+- Nghĩa phải là tiếng Việt tự nhiên và chính xác.
+- Ví dụ ngắn, đúng ngữ pháp, phù hợp trình độ.
+- Không trùng từ, không bịa cách dịch, không tạo mẹo ghi nhớ.
+- Không trộn ký tự từ ngôn ngữ khác.
+- Tiếng Hàn dùng Hangul + romanization.
+- Tiếng Nhật dùng Kanji/Kana + romaji.
+- Tiếng Trung dùng Hán tự + pinyin.
+- Tiếng Anh dùng từ/cụm từ chuẩn CEFR nếu có yêu cầu A1-C2.
+"""
 
 
 VOCAB_JSON_SCHEMA = {
@@ -435,6 +457,7 @@ async def ai_extract_vocabulary(
     text: str,
     topic: str = "",
     max_items: int = 30,
+    context: dict | None = None,
 ) -> list[dict]:
     """Trích xuất từ vựng bằng LLM → danh sách chuẩn hoá."""
     sample = text[:6000]
@@ -442,20 +465,128 @@ async def ai_extract_vocabulary(
         f"Chủ đề: {topic or 'từ vựng'}\n"
         f"Trích xuất tối đa {max_items} mục từ vựng từ nội dung sau:\n\n{sample}"
     )
-    for model in _VOCAB_MODELS:
+    provider = str((context or {}).get("provider") or "openrouter")
+    selected_model = str((context or {}).get("model") or "").strip()
+    api_key = str((context or {}).get("api_key") or "").strip()
+    models = [selected_model] if selected_model else ["openrouter/free"]
+    for model in models:
         try:
-            res = await _vocab_client.chat.completions.create(
-                model=model,
-                max_tokens=4000,
-                messages=[
-                    {"role": "system", "content": VOCABULARY_EXTRACT_PROMPT},
-                    {"role": "user", "content": prompt},
-                ],
-            )
-            raw = res.choices[0].message.content or ""
+            if provider == "anthropic":
+                if not api_key:
+                    raise ValueError("Anthropic API key is required.")
+                client = AsyncAnthropic(
+                    api_key=api_key,
+                    timeout=LLM_REQUEST_TIMEOUT_SECONDS,
+                    max_retries=LLM_MAX_RETRIES,
+                )
+                async with llm_capacity_slot(context):
+                    res = await client.messages.create(
+                        model=model,
+                        max_tokens=4000,
+                        system=VOCABULARY_EXTRACT_PROMPT,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                raw = "\n".join(
+                    block.text
+                    for block in res.content
+                    if getattr(block, "type", "") == "text"
+                )
+            else:
+                client = (
+                    AsyncOpenAI(
+                        api_key=api_key,
+                        base_url="https://openrouter.ai/api/v1",
+                        timeout=LLM_REQUEST_TIMEOUT_SECONDS,
+                        max_retries=LLM_MAX_RETRIES,
+                    )
+                    if api_key
+                    else _vocab_client
+                )
+                async with llm_capacity_slot(context):
+                    res = await client.chat.completions.create(
+                        model=model,
+                        max_tokens=4000,
+                        messages=[
+                            {"role": "system", "content": VOCABULARY_EXTRACT_PROMPT},
+                            {"role": "user", "content": prompt},
+                        ],
+                    )
+                raw = res.choices[0].message.content or ""
             items = extract_vocabulary_json(raw)
             if items:
                 return items[:max_items]
+        except LLMCapacityError:
+            raise
+        except Exception:
+            continue
+    return []
+
+
+async def ai_generate_vocabulary(
+    request: str,
+    max_items: int = 20,
+    context: dict | None = None,
+) -> list[dict]:
+    """Generate a normalized vocabulary set with a single model request."""
+    provider = str((context or {}).get("provider") or "openrouter")
+    selected_model = str((context or {}).get("model") or "").strip()
+    api_key = str((context or {}).get("api_key") or "").strip()
+    models = [selected_model] if selected_model else ["openrouter/free"]
+    prompt = (
+        f"Yêu cầu: {request}\n"
+        f"Số lượng bắt buộc: {max_items}. "
+        "Chỉ trả JSON đúng schema và đủ số lượng."
+    )
+
+    for model in models:
+        try:
+            if provider == "anthropic":
+                if not api_key:
+                    raise ValueError("Anthropic API key is required.")
+                client = AsyncAnthropic(
+                    api_key=api_key,
+                    timeout=LLM_REQUEST_TIMEOUT_SECONDS,
+                    max_retries=LLM_MAX_RETRIES,
+                )
+                async with llm_capacity_slot(context):
+                    response = await client.messages.create(
+                        model=model,
+                        max_tokens=min(4000, max(800, max_items * 140)),
+                        system=VOCABULARY_GENERATE_PROMPT,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
+                raw = "\n".join(
+                    block.text
+                    for block in response.content
+                    if getattr(block, "type", "") == "text"
+                )
+            else:
+                client = (
+                    AsyncOpenAI(
+                        api_key=api_key,
+                        base_url="https://openrouter.ai/api/v1",
+                        timeout=LLM_REQUEST_TIMEOUT_SECONDS,
+                        max_retries=LLM_MAX_RETRIES,
+                    )
+                    if api_key
+                    else _vocab_client
+                )
+                async with llm_capacity_slot(context):
+                    response = await client.chat.completions.create(
+                        model=model,
+                        max_tokens=min(4000, max(800, max_items * 140)),
+                        messages=[
+                            {"role": "system", "content": VOCABULARY_GENERATE_PROMPT},
+                            {"role": "user", "content": prompt},
+                        ],
+                    )
+                raw = response.choices[0].message.content or ""
+
+            items = extract_vocabulary_json(raw)
+            if len(items) >= max_items:
+                return items[:max_items]
+        except LLMCapacityError:
+            raise
         except Exception:
             continue
     return []

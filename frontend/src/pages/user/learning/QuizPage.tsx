@@ -573,6 +573,7 @@ export default function QuizPage() {
     }) => quizApi.recordAttempt(quizId, { questionId, correct }),
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['quiz-weak', vars.quizId] })
+      qc.invalidateQueries({ queryKey: ['auth-me-sync'] })
     },
   })
 

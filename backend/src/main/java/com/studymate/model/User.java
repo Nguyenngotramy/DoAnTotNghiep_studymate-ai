@@ -63,6 +63,8 @@ public class User {
 
     private Instant lastStreakAt;
 
+    private Instant lastLoginRewardAt;
+
     @Builder.Default
     private List<UserSkill> skills = new ArrayList<>();
 

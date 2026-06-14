@@ -10,5 +10,11 @@
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 	}
 
+	handle_path /ai-agent/* {
+		reverse_proxy ai-agent:8001 {
+			header_up X-AI-Service-Key {$AI_AGENT_SERVICE_KEY}
+		}
+	}
+
 	reverse_proxy frontend:80
 }

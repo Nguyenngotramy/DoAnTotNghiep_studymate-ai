@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,8 +23,6 @@ public class AuthService {
     private final PasswordEncoder encoder;
     private final EmailService emailService;
     private final UserAccountLockService accountLockService;
-
-    private static final ZoneId STREAK_ZONE = ZoneId.of("Asia/Bangkok");
 
     public record AuthResponse(User user, String accessToken, String refreshToken) {}
 
@@ -63,7 +60,7 @@ public class AuthService {
             throw new RuntimeException("Email hoặc mật khẩu không đúng");
         }
 
-        user = applyDailyStreak(user);
+        user = applyDailyLoginReward(user);
         return tokens(user);
     }
 
@@ -117,8 +114,7 @@ public class AuthService {
                 .availableSchedule(schedule)
                 .onboardingDone(true)
                 .xp(100)
-                .streak(1)
-                .lastStreakAt(Instant.now())
+                .streak(0)
                 .build();
 
         user = userRepo.save(user);
@@ -152,7 +148,7 @@ public class AuthService {
                 user = userRepo.save(user);
             }
 
-            user = applyDailyStreak(user);
+            user = applyDailyLoginReward(user);
             return tokens(user);
         }
 
@@ -164,12 +160,11 @@ public class AuthService {
                 .role(User.Role.USER)
                 .onboardingDone(false)
                 .xp(50)
-                .streak(1)
-                .lastStreakAt(Instant.now())
+                .streak(0)
                 .build();
 
         newUser = userRepo.save(newUser);
-        newUser = applyDailyStreak(newUser);
+        newUser = applyDailyLoginReward(newUser);
         return tokens(newUser);
     }
 
@@ -278,36 +273,24 @@ public class AuthService {
         return new AuthResponse(user, access, refresh);
     }
 
-    /** Cập nhật streak đăng nhập hàng ngày — gọi khi login hoặc /auth/me. */
-    public User applyDailyStreak(User user) {
+    /** Thưởng XP đăng nhập một lần mỗi ngày, không thay đổi chuỗi ngày học. */
+    public User applyDailyLoginReward(User user) {
         User normalized = normalizeBannerFields(user);
 
         Instant now = Instant.now();
-        LocalDate today = LocalDate.ofInstant(now, STREAK_ZONE);
-        LocalDate yesterday = today.minusDays(1);
-        LocalDate last = normalized.getLastStreakAt() == null
-                ? null
-                : LocalDate.ofInstant(normalized.getLastStreakAt(), STREAK_ZONE);
-
-        if (last == null) {
-            normalized.setStreak(Math.max(1, normalized.getStreak()));
-            normalized.setXp(normalized.getXp() + XPService.Action.DAILY_LOGIN.points);
-            normalized.setLastStreakAt(now);
-            return userRepo.save(normalized);
+        if (normalized.getLastLoginRewardAt() != null) {
+            LocalDate today = LocalDate.ofInstant(now, StreakService.STREAK_ZONE);
+            LocalDate lastRewardDate = LocalDate.ofInstant(
+                    normalized.getLastLoginRewardAt(),
+                    StreakService.STREAK_ZONE
+            );
+            if (lastRewardDate.isEqual(today)) {
+                return normalized;
+            }
         }
 
-        if (last.isEqual(today)) {
-            return normalized != user ? userRepo.save(normalized) : user;
-        }
-
-        if (last.isEqual(yesterday)) {
-            normalized.setStreak(normalized.getStreak() + 1);
-        } else {
-            normalized.setStreak(1);
-        }
-
-        normalized.setXp(normalized.getXp() + XPService.Action.DAILY_LOGIN.points);
-        normalized.setLastStreakAt(now);
+        normalized.setXp(Math.max(0, normalized.getXp()) + XPService.Action.DAILY_LOGIN.points);
+        normalized.setLastLoginRewardAt(now);
         return userRepo.save(normalized);
     }
 
@@ -324,8 +307,8 @@ public class AuthService {
             changed = true;
         }
 
-        if (user.getStreak() <= 0) {
-            user.setStreak(1);
+        if (user.getStreak() < 0) {
+            user.setStreak(0);
             changed = true;
         }
 

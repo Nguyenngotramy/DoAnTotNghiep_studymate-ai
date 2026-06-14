@@ -306,6 +306,7 @@ export default function FlashcardStudySession({ deck, mode, folder, sourceBadge,
       const result = await flashcardApi.recordReview(deck.id, currentCard.id, rating)
       setSessionCounts(prev => ({ ...prev, [rating]: prev[rating] + 1 }))
       qc.invalidateQueries({ queryKey: ['flashcard-study-summary', deck.id] })
+      qc.invalidateQueries({ queryKey: ['auth-me-sync'] })
 
       if (rating === 'AGAIN' || rating === 'HARD') {
         await refreshNotifCount()

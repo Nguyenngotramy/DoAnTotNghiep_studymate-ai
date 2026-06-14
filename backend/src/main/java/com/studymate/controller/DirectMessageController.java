@@ -264,7 +264,14 @@ public class DirectMessageController {
             @RequestBody Map<String, String> body
     ) {
         return ResponseEntity.ok(ApiResponse.ok(
-                dmService.askAI(auth.getName(), userId, body.get("question"))
+                dmService.askAI(
+                        auth.getName(),
+                        userId,
+                        body.get("question"),
+                        body.get("provider"),
+                        body.get("model"),
+                        body.get("api_key")
+                )
         ));
     }
 

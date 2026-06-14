@@ -348,6 +348,24 @@ export interface ChatReplyPreview {
 
 export type ChatMessageType = 'USER' | 'AI' | 'SYSTEM'
 
+export interface GroupAgentProposedTask {
+  title: string
+  description?: string
+  priority: TaskPriority
+  assigneeId?: string | null
+  assigneeName?: string | null
+  deadline?: string | null
+}
+
+export interface GroupAgentTaskProposal {
+  summary: string
+  status: 'PENDING' | 'APPROVED'
+  tasks: GroupAgentProposedTask[]
+  createdTaskIds?: string[]
+  approvedBy?: string
+  approvedAt?: string
+}
+
 export interface ChatMessage {
   id: string
   groupId: string
@@ -364,6 +382,7 @@ export interface ChatMessage {
   recalled?: boolean
   recalledAt?: string
   recalledBy?: string
+  taskProposal?: GroupAgentTaskProposal | null
   createdAt: string
 }
 

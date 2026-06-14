@@ -113,6 +113,21 @@ public class QuizController {
         return ResponseEntity.ok(ApiResponse.ok(quizSet, "Tạo bộ quiz thành công"));
     }
 
+    @PostMapping("/quizzes/from-chat")
+    public ResponseEntity<?> saveFromChat(Authentication auth, @RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> questions = (List<Map<String, Object>>) body.get("questions");
+
+        QuizSet quizSet = quizService.createAiQuizFromChat(
+                auth.getName(),
+                body.get("title") == null ? "" : body.get("title").toString(),
+                body.get("description") == null ? "" : body.get("description").toString(),
+                questions
+        );
+
+        return ResponseEntity.ok(ApiResponse.ok(quizSet, "Da luu bo quiz tu AI chat"));
+    }
+
     @PostMapping("/quizzes/from-document")
     public ResponseEntity<?> saveFromDocument(Authentication auth, @RequestBody Map<String, Object> body) {
         @SuppressWarnings("unchecked")

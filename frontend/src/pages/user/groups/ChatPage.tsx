@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AlertCircle,
   ArrowLeft,
@@ -26,6 +26,8 @@ import {
   Circle,
   Clock3,
   CheckCircle2,
+  Bot,
+  Sparkles,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -231,6 +233,7 @@ export default function ChatPage() {
   const { groupId = '' } = useParams<{ groupId: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { user } = useAuthStore()
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -251,6 +254,7 @@ export default function ChatPage() {
   const [sideTab, setSideTab] = useState<'pinned' | 'files' | 'media' | 'members' | 'task' | 'reminder'>('pinned')
   const [replyTo, setReplyTo] = useState<ChatReplyPreview | null>(null)
   const [highlightId, setHighlightId] = useState<string | null>(null)
+  const [approvingProposalId, setApprovingProposalId] = useState<string | null>(null)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -334,6 +338,7 @@ export default function ChatPage() {
     recalled: !!raw?.recalled,
     recalledAt: raw?.recalledAt ?? undefined,
     recalledBy: raw?.recalledBy ?? undefined,
+    taskProposal: raw?.taskProposal ?? null,
     createdAt: raw?.createdAt ?? new Date().toISOString(),
   }), [])
 
@@ -365,16 +370,20 @@ export default function ChatPage() {
 
   const mentionCandidates = useMemo(() => {
     const q = mentionQuery.trim().toLowerCase()
-    const base = safeMembers
-      .filter(m => normalizeId(m.userId) !== normalizeId(user?.id))
-      .map(m => ({
-        id: normalizeId(m.userId),
-        name: m.fullName,
-      }))
+    const base = [
+      { id: '__group_agent__', name: 'GroupAgent' },
+      { id: '__all__', name: 'all' },
+      ...safeMembers
+        .filter(m => normalizeId(m.userId) !== normalizeId(user?.id))
+        .map(m => ({
+          id: normalizeId(m.userId),
+          name: m.fullName,
+        })),
+    ]
 
-    if (!q) return [{ id: '__all__', name: 'all' }, ...base].slice(0, 8)
+    if (!q) return base.slice(0, 8)
 
-    return [{ id: '__all__', name: 'all' }, ...base]
+    return base
       .filter(x => x.name.toLowerCase().includes(q))
       .slice(0, 8)
   }, [safeMembers, mentionQuery, user])
@@ -560,6 +569,25 @@ export default function ChatPage() {
     setSending(true)
 
     try {
+      const groupAgentMatch = content.match(/^@GroupAgent(?:\s+|$)(.*)$/i)
+      if (groupAgentMatch) {
+        if (pickedFiles.length > 0) {
+          toast.error('GroupAgent chưa hỗ trợ tệp đính kèm khi phân task')
+          return
+        }
+        const question = groupAgentMatch[1].trim()
+        if (!question) {
+          toast.error('Hãy nhập yêu cầu sau @GroupAgent')
+          return
+        }
+        const aiMessage = await chatApi.askGroupAgent(groupId, question)
+        appendIncomingMessage(aiMessage)
+        setInput('')
+        setShowMentionBox(false)
+        setReplyTo(null)
+        return
+      }
+
       const attachments = await uploadPickedFiles()
       const { mentionAll, mentionUserIds } = buildMentionPayload()
 
@@ -583,6 +611,23 @@ export default function ChatPage() {
     } finally {
       setSending(false)
       inputRef.current?.focus()
+    }
+  }
+
+  const approveGroupAgentTasks = async (messageId: string) => {
+    if (!isLeader || approvingProposalId) return
+    if (!window.confirm('Duyệt đề xuất và tạo toàn bộ task này trên Kanban?')) return
+
+    setApprovingProposalId(messageId)
+    try {
+      const updated = await chatApi.approveGroupAgentTasks(groupId, messageId)
+      appendIncomingMessage(updated)
+      await queryClient.invalidateQueries({ queryKey: ['tasks', groupId] })
+      toast.success('Đã tạo task trên Kanban')
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? 'Không thể duyệt đề xuất task')
+    } finally {
+      setApprovingProposalId(null)
     }
   }
 
@@ -1021,6 +1066,105 @@ export default function ChatPage() {
 
                                 {!!msg.content && <div>{msg.content}</div>}
 
+                                {msg.taskProposal && (
+                                  <div
+                                    className="mt-3 rounded-2xl border p-3 min-w-[320px] max-w-[560px]"
+                                    style={{
+                                      background: 'rgba(139,92,246,.08)',
+                                      borderColor: 'rgba(139,92,246,.28)',
+                                    }}
+                                  >
+                                    <div className="flex items-center justify-between gap-3 mb-3">
+                                      <div className="flex items-center gap-2">
+                                        <Bot size={16} style={{ color: '#a78bfa' }} />
+                                        <span className="text-[12px] font-semibold" style={{ color: '#c4b5fd' }}>
+                                          Đề xuất phân task
+                                        </span>
+                                      </div>
+                                      <span
+                                        className="px-2 py-1 rounded-full text-[10px] font-medium"
+                                        style={{
+                                          background: msg.taskProposal.status === 'APPROVED'
+                                            ? 'rgba(34,197,94,.12)'
+                                            : 'rgba(245,158,11,.12)',
+                                          color: msg.taskProposal.status === 'APPROVED' ? '#22c55e' : '#f59e0b',
+                                        }}
+                                      >
+                                        {msg.taskProposal.status === 'APPROVED' ? 'Đã tạo task' : 'Chờ trưởng nhóm duyệt'}
+                                      </span>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                      {msg.taskProposal.tasks.map((task, index) => (
+                                        <div
+                                          key={`${task.title}-${index}`}
+                                          className="rounded-xl px-3 py-2"
+                                          style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}
+                                        >
+                                          <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                              <div className="text-[13px] font-medium" style={{ color: 'var(--text)' }}>
+                                                {index + 1}. {task.title}
+                                              </div>
+                                              <div className="text-[11px] mt-1" style={{ color: 'var(--text3)' }}>
+                                                {task.assigneeName || 'Chưa giao người'}
+                                                {task.deadline
+                                                  ? ` · Hạn ${new Date(task.deadline).toLocaleDateString('vi-VN')}`
+                                                  : ''}
+                                              </div>
+                                            </div>
+                                            <span
+                                              className="text-[10px] px-2 py-1 rounded-full"
+                                              style={{
+                                                color: task.priority === 'HIGH'
+                                                  ? '#f87171'
+                                                  : task.priority === 'LOW'
+                                                    ? '#60a5fa'
+                                                    : '#fbbf24',
+                                                background: 'rgba(255,255,255,.05)',
+                                              }}
+                                            >
+                                              {task.priority}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    {msg.taskProposal.status === 'PENDING' && isLeader && (
+                                      <button
+                                        onClick={() => approveGroupAgentTasks(msg.id)}
+                                        disabled={approvingProposalId === msg.id}
+                                        className="mt-3 w-full h-10 rounded-xl text-white flex items-center justify-center gap-2 font-medium disabled:opacity-60"
+                                        style={{ background: 'linear-gradient(135deg,#7c3aed,#6366f1)' }}
+                                      >
+                                        {approvingProposalId === msg.id
+                                          ? <Loader2 size={15} className="animate-spin" />
+                                          : <Sparkles size={15} />}
+                                        {approvingProposalId === msg.id
+                                          ? 'Đang tạo task...'
+                                          : 'Duyệt & tạo trên Kanban'}
+                                      </button>
+                                    )}
+
+                                    {msg.taskProposal.status === 'PENDING' && !isLeader && (
+                                      <div className="mt-3 text-[11px] text-center" style={{ color: 'var(--text3)' }}>
+                                        Chỉ trưởng nhóm có thể duyệt đề xuất này.
+                                      </div>
+                                    )}
+
+                                    {msg.taskProposal.status === 'APPROVED' && (
+                                      <button
+                                        onClick={openTaskBoard}
+                                        className="mt-3 w-full h-9 rounded-xl border text-[12px] font-medium"
+                                        style={{ color: '#a5b4fc', borderColor: 'rgba(99,102,241,.35)' }}
+                                      >
+                                        Mở Kanban
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+
                                 {!!msg.attachments?.length && (
                                   <div className="space-y-2">
                                     {msg.attachments.map((att, idx) => (
@@ -1232,6 +1376,22 @@ export default function ChatPage() {
             >
               <AtSign size={14} />
               @all
+            </button>
+
+            <button
+              onClick={() => {
+                setInput('@GroupAgent ')
+                inputRef.current?.focus()
+              }}
+              className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+              style={{
+                background: 'rgba(139,92,246,.1)',
+                borderColor: 'rgba(139,92,246,.3)',
+                color: '#a78bfa',
+              }}
+            >
+              <Bot size={14} />
+              @GroupAgent
             </button>
           </div>
 

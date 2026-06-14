@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 
 
@@ -28,13 +29,21 @@ class ChatStore:
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path, timeout=30, check_same_thread=False)
         conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA synchronous=NORMAL")
         conn.execute("PRAGMA busy_timeout=30000")
         return conn
 
+    @contextmanager
+    def _connection(self):
+        conn = self._connect()
+        try:
+            yield conn
+        finally:
+            conn.close()
+
     def _init_db(self) -> None:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA synchronous=NORMAL")
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS chat_messages (
@@ -52,10 +61,94 @@ class ChatStore:
                 ON chat_messages(session_id, id)
                 """
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS account_ai_usage (
+                    account_id TEXT PRIMARY KEY,
+                    successful_requests INTEGER NOT NULL DEFAULT 0,
+                    inflight_requests INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+
+    def claim_intro_priority(self, account_id: str, limit: int = 3) -> bool:
+        account = (account_id or "").strip()
+        if not account or limit <= 0:
+            return False
+
+        with self._lock, self._connection() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO account_ai_usage(account_id)
+                VALUES (?)
+                """,
+                (account,),
+            )
+            row = conn.execute(
+                """
+                SELECT successful_requests, inflight_requests
+                FROM account_ai_usage
+                WHERE account_id = ?
+                """,
+                (account,),
+            ).fetchone()
+            eligible = (
+                int(row["successful_requests"] or 0)
+                + int(row["inflight_requests"] or 0)
+                < limit
+            )
+            if eligible:
+                conn.execute(
+                    """
+                    UPDATE account_ai_usage
+                    SET inflight_requests = inflight_requests + 1,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE account_id = ?
+                    """,
+                    (account,),
+                )
+            conn.commit()
+        return eligible
+
+    def finish_intro_priority(self, account_id: str, success: bool) -> None:
+        account = (account_id or "").strip()
+        if not account:
+            return
+        with self._lock, self._connection() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            conn.execute(
+                """
+                UPDATE account_ai_usage
+                SET inflight_requests = MAX(0, inflight_requests - 1),
+                    successful_requests = successful_requests + ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE account_id = ?
+                """,
+                (1 if success else 0, account),
+            )
+            conn.commit()
+
+    def intro_priority_status(self, account_id: str, limit: int = 3) -> dict:
+        account = (account_id or "").strip()
+        if not account:
+            return {"used": 0, "remaining": 0}
+        with self._lock, self._connection() as conn:
+            row = conn.execute(
+                """
+                SELECT successful_requests
+                FROM account_ai_usage
+                WHERE account_id = ?
+                """,
+                (account,),
+            ).fetchone()
+        used = int(row["successful_requests"] or 0) if row else 0
+        return {"used": used, "remaining": max(0, limit - used)}
 
     def get_history(self, session_id: str, limit: int | None = None) -> list[dict]:
         safe_limit = max(1, min(limit or self.max_messages, self.max_messages))
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             rows = conn.execute(
                 """
                 SELECT role, content
@@ -74,7 +167,7 @@ class ChatStore:
 
     def get_messages(self, session_id: str, limit: int = 100) -> list[dict]:
         safe_limit = max(1, min(limit, 500))
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             rows = conn.execute(
                 """
                 SELECT id, role, content, created_at
@@ -97,7 +190,7 @@ class ChatStore:
         ]
 
     def remember_turn(self, session_id: str, user_text: str, assistant_text: str) -> None:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             conn.execute("BEGIN IMMEDIATE")
             conn.execute(
                 "INSERT INTO chat_messages(session_id, role, content) VALUES (?, 'user', ?)",
@@ -124,7 +217,7 @@ class ChatStore:
             conn.commit()
 
     def clear(self, session_id: str | None = None) -> int:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             if session_id:
                 cur = conn.execute(
                     "DELETE FROM chat_messages WHERE session_id = ?",
@@ -135,7 +228,7 @@ class ChatStore:
             return cur.rowcount
 
     def stats(self) -> dict:
-        with self._lock, self._connect() as conn:
+        with self._lock, self._connection() as conn:
             row = conn.execute(
                 """
                 SELECT COUNT(DISTINCT session_id) AS sessions,

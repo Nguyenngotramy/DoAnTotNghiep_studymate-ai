@@ -233,7 +233,7 @@ export default function AppLayout() {
           )}
 
           <div className="text-[10px] font-medium text-[#5a5a6e] uppercase tracking-[.06em] px-2 py-2 mt-2">Phân tích AI</div>
-          <NavItem to="/predict" icon={BrainCircuit} label="Dự đoán học lực" />
+          <NavItem to="/predict" icon={BrainCircuit} label="Đề xuất ngành học" />
           <NavItem to="/dashboard" icon={TrendingUp} label="Thống kê cá nhân" />
 
           {user?.role === 'ADMIN' && (

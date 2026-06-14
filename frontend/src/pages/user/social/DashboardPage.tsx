@@ -583,8 +583,8 @@ export default function DashboardPage() {
             <QuickAction
               to="/predict"
               icon={TrendingUp}
-              title="Dự đoán"
-              desc="AI học lực"
+              title="Đề xuất ngành"
+              desc="Điểm & RIASEC"
               color="#8b5cf6"
             />
           </div>
@@ -848,7 +848,7 @@ export default function DashboardPage() {
                 <TrendingUp size={17} />
               </div>
               <div>
-                <p className="text-[14px] font-semibold text-indigo-300">Dự đoán học lực</p>
+                <p className="text-[14px] font-semibold text-indigo-300">Đề xuất ngành học</p>
                 <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
                   AI phân tích điểm số
                 </p>
@@ -856,14 +856,14 @@ export default function DashboardPage() {
             </div>
 
             <p className="text-[12px] leading-6" style={{ color: 'var(--text2)' }}>
-              Nhập điểm các môn học để AI dự đoán học lực và gợi ý cải thiện phù hợp.
+              Nhập điểm thi và kết quả RIASEC để tham khảo các ngành học phù hợp.
             </p>
 
             <Link
               to="/predict"
               className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-2xl bg-indigo-500 py-3 text-[12px] font-semibold text-white transition-colors hover:bg-indigo-400"
             >
-              Dự đoán ngay <ArrowRight size={13} />
+              Xem gợi ý <ArrowRight size={13} />
             </Link>
           </div>
         </aside>

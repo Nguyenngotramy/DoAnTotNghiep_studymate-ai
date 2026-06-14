@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Instant;
+import java.time.Duration;
 import java.util.*;
 
 @Service
@@ -29,6 +30,12 @@ public class DirectMessageService {
 
     @Value("${app.ai-agent.url}")
     private String aiAgentUrl;
+
+    @Value("${app.ai-agent.service-key:}")
+    private String aiAgentServiceKey;
+
+    @Value("${app.ai-agent.timeout-seconds:45}")
+    private long aiAgentTimeoutSeconds;
 
     public Page<DirectMessage> getConversation(String u1, String u2, int page) {
         return dmRepo.findConversation(
@@ -118,19 +125,38 @@ public class DirectMessageService {
         return send(senderId, receiverId, content, type, new ArrayList<>(), null);
     }
 
-    public DirectMessage askAI(String senderId, String receiverId, String question) {
+    public DirectMessage askAI(
+            String senderId,
+            String receiverId,
+            String question,
+            String provider,
+            String model,
+            String apiKey
+    ) {
         String answer;
         try {
+            List<String> participantIds = new ArrayList<>(List.of(senderId, receiverId));
+            Collections.sort(participantIds);
+            String conversationScope = "dm:" + String.join(":", participantIds);
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("text", question);
+            payload.put("session_id", conversationScope);
+            payload.put("tenant_id", conversationScope);
+            payload.put("account_id", senderId);
+            if (apiKey != null && !apiKey.isBlank()) {
+                payload.put("api_key", apiKey.trim());
+                payload.put("provider", provider);
+                payload.put("model", model);
+            }
+
             var res = webClient.build()
                     .post()
                     .uri(aiAgentUrl + "/chat")
-                    .bodyValue(Map.of(
-                            "text", question,
-                            "session_id", "dm:" + senderId + ":" + receiverId
-                    ))
+                    .header("X-AI-Service-Key", aiAgentServiceKey)
+                    .bodyValue(payload)
                     .retrieve()
                     .bodyToMono(Map.class)
-                    .block();
+                    .block(Duration.ofSeconds(aiAgentTimeoutSeconds));
 
             answer = res != null
                     ? String.valueOf(res.getOrDefault("response", res.getOrDefault("answer", "")))

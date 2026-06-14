@@ -33,6 +33,7 @@ public class FlashcardService {
     private final StudyDocumentRepository docRepo;
     private final GroupRepository groupRepo;
     private final UserRepository userRepo;
+    private final StreakService streakService;
 
     public List<FlashcardDeck> listDecks(
             String userId,
@@ -314,6 +315,7 @@ public class FlashcardService {
 
         Sm2Scheduler.applyReview(progress, rating);
         progress = progressRepo.save(progress);
+        streakService.applyStudyStreak(userId);
 
         if (rating == FlashcardCardProgress.Rating.AGAIN) {
             notificationService.send(

@@ -3,19 +3,14 @@ import {
   StickyNote, Download, Trash2, Plus, X, ChevronRight,
   Bold, Italic, List, Clock, Save, FileText
 } from 'lucide-react'
-
-// ── Types ─────────────────────────────────────────────────
-interface Note {
-  id: string
-  title: string
-  content: string
-  color: string
-  updatedAt: string
-}
-
-const NOTE_COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#ec4899', '#22c55e', '#f97316']
-
-const STORAGE_KEY = 'studymate_notes'
+import {
+  loadNotes,
+  NOTE_COLORS,
+  NOTES_STORAGE_KEY,
+  NOTES_UPDATED_EVENT,
+  persistNotes,
+  type Note,
+} from '@/utils/notesStorage'
 
 const THEME = {
   dark: {
@@ -91,19 +86,6 @@ function timeAgo(iso: string) {
   return new Date(iso).toLocaleDateString('vi-VN')
 }
 
-function loadNotes(): Note[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function saveNotes(notes: Note[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes))
-}
-
 export default function SideToolbar() {
   const [open, setOpen] = useState(false)
   const [notes, setNotes] = useState<Note[]>(loadNotes)
@@ -149,8 +131,23 @@ export default function SideToolbar() {
 
   // Persist notes on change
   useEffect(() => {
-    saveNotes(notes)
+    persistNotes(notes)
   }, [notes])
+
+  useEffect(() => {
+    const syncNotes = () => setNotes(loadNotes())
+    const syncNotesFromStorage = (event: StorageEvent) => {
+      if (event.key === NOTES_STORAGE_KEY) syncNotes()
+    }
+
+    window.addEventListener(NOTES_UPDATED_EVENT, syncNotes)
+    window.addEventListener('storage', syncNotesFromStorage)
+
+    return () => {
+      window.removeEventListener(NOTES_UPDATED_EVENT, syncNotes)
+      window.removeEventListener('storage', syncNotesFromStorage)
+    }
+  }, [])
 
   // Auto-focus textarea khi mở note
   useEffect(() => {

@@ -1,10 +1,13 @@
 package com.studymate.controller;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.studymate.dto.ApiResponse;
 import com.studymate.dto.PageResponse;
+import com.studymate.dto.request.TaskRequest;
 import com.studymate.model.ChatMessage;
 import com.studymate.model.Group;
 import com.studymate.model.Notification;
+import com.studymate.model.Task;
 import com.studymate.model.User;
 import com.studymate.repository.ChatMessageRepository;
 import com.studymate.repository.GroupRepository;
@@ -14,6 +17,7 @@ import com.studymate.service.DocumentService;
 import com.studymate.service.FlashcardService;
 import com.studymate.service.NotificationService;
 import com.studymate.service.QuizService;
+import com.studymate.service.TaskService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,6 +35,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.security.Principal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,9 +58,16 @@ public class ChatController {
     private final DocumentService documentService;
     private final FlashcardService flashcardService;
     private final QuizService quizService;
+    private final TaskService taskService;
 
     @Value("${app.ai-agent.url}")
     private String aiAgentUrl;
+
+    @Value("${app.ai-agent.service-key:}")
+    private String aiAgentServiceKey;
+
+    @Value("${app.ai-agent.timeout-seconds:45}")
+    private long aiAgentTimeoutSeconds;
 
     @GetMapping("/groups/{groupId}/chat")
     public ResponseEntity<?> history(
@@ -317,20 +331,25 @@ public class ChatController {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("text", question);
             payload.put("session_id", "group:" + groupId);
+            payload.put("tenant_id", "group:" + groupId);
+            payload.put("account_id", auth.getName());
             if (group.getSubject() != null && !group.getSubject().isBlank()) {
                 payload.put("subject", group.getSubject());
             }
             if (body.getApiKey() != null && !body.getApiKey().isBlank()) {
                 payload.put("api_key", body.getApiKey().trim());
+                payload.put("provider", body.getProvider());
+                payload.put("model", body.getModel());
             }
 
             var res = webClientBuilder.build()
                     .post()
                     .uri(aiAgentUrl + "/chat")
+                    .header("X-AI-Service-Key", aiAgentServiceKey)
                     .bodyValue(payload)
                     .retrieve()
                     .bodyToMono(Map.class)
-                    .block();
+                    .block(Duration.ofSeconds(aiAgentTimeoutSeconds));
 
             autoSaveStructuredStudyMaterial(auth.getName(), question, res);
             aiAnswer = res != null
@@ -353,6 +372,152 @@ public class ChatController {
         messaging.convertAndSend("/topic/group." + groupId, aiMsg);
 
         return ResponseEntity.ok(ApiResponse.ok(aiMsg));
+    }
+
+    @PostMapping("/groups/{groupId}/chat/group-agent")
+    public ResponseEntity<?> askGroupAgent(
+            @PathVariable String groupId,
+            Authentication auth,
+            @RequestBody AskAIRequest body
+    ) {
+        Group group = validateMember(groupId, auth.getName());
+        String question = body.getQuestion() == null ? "" : body.getQuestion().trim();
+        if (question.isEmpty()) {
+            throw new RuntimeException("Yêu cầu phân task không được để trống");
+        }
+
+        User user = userRepo.findById(auth.getName()).orElseThrow();
+        ChatMessage userMsg = ChatMessage.builder()
+                .groupId(groupId)
+                .senderId(auth.getName())
+                .senderName(user.getFullName())
+                .senderAvatar(user.getAvatar())
+                .content("@GroupAgent " + question)
+                .type(ChatMessage.Type.USER)
+                .build();
+        chatRepo.save(userMsg);
+        messaging.convertAndSend("/topic/group." + groupId, userMsg);
+
+        try {
+            List<Map<String, Object>> memberPayload = Optional.ofNullable(group.getMembers())
+                    .orElseGet(ArrayList::new)
+                    .stream()
+                    .map(member -> {
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("id", member.getUserId());
+                        item.put("name", member.getFullName());
+                        item.put("role", String.valueOf(member.getRole()));
+                        return item;
+                    })
+                    .collect(Collectors.toList());
+
+            List<Map<String, Object>> taskPayload = taskService.getByGroup(groupId).stream()
+                    .map(task -> {
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("title", task.getTitle());
+                        item.put("status", String.valueOf(task.getStatus()));
+                        item.put("priority", String.valueOf(task.getPriority()));
+                        item.put("assignee", task.getAssigneeName());
+                        item.put("deadline", task.getDeadline());
+                        return item;
+                    })
+                    .collect(Collectors.toList());
+
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("request", question);
+            payload.put("group_name", group.getName());
+            payload.put("description", group.getDescription());
+            payload.put("subject", group.getSubject());
+            payload.put("tenant_id", "group:" + groupId);
+            payload.put("members", memberPayload);
+            payload.put("tasks", taskPayload);
+            payload.put("response_format", "task_plan");
+            payload.put("history", buildGroupAgentHistory(groupId, userMsg.getId()));
+            if (body.getApiKey() != null && !body.getApiKey().isBlank()) {
+                payload.put("api_key", body.getApiKey().trim());
+                payload.put("provider", body.getProvider());
+                payload.put("model", body.getModel());
+            }
+
+            Map<?, ?> res = webClientBuilder.build()
+                    .post()
+                    .uri(aiAgentUrl + "/group-assistant")
+                    .header("X-AI-Service-Key", aiAgentServiceKey)
+                    .bodyValue(payload)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block(Duration.ofSeconds(aiAgentTimeoutSeconds));
+
+            ChatMessage.TaskProposal proposal = parseTaskProposal(group, res);
+            ChatMessage aiMsg = ChatMessage.builder()
+                    .groupId(groupId)
+                    .senderId("GROUP_AGENT")
+                    .senderName("GroupAgent")
+                    .content(proposal.getSummary())
+                    .type(ChatMessage.Type.AI)
+                    .taskProposal(proposal)
+                    .build();
+            chatRepo.save(aiMsg);
+            messaging.convertAndSend("/topic/group." + groupId, aiMsg);
+            return ResponseEntity.ok(ApiResponse.ok(aiMsg));
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("GroupAgent chưa thể tạo đề xuất phân task. Vui lòng thử lại.");
+        }
+    }
+
+    @PostMapping("/groups/{groupId}/chat/{messageId}/approve-tasks")
+    public ResponseEntity<?> approveGroupAgentTasks(
+            @PathVariable String groupId,
+            @PathVariable String messageId,
+            Authentication auth
+    ) {
+        Group group = validateLeader(groupId, auth.getName());
+        ChatMessage message = chatRepo.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đề xuất GroupAgent"));
+        if (!groupId.equals(message.getGroupId()) || message.getTaskProposal() == null) {
+            throw new RuntimeException("Tin nhắn không chứa đề xuất task hợp lệ");
+        }
+        ChatMessage.TaskProposal proposal = message.getTaskProposal();
+        if (proposal.getStatus() != ChatMessage.ProposalStatus.PENDING) {
+            throw new RuntimeException("Đề xuất này đã được duyệt trước đó");
+        }
+
+        Set<String> memberIds = Optional.ofNullable(group.getMembers())
+                .orElseGet(ArrayList::new)
+                .stream()
+                .map(Group.GroupMember::getUserId)
+                .collect(Collectors.toSet());
+        for (ChatMessage.ProposedTask item : proposal.getTasks()) {
+            if (item.getAssigneeId() != null && !memberIds.contains(item.getAssigneeId())) {
+                throw new RuntimeException("Đề xuất có người phụ trách không thuộc nhóm");
+            }
+        }
+
+        List<String> createdTaskIds = new ArrayList<>();
+        for (ChatMessage.ProposedTask item : proposal.getTasks()) {
+            TaskRequest request = new TaskRequest();
+            request.setTitle(item.getTitle());
+            request.setDescription(item.getDescription());
+            request.setStatus(Task.Status.TODO);
+            request.setPriority(parseTaskPriority(item.getPriority()));
+            request.setAssigneeId(item.getAssigneeId());
+            request.setDeadline(item.getDeadline());
+            request.setLabel("GroupAgent");
+            request.setLabelColor("#8b5cf6");
+            createdTaskIds.add(taskService.create(groupId, auth.getName(), request).getId());
+        }
+
+        proposal.setStatus(ChatMessage.ProposalStatus.APPROVED);
+        proposal.setApprovedBy(auth.getName());
+        proposal.setApprovedAt(Instant.now());
+        proposal.setCreatedTaskIds(createdTaskIds);
+        message.setTaskProposal(proposal);
+        ChatMessage saved = chatRepo.save(message);
+        messaging.convertAndSend("/topic/group." + groupId, saved);
+
+        return ResponseEntity.ok(ApiResponse.ok(saved, "Đã duyệt và tạo task trên Kanban"));
     }
 
     @MessageMapping("/group.{groupId}.sendMessage")
@@ -693,6 +858,115 @@ public class ChatController {
         }
     }
 
+    private ChatMessage.TaskProposal parseTaskProposal(Group group, Map<?, ?> response) {
+        if (response == null || !(response.get("proposal") instanceof Map<?, ?> rawProposal)) {
+            throw new RuntimeException("GroupAgent không trả về đề xuất task hợp lệ");
+        }
+
+        Map<String, String> memberNames = Optional.ofNullable(group.getMembers())
+                .orElseGet(ArrayList::new)
+                .stream()
+                .collect(Collectors.toMap(
+                        Group.GroupMember::getUserId,
+                        Group.GroupMember::getFullName,
+                        (first, second) -> first
+                ));
+        List<ChatMessage.ProposedTask> tasks = new ArrayList<>();
+        Object rawTasks = rawProposal.get("tasks");
+        if (rawTasks instanceof List<?> items) {
+            for (Object rawItem : items.stream().limit(20).toList()) {
+                if (!(rawItem instanceof Map<?, ?> item)) continue;
+                String title = safeString(item.get("title")).trim();
+                if (title.isEmpty()) continue;
+
+                String assigneeId = safeString(item.get("assignee_id")).trim();
+                if (assigneeId.isEmpty() || !memberNames.containsKey(assigneeId)) {
+                    assigneeId = null;
+                }
+                tasks.add(ChatMessage.ProposedTask.builder()
+                        .title(title)
+                        .description(safeString(item.get("description")).trim())
+                        .priority(parseTaskPriority(item.get("priority")).name())
+                        .assigneeId(assigneeId)
+                        .assigneeName(assigneeId == null ? null : memberNames.get(assigneeId))
+                        .deadline(parseTaskDeadline(item.get("deadline")))
+                        .build());
+            }
+        }
+        if (tasks.isEmpty()) {
+            throw new RuntimeException("GroupAgent không tạo được task hợp lệ");
+        }
+
+        String summary = safeString(rawProposal.get("summary")).trim();
+        if (summary.isEmpty()) {
+            summary = "GroupAgent đã đề xuất " + tasks.size() + " task. Trưởng nhóm hãy kiểm tra trước khi duyệt.";
+        }
+        return ChatMessage.TaskProposal.builder()
+                .summary(summary)
+                .status(ChatMessage.ProposalStatus.PENDING)
+                .tasks(tasks)
+                .build();
+    }
+
+    private List<Map<String, String>> buildGroupAgentHistory(String groupId, String currentMessageId) {
+        List<ChatMessage> recent = new ArrayList<>(
+                chatRepo.findByGroupIdOrderByCreatedAtDesc(
+                        groupId,
+                        PageRequest.of(0, 50)
+                ).getContent()
+        );
+        Collections.reverse(recent);
+
+        return recent.stream()
+                .filter(message -> !Objects.equals(message.getId(), currentMessageId))
+                .filter(message ->
+                        "GROUP_AGENT".equals(message.getSenderId()) ||
+                                (message.getContent() != null &&
+                                        message.getContent().toLowerCase().startsWith("@groupagent"))
+                )
+                .skip(Math.max(0, recent.stream()
+                        .filter(message ->
+                                "GROUP_AGENT".equals(message.getSenderId()) ||
+                                        (message.getContent() != null &&
+                                                message.getContent().toLowerCase().startsWith("@groupagent"))
+                        )
+                        .count() - 12))
+                .map(message -> {
+                    Map<String, String> item = new LinkedHashMap<>();
+                    boolean assistant = "GROUP_AGENT".equals(message.getSenderId());
+                    item.put("role", assistant ? "assistant" : "user");
+                    String content = Optional.ofNullable(message.getContent()).orElse("");
+                    item.put(
+                            "content",
+                            assistant ? content : content.replaceFirst("(?i)^@GroupAgent\\s*", "")
+                    );
+                    return item;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private Task.Priority parseTaskPriority(Object value) {
+        try {
+            return Task.Priority.valueOf(safeString(value).trim().toUpperCase());
+        } catch (Exception ignored) {
+            return Task.Priority.MEDIUM;
+        }
+    }
+
+    private Instant parseTaskDeadline(Object value) {
+        String raw = safeString(value).trim();
+        if (raw.isEmpty() || "null".equalsIgnoreCase(raw)) return null;
+        try {
+            return Instant.parse(raw);
+        } catch (Exception ignored) {
+            try {
+                return LocalDate.parse(raw).atStartOfDay().toInstant(ZoneOffset.UTC);
+            } catch (Exception ignoredAgain) {
+                return null;
+            }
+        }
+    }
+
     private Group validateMember(String groupId, String userId) {
         Group group = groupRepo.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Nhóm không tồn tại"));
@@ -704,6 +978,19 @@ public class ChatController {
             throw new RuntimeException("Bạn không phải thành viên nhóm này");
         }
 
+        return group;
+    }
+
+    private Group validateLeader(String groupId, String userId) {
+        Group group = validateMember(groupId, userId);
+        boolean isLeader = group.getMembers() != null && group.getMembers().stream()
+                .anyMatch(member ->
+                        userId.equals(member.getUserId()) &&
+                                member.getRole() == Group.Role.LEADER
+                );
+        if (!isLeader) {
+            throw new RuntimeException("Chỉ trưởng nhóm mới được duyệt và tạo task từ GroupAgent");
+        }
         return group;
     }
 
@@ -740,7 +1027,10 @@ public class ChatController {
     @AllArgsConstructor
     public static class AskAIRequest {
         private String question;
+        @JsonProperty("api_key")
         private String apiKey;
+        private String provider;
+        private String model;
     }
 
     @Data

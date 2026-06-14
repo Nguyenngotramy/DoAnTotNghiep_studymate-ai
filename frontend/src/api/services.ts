@@ -12,6 +12,7 @@ import type {
   VocabularySet,
   StudyProfile, StudyTermRecord, StudySubjectRecord, StudyPrediction
 } from '@/types'
+import { withAiConfig } from '@/utils/aiConfig'
 
 const AI_AGENT_URL = '/ai-agent'
 
@@ -375,7 +376,7 @@ export const dmApi = {
     }).then(r => d<DirectMessage>(r)),
 
   askAI: (userId: string, question: string) =>
-    api.post(`/dm/${userId}/ai`, { question }).then(r => d<DirectMessage>(r)),
+    api.post(`/dm/${userId}/ai`, withAiConfig({ question })).then(r => d<DirectMessage>(r)),
 
   markRead: (userId: string) =>
     api.post(`/dm/${userId}/read`),
@@ -648,8 +649,14 @@ export const chatApi = {
   recall: (groupId: string, messageId: string) =>
     api.post(`/groups/${groupId}/chat/${messageId}/recall`).then(r => d<ChatMessage>(r)),
 
-  askAI: (groupId: string, question: string, apiKey?: string) =>
-    api.post(`/groups/${groupId}/chat/ai`, { question, apiKey }).then(r => d<ChatMessage>(r)),
+  askAI: (groupId: string, question: string) =>
+    api.post(`/groups/${groupId}/chat/ai`, withAiConfig({ question })).then(r => d<ChatMessage>(r)),
+
+  askGroupAgent: (groupId: string, question: string) =>
+    api.post(`/groups/${groupId}/chat/group-agent`, withAiConfig({ question })).then(r => d<ChatMessage>(r)),
+
+  approveGroupAgentTasks: (groupId: string, messageId: string) =>
+    api.post(`/groups/${groupId}/chat/${messageId}/approve-tasks`).then(r => d<ChatMessage>(r)),
 
   uploadImage: (file: File) => {
     const fd = new FormData()
@@ -1112,6 +1119,18 @@ export const quizApi = {
   }) =>
     api.post('/quizzes', body).then(r => d<QuizSet>(r)),
 
+  saveFromChat: (body: {
+    title: string
+    description?: string
+    questions: {
+      question: string
+      options: string[]
+      correctIndex: number
+      explanation: string
+    }[]
+  }) =>
+    api.post('/quizzes/from-chat', body).then(r => d<QuizSet>(r)),
+
   updatePersonalQuizSet: (
     quizId: string,
     body: {
@@ -1201,7 +1220,7 @@ export const vocabularyApi = {
     fetch(`${AI_AGENT_URL}/vocabulary/extract`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(withAiConfig(body)),
     }).then(async res => {
       if (!res.ok) throw new Error(await res.text())
       return res.json() as Promise<{ count: number; vocabulary: VocabularyPayload }>
@@ -1217,7 +1236,7 @@ export const vocabularyApi = {
       return res.json() as Promise<{ flashcards: { question: string; answer: string }[]; vocabulary: VocabularyPayload }>
     }),
 
-  toQuiz: (vocabulary: VocabularyItem[], num_questions = 10) =>
+  toQuiz: (vocabulary: VocabularyItem[], num_questions = 20) =>
     fetch(`${AI_AGENT_URL}/vocabulary/to-quiz`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

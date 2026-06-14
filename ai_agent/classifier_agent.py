@@ -23,13 +23,17 @@ import logging
 from dataclasses import dataclass, asdict
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
+from llm_capacity import llm_capacity_slot
+from llm_runtime import LLM_MAX_RETRIES, LLM_REQUEST_TIMEOUT_SECONDS
 
 load_dotenv()
 logger = logging.getLogger(__name__)
 
 async_client = AsyncOpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
-    base_url="https://openrouter.ai/api/v1",
+    base_url=os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
+    timeout=LLM_REQUEST_TIMEOUT_SECONDS,
+    max_retries=LLM_MAX_RETRIES,
 )
 
 MODEL = os.getenv("MODEL", "anthropic/claude-haiku-4-5")
@@ -235,14 +239,15 @@ class ClassifierAgent:
         )
 
     async def _call_model(self, model: str, prompt: str) -> ClassificationResult | None:
-        response = await async_client.chat.completions.create(
-            model=model,
-            max_tokens=500,
-            messages=[
-                {"role": "system", "content": CLASSIFIER_SYSTEM_PROMPT},
-                {"role": "user",   "content": prompt},
-            ],
-        )
+        async with llm_capacity_slot():
+            response = await async_client.chat.completions.create(
+                model=model,
+                max_tokens=500,
+                messages=[
+                    {"role": "system", "content": CLASSIFIER_SYSTEM_PROMPT},
+                    {"role": "user",   "content": prompt},
+                ],
+            )
 
         raw = response.choices[0].message.content or ""
         # Strip markdown fences nếu có
