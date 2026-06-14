@@ -12,7 +12,7 @@ import {
   BrainCircuit, User, Settings, LogOut, Search, Bell,
   Zap, Flame, X, ChevronRight, CheckCircle2, AlertCircle,
   FileText, Heart, Check, FolderOpen,
-  Crown, PenSquare,
+  Crown,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -117,7 +117,6 @@ function NavSection({ title }: { title: string }) {
 }
 
 const QUICK_LINKS = [
-  { label: 'Viết bài', to: '/blog/create', icon: PenSquare, color: '#ec4899' },
   { label: 'Blog học tập', to: '/blog', icon: BookOpen, color: '#6366f1' },
   { label: 'Nhóm của tôi', to: '/groups', icon: UsersRound, color: '#14b8a6' },
   { label: 'Flashcard', to: '/flashcard', icon: Layers, color: '#f59e0b' },
@@ -548,7 +547,6 @@ export default function UserLayout() {
 
           <NavSection title="Cộng đồng" />
           <NavItem to="/blog" icon={BookOpen} label="Blog học tập" />
-          <NavItem to="/blog/create" icon={PenSquare} label="Viết bài" />
           <NavItem to="/discover" icon={Compass} label="Khám phá" />
           <NavItem to="/friends" icon={Users} label="Kết bạn" />
           <NavItem to="/inbox" icon={MessageCircle} label="Tin nhắn" badge={messageUnread} />
@@ -565,6 +563,7 @@ export default function UserLayout() {
           <NavItem to="/predict" icon={BrainCircuit} label="Đề xuất ngành học" />
 
           <NavSection title="Tài khoản" />
+          <NavItem to="/membership" icon={Crown} label="Nâng cấp ngay" />
           <NavItem to="/profile" icon={User} label="Hồ sơ cá nhân" />
           <NavItem to="/settings" icon={Settings} label="Cài đặt" />
         </nav>

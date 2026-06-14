@@ -3,8 +3,8 @@ import { useAuthStore } from '@/store/authStore'
 import { authApi } from '@/api/services'
 import toast from 'react-hot-toast'
 import {
-  LayoutDashboard, Users, Users2, FileText,
-  BrainCircuit, AlertTriangle, Bell, Settings, LogOut
+  LayoutDashboard, Users, Users2, FileText, MessageCircle,
+  BrainCircuit, AlertTriangle, Bell, Settings, LogOut, Wallet, BarChart3
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useState } from 'react'
@@ -101,12 +101,17 @@ export default function AdminLayout() {
 
           <div className="text-[10px] font-medium text-[#5a5a6e] uppercase tracking-[.06em] px-2 py-2 mt-2">Quản lý</div>
           <AdminNavItem to="/admin/users"  icon={Users}    label="Người dùng" />
+          <AdminNavItem to="/admin/posts"  icon={MessageCircle} label="Kiểm duyệt bài viết" />
           <AdminNavItem to="/admin/groups" icon={Users2}   label="Nhóm học" />
           <AdminNavItem to="/admin/docs"   icon={FileText} label="Tài liệu" />
 
           <div className="text-[10px] font-medium text-[#5a5a6e] uppercase tracking-[.06em] px-2 py-2 mt-2">AI & Dự đoán</div>
           <AdminNavItem to="/admin/ml"     icon={BrainCircuit}   label="Kết quả ML" />
           <AdminNavItem to="/admin/alerts" icon={AlertTriangle}  label="Cảnh báo" />
+
+          <div className="text-[10px] font-medium text-[#5a5a6e] uppercase tracking-[.06em] px-2 py-2 mt-2">Thu phí</div>
+          <AdminNavItem to="/admin/membership" icon={Wallet} label="Gói & doanh thu" />
+          <AdminNavItem to="/admin/revenue" icon={BarChart3} label="Thống kê doanh thu" />
 
           <div className="text-[10px] font-medium text-[#5a5a6e] uppercase tracking-[.06em] px-2 py-2 mt-2">Hệ thống</div>
           <AdminNavItem to="/admin/notifications" icon={Bell}     label="Gửi thông báo" />
