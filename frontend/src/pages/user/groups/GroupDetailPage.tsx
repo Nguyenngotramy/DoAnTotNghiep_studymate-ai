@@ -723,12 +723,12 @@ export default function GroupDetailPage() {
               </Link>
 
               <Link
-                to={`/groups/${groupId}/kanban`}
+                to={`/groups/${groupId}/projects`}
                 className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium border"
                 style={{ borderColor: 'rgba(255,255,255,.16)', color: '#fff', background: 'rgba(255,255,255,.06)' }}
               >
                 <KanbanSquare size={15} />
-                Task
+                Dự án và Task
               </Link>
 
               <Link
@@ -1858,7 +1858,7 @@ export default function GroupDetailPage() {
                 style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
               >
                 <KanbanSquare size={16} />
-                Dự án & Task
+                Dự án và Task
               </Link>
 
               <Link

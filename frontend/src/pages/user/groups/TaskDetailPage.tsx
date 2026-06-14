@@ -27,7 +27,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
-import { groupApi, taskApi } from '@/api/services'
+import { groupApi, taskApi, authApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import type {
   GroupMember,
@@ -77,24 +77,6 @@ function toInputDate(v?: string) {
   } catch {
     return ''
   }
-}
-
-function toInstantString(value?: string) {
-  if (!value) return undefined
-
-  const cleanValue = String(value).trim()
-  if (!cleanValue) return undefined
-
-  // input type="date" sẽ trả về dạng YYYY-MM-DD.
-  // Backend dùng java.time.Instant nên phải gửi đủ datetime + timezone.
-  if (/^\d{4}-\d{2}-\d{2}$/.test(cleanValue)) {
-    return new Date(`${cleanValue}T23:59:00`).toISOString()
-  }
-
-  const date = new Date(cleanValue)
-  if (Number.isNaN(date.getTime())) return undefined
-
-  return date.toISOString()
 }
 
 function isOverdue(deadline?: string, status?: TaskStatus) {
@@ -155,10 +137,11 @@ function buildCommentTree(comments?: TaskComment[]) {
 }
 
 export default function TaskDetailPage() {
-  const { groupId = '', taskId = '' } = useParams()
+  const { groupId = '', projectId = '', taskId = '' } = useParams()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const { user } = useAuthStore()
+  const boardPath = projectId ? `/groups/${groupId}/projects/${projectId}/kanban` : `/groups/${groupId}/kanban`
 
   const [editing, setEditing] = useState(false)
 
@@ -236,7 +219,7 @@ export default function TaskDetailPage() {
         status,
         priority,
         assigneeId: assigneeId || undefined,
-        deadline: toInstantString(deadline),
+        deadline: deadline || undefined,
       } as Partial<Task>)
     },
     onSuccess: () => {
@@ -260,6 +243,9 @@ export default function TaskDetailPage() {
       qc.invalidateQueries({ queryKey: ['group-tasks', groupId] })
       qc.invalidateQueries({ queryKey: ['my-tasks'] })
       toast.success('Đã cập nhật trạng thái')
+      authApi.me().then(latestUser => {
+        useAuthStore.getState().updateUser(latestUser)
+      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: () => {
       toast.error('Không thể cập nhật trạng thái')
@@ -273,7 +259,7 @@ export default function TaskDetailPage() {
       qc.invalidateQueries({ queryKey: ['group-tasks', groupId] })
       qc.invalidateQueries({ queryKey: ['my-tasks'] })
       toast.success('Đã xoá task')
-      navigate(`/groups/${groupId}/kanban`)
+      navigate(boardPath)
     },
     onError: (e: any) => {
       toast.error(e?.response?.data?.message ?? 'Không thể xoá task')
@@ -349,6 +335,9 @@ export default function TaskDetailPage() {
       setPickedFiles([])
       setPickedImages([])
       toast.success('Đã nộp task')
+      authApi.me().then(latestUser => {
+        useAuthStore.getState().updateUser(latestUser)
+      }).catch(e => console.error('Lỗi cập nhật XP:', e))
     },
     onError: (e: any) => {
       toast.error(e?.response?.data?.message ?? 'Không thể nộp task')
@@ -656,7 +645,7 @@ export default function TaskDetailPage() {
           Không tìm thấy task
         </div>
         <button
-          onClick={() => navigate(`/groups/${groupId}/kanban`)}
+          onClick={() => navigate(boardPath)}
           className="mt-4 px-4 py-2 rounded-xl text-sm"
           style={{ background: '#6366f1', color: '#fff' }}
         >
@@ -689,14 +678,14 @@ export default function TaskDetailPage() {
             <span>/</span>
             <Link to={`/groups/${groupId}`} style={{ color: 'inherit' }}>{group.name}</Link>
             <span>/</span>
-            <Link to={`/groups/${groupId}/kanban`} style={{ color: 'inherit' }}>Board</Link>
+            <Link to={boardPath} style={{ color: 'inherit' }}>Board</Link>
             <span>/</span>
             <span>Task detail</span>
           </div>
 
           <div className="flex items-center gap-3 min-w-0">
             <Link
-              to={`/groups/${groupId}/kanban`}
+              to={boardPath}
               className="w-9 h-9 rounded-xl border flex items-center justify-center"
               style={{ borderColor: 'var(--border)', color: 'var(--text2)', background: 'var(--bg3)' }}
             >
@@ -1353,7 +1342,7 @@ export default function TaskDetailPage() {
                 Về trang nhóm
               </Link>
               <Link
-                to={`/groups/${groupId}/kanban`}
+                to={boardPath}
                 className="h-11 rounded-xl border inline-flex items-center px-3 text-[13px]"
                 style={{ background: 'rgba(99,102,241,.12)', borderColor: 'rgba(99,102,241,.20)', color: '#818cf8' }}
               >

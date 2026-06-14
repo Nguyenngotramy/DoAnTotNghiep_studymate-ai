@@ -43,8 +43,63 @@ const fmtSize = (kb: number) => {
 
 const resolveDocUrl = (fileUrl?: string) => {
   if (!fileUrl) return '#'
-  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) return fileUrl
+
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    return fileUrl
+  }
+
   return `http://localhost:8080/api${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`
+}
+
+const isCloudinaryUrl = (url: string) => {
+  return url.includes('res.cloudinary.com') && url.includes('/upload/')
+}
+
+const addCloudinaryFlag = (url: string, flag: string) => {
+  if (!isCloudinaryUrl(url)) return url
+
+  const uploadPart = '/upload/'
+
+  if (!url.includes(uploadPart)) return url
+  if (url.includes(`/upload/${flag}/`)) return url
+
+  return url.replace(uploadPart, `/upload/${flag}/`)
+}
+
+const canPreviewDirectly = (type?: string) => {
+  return ['IMAGE', 'TEXT'].includes(type || '')
+}
+
+const canPreviewWithGoogleDocs = (type?: string) => {
+  return ['PDF', 'DOCX', 'PPTX', 'EXCEL'].includes(type || '')
+}
+
+const resolveDocViewUrl = (doc: Document) => {
+  const url = resolveDocUrl(doc.fileUrl)
+
+  if (!url || url === '#') return '#'
+
+  if (canPreviewDirectly(doc.type)) {
+    return url
+  }
+
+  if (canPreviewWithGoogleDocs(doc.type) && url.startsWith('http')) {
+    return `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`
+  }
+
+  return url
+}
+
+const resolveDocDownloadUrl = (doc: Document) => {
+  const url = resolveDocUrl(doc.fileUrl)
+
+  if (!url || url === '#') return '#'
+
+  if (isCloudinaryUrl(url)) {
+    return addCloudinaryFlag(url, 'fl_attachment')
+  }
+
+  return url
 }
 
 function SummaryModal({
@@ -692,7 +747,7 @@ function DocCard({
 
       <div className="grid grid-cols-2 gap-2 mb-2">
         <a
-          href={resolveDocUrl(doc.fileUrl)}
+          href={resolveDocViewUrl(doc)}
           target="_blank"
           rel="noreferrer"
           className="h-9 rounded-xl border flex items-center justify-center gap-1.5 text-[11px] font-medium"
@@ -703,7 +758,9 @@ function DocCard({
         </a>
 
         <a
-          href={resolveDocUrl(doc.fileUrl)}
+          href={resolveDocDownloadUrl(doc)}
+          target="_blank"
+          rel="noreferrer"
           download
           className="h-9 rounded-xl border flex items-center justify-center gap-1.5 text-[11px] font-medium"
           style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
