@@ -25,7 +25,12 @@ public class DocumentService {
     private final GroupRepository groupRepo;
     private final OpenAiDocumentService openAiDocumentService;
     private final MembershipQuotaService membershipQuotaService;
+    private final CloudinaryStorageService cloudinaryStorageService;
 
+    /**
+     * Giữ lại để xoá fallback các file cũ đã từng lưu local ở /uploads.
+     * File upload mới sẽ lưu Cloudinary, không còn lưu local nữa.
+     */
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
@@ -66,18 +71,16 @@ public class DocumentService {
             safeOriginalName = normalizeDuplicateExtension(safeOriginalName);
 
             String type = getType(safeOriginalName);
-            String filename = UUID.randomUUID() + "_" + safeOriginalName;
 
-            Path dir = Paths.get(uploadDir, groupId).toAbsolutePath().normalize();
-            Files.createDirectories(dir);
-
-            Path target = dir.resolve(filename).normalize();
-            Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+            CloudinaryStorageService.CloudinaryUploadResult uploaded =
+                    cloudinaryStorageService.uploadDocument(file, groupId, safeOriginalName);
 
             StudyDocument doc = StudyDocument.builder()
                     .groupId(groupId)
                     .name(safeOriginalName)
-                    .fileUrl("/uploads/" + groupId + "/" + filename)
+                    .fileUrl(uploaded.secureUrl())
+                    .cloudinaryPublicId(uploaded.publicId())
+                    .cloudinaryResourceType(uploaded.resourceType())
                     .type(type)
                     .sizeKb(Math.max(1, file.getSize() / 1024))
                     .uploaderId(uploaderId)
@@ -87,11 +90,8 @@ public class DocumentService {
                     .build();
 
             return docRepo.save(doc);
-        } catch (IOException e) {
-            log.error("Upload document failed for group {}: {}", groupId, e.getMessage(), e);
-            throw new RuntimeException("Lỗi upload file: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Unexpected upload error for group {}: {}", groupId, e.getMessage(), e);
+            log.error("Upload document failed for group {}: {}", groupId, e.getMessage(), e);
             throw new RuntimeException("Không thể upload tài liệu: " + e.getMessage());
         }
     }
@@ -277,16 +277,40 @@ public class DocumentService {
         }
 
         if (doc.getSourceType() != StudyDocument.SourceType.CHAT) {
-            try {
-                String relativePath = doc.getFileUrl().replaceFirst("^/uploads/", "");
-                Path path = Paths.get(uploadDir).toAbsolutePath().normalize().resolve(relativePath).normalize();
-                Files.deleteIfExists(path);
-            } catch (IOException e) {
-                log.warn("Không thể xoá file vật lý {}: {}", doc.getFileUrl(), e.getMessage());
-            }
+            deletePhysicalFileIfPossible(doc);
         }
 
         docRepo.delete(doc);
+    }
+
+    private void deletePhysicalFileIfPossible(StudyDocument doc) {
+        if (doc.getCloudinaryPublicId() != null && !doc.getCloudinaryPublicId().isBlank()) {
+            cloudinaryStorageService.delete(
+                    doc.getCloudinaryPublicId(),
+                    doc.getCloudinaryResourceType()
+            );
+            return;
+        }
+
+        deleteOldLocalFileIfPossible(doc.getFileUrl());
+    }
+
+    private void deleteOldLocalFileIfPossible(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) return;
+        if (!fileUrl.startsWith("/uploads/")) return;
+
+        try {
+            String relativePath = fileUrl.replaceFirst("^/uploads/", "");
+            Path path = Paths.get(uploadDir)
+                    .toAbsolutePath()
+                    .normalize()
+                    .resolve(relativePath)
+                    .normalize();
+
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            log.warn("Không thể xoá file local cũ {}: {}", fileUrl, e.getMessage());
+        }
     }
 
     private void validateMember(String groupId, String userId) {

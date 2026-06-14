@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 
@@ -48,7 +49,7 @@ import FlashcardPage from '@/pages/user/learning/FlashcardPage'
 import QuizPage from '@/pages/user/learning/QuizPage'
 import StatisticsPage from '@/pages/user/learning/StatisticsPage'
 
-// User — Predict
+// User — Predict / Payment
 import PredictPage from '@/pages/user/predict/PredictPage'
 
 // User — Membership
@@ -59,22 +60,30 @@ import PaymentResultPage from '@/pages/user/payment/PaymentResultPage'
 // Admin
 import AdminDashboard from '@/pages/admin/DashboardPage'
 import AdminUsers from '@/pages/admin/UsersPage'
+import AdminPosts from '@/pages/admin/AdminPostsPage'
 import AdminGroups from '@/pages/admin/GroupsPage'
 import AdminML from '@/pages/admin/MLResultsPage'
 import AdminAlerts from '@/pages/admin/AlertsPage'
 import AdminSettings from '@/pages/admin/SettingsPage'
+import AdminMembershipPage from '@/pages/admin/AdminMembershipPage'
 import AdminUserDetailPage from '@/pages/admin/UserDetailPage'
 import AdminGroupDetailPage from '@/pages/admin/AdminGroupDetailPage'
 import AdminDocuments from '@/pages/admin/AdminDocuments'
 import AdminNotifications from '@/pages/admin/AdminNotifications'
 import AdminStats from '@/pages/admin/AdminStats'
+import AdminRevenuePage from '@/pages/admin/AdminRevenuePage'
 
-function RequireAuth({ children }: { children: React.ReactNode }) {
-  const token = useAuthStore(s => s.accessToken)
-  return token ? <>{children}</> : <Navigate to="/login" replace />
+function RequireAuth({ children }: { children: ReactNode }) {
+  const accessToken = useAuthStore(s => s.accessToken)
+
+  if (!accessToken) {
+    return <Navigate to="/login" replace />
+  }
+
+  return <>{children}</>
 }
 
-function RequireAdmin({ children }: { children: React.ReactNode }) {
+function RequireAdmin({ children }: { children: ReactNode }) {
   const user = useAuthStore(s => s.user)
   if (!user) return <Navigate to="/login" replace />
   return user.role === 'ADMIN'
@@ -108,6 +117,7 @@ export default function App() {
             </RequireAuth>
           }
         >
+          {/* Social */}
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/create" element={<CreatePostPage />} />
@@ -122,22 +132,54 @@ export default function App() {
           <Route path="/profile/edit" element={<EditProfilePage />} />
           <Route path="/u/:userId" element={<UserProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/kanban/personal/:taskId" element={<PersonalTaskDetailPage />} />
-          <Route path="/groups" element={<GroupsPage />} />
+
+          {/* Personal tasks */}
           <Route path="/kanban" element={<MyTasksPage />} />
           <Route path="/kanban/progress" element={<TaskProgressPage />} />
+          <Route path="/kanban/personal/:taskId" element={<PersonalTaskDetailPage />} />
+
+          {/* Groups */}
+          <Route path="/groups" element={<GroupsPage />} />
           <Route path="/groups/:groupId" element={<GroupDetailPage />} />
-          <Route path="/groups/:groupId/kanban" element={<KanbanPage />} />
-          <Route path="/groups/:groupId/kanban/:taskId" element={<TaskDetailPage />} />
-          <Route path="/groups/:groupId/projects" element={<ProjectListPage />} />
-          <Route path="/groups/:groupId/projects/:projectId/kanban" element={<ProjectKanbanPage />} />
-          <Route path="/groups/:groupId/projects/:projectId/progress" element={<ProjectProgressPage />} />
           <Route path="/groups/:groupId/chat" element={<ChatPage />} />
           <Route path="/groups/:groupId/docs" element={<DocsPage />} />
+
+          {/* Project + Task flow */}
+          <Route path="/groups/:groupId/projects" element={<ProjectListPage />} />
+          <Route
+            path="/groups/:groupId/projects/:projectId"
+            element={<Navigate to="kanban" replace />}
+          />
+          <Route
+            path="/groups/:groupId/projects/:projectId/kanban"
+            element={<ProjectKanbanPage />}
+          />
+          <Route
+            path="/groups/:groupId/projects/:projectId/progress"
+            element={<ProjectProgressPage />}
+          />
+          <Route
+            path="/groups/:groupId/projects/:projectId/kanban/:taskId"
+            element={<TaskDetailPage />}
+          />
+          <Route
+            path="/groups/:groupId/projects/:projectId/tasks/:taskId"
+            element={<TaskDetailPage />}
+          />
+
+          {/* Legacy group kanban routes - giữ lại để không lỗi link cũ */}
+          <Route path="/groups/:groupId/kanban" element={<KanbanPage />} />
+          <Route path="/groups/:groupId/kanban/:taskId" element={<TaskDetailPage />} />
+
+          {/* Study drive */}
           <Route path="/study-drive" element={<MyStudyDrivePage />} />
+
+          {/* Learning */}
           <Route path="/flashcard" element={<FlashcardPage />} />
           <Route path="/quiz" element={<QuizPage />} />
           <Route path="/statistics" element={<StatisticsPage />} />
+
+          {/* Predict / Payment */}
           <Route path="/predict" element={<PredictPage />} />
           <Route path="/membership" element={<MembershipPage />} />
           <Route path="/payment" element={<PaymentPage />} />
@@ -154,15 +196,20 @@ export default function App() {
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/users/:userId" element={<AdminUserDetailPage />} />
+
+          <Route path="/admin/posts" element={<AdminPosts />} />
+
           <Route path="/admin/groups" element={<AdminGroups />} />
+          <Route path="/admin/groups/:groupId" element={<AdminGroupDetailPage />} />
           <Route path="/admin/ml" element={<AdminML />} />
           <Route path="/admin/alerts" element={<AdminAlerts />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
-          <Route path="/admin/users/:userId" element={<AdminUserDetailPage />} />
-          <Route path="/admin/groups/:groupId" element={<AdminGroupDetailPage />} />
           <Route path="/admin/docs" element={<AdminDocuments />} />
-          <Route path="/admin/nsotifications" element={<AdminNotifications />} />
+          <Route path="/admin/notifications" element={<AdminNotifications />} />
           <Route path="/admin/stats" element={<AdminStats />} />
+          <Route path="/admin/revenue" element={<AdminRevenuePage />} />
+          <Route path="/admin/membership" element={<AdminMembershipPage />} />
         </Route>
 
         <Route path="*" element={<RedirectByRole />} />

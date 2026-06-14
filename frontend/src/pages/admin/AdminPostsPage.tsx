@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { adminPostApi } from '@/api/services'
 import type { Post, PostReport } from '@/types'
@@ -18,7 +18,7 @@ function ago(d?: string): string {
 }
 
 function reportKey(r: PostReport): string {
-  return r.reportId || r.id
+  return r.reportId || r.id || `${r.postId || 'report'}-${r.createdAt || 'unknown'}`
 }
 
 function validSummary(post: Post) {
@@ -89,6 +89,34 @@ export default function AdminPostsPage() {
     qc.invalidateQueries({ queryKey: ['unreadCount'] })
   }
 
+  const closeRejectForm = () => {
+    setRejectPostId(null)
+    setRejectReason('')
+  }
+
+  const closeRevisionForm = () => {
+    setRevisionPostId(null)
+    setRevisionMessage('')
+  }
+
+  const closeRemoveForm = () => {
+    setRemoveReportPostId(null)
+    setRemoveReason('')
+  }
+
+  const closeWarningForm = () => {
+    setWarningUserId(null)
+    setWarningPostId(null)
+    setWarningLevel('WARNING')
+    setWarningReason('')
+    setWarningMsgText('')
+  }
+
+  const openRemoveForm = (postId: string) => {
+    setRemoveReportPostId(postId)
+    setRemoveReason('')
+  }
+
   const removeFromCurrentList = (postId: string) => {
     if (activeTab !== 'reported') {
       qc.setQueryData(['admin-posts', activeTab], (old: any) => {
@@ -118,8 +146,7 @@ export default function AdminPostsPage() {
     onSuccess: (_, { postId }) => {
       removeFromCurrentList(postId)
       refreshAll()
-      setRejectPostId(null)
-      setRejectReason('')
+      closeRejectForm()
       toast.success('Đã từ chối bài viết')
     },
   })
@@ -148,8 +175,7 @@ export default function AdminPostsPage() {
         old ? old.filter(r => r.postId !== postId) : old,
       )
       refreshAll()
-      setRemoveReportPostId(null)
-      setRemoveReason('')
+      closeRemoveForm()
       setDetailReport(null)
       toast.success('Đã gỡ bài viết — chuyển sang tab Đã xử lý')
     },
@@ -160,8 +186,7 @@ export default function AdminPostsPage() {
     onSuccess: (_, { postId }) => {
       removeFromCurrentList(postId)
       refreshAll()
-      setRevisionPostId(null)
-      setRevisionMessage('')
+      closeRevisionForm()
       toast.success('Đã gửi yêu cầu chỉnh sửa')
     },
   })
@@ -180,11 +205,8 @@ export default function AdminPostsPage() {
     mutationFn: (payload: { userId: string; postId: string; level: 'REMINDER' | 'WARNING' | 'SEVERE'; reason: string; message: string }) =>
       adminPostApi.warnUser(payload.userId, payload.postId, payload.level, payload.reason, payload.message),
     onSuccess: (data: any) => {
-      setWarningUserId(null)
-      setWarningPostId(null)
-      setWarningLevel('WARNING')
-      setWarningReason('')
-      setWarningMsgText('')
+      closeWarningForm()
+      refreshAll()
       const discipline = data?.discipline
       if (discipline?.actionTaken) {
         toast.success(discipline.message || 'Đã áp dụng kỷ luật tài khoản')
@@ -202,6 +224,39 @@ export default function AdminPostsPage() {
     },
     onError: () => toast.error('Không thể quét lại media. Thử lại sau.'),
   })
+
+  const handleRejectPost = () => {
+    if (!rejectPostId) return
+
+    const reason = rejectReason.trim()
+    if (!reason) {
+      toast.error('Vui lòng nhập lý do từ chối')
+      return
+    }
+
+    rejectMutation.mutate({ postId: rejectPostId, reason })
+  }
+
+  const handleRequestRevision = () => {
+    if (!revisionPostId) return
+
+    const message = revisionMessage.trim()
+    if (!message) {
+      toast.error('Vui lòng nhập nội dung yêu cầu chỉnh sửa')
+      return
+    }
+
+    requestRevisionMutation.mutate({ postId: revisionPostId, message })
+  }
+
+  const handleRemovePost = () => {
+    if (!removeReportPostId) return
+
+    removeMutation.mutate({
+      postId: removeReportPostId,
+      reason: removeReason.trim() || 'Vi phạm tiêu chuẩn cộng đồng',
+    })
+  }
 
   const handleSendWarning = () => {
     if (!warningUserId || !warningPostId || !warningReason.trim() || !warningMsgText.trim()) {
@@ -240,6 +295,12 @@ export default function AdminPostsPage() {
           </div>
         </div>
 
+        {activeTab === 'processed' ? (
+          <div className="flex items-center gap-2 text-[11px] text-zinc-400">
+            <span className="rounded-lg border border-white/[.08] bg-white/[.04] px-3 py-1.5 font-semibold">Trạng thái: {post.moderationStatus}</span>
+            {post.reviewedAt && <span>Đã xử lý {ago(post.reviewedAt)}</span>}
+          </div>
+        ) : (
         <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => approveMutation.mutate(post.id)} className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11.5px] font-bold flex items-center gap-1 transition-all">
             <Check size={12} />
@@ -253,7 +314,7 @@ export default function AdminPostsPage() {
             <X size={12} />
             Từ chối
           </button>
-          <button onClick={() => removeMutation.mutate({ postId: post.id })} className="h-8 px-3 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-[11.5px] font-bold flex items-center gap-1 transition-all">
+          <button onClick={() => openRemoveForm(post.id)} className="h-8 px-3 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-[11.5px] font-bold flex items-center gap-1 transition-all">
             <Trash2 size={12} />
             Gỡ bỏ
           </button>
@@ -267,6 +328,7 @@ export default function AdminPostsPage() {
             Cảnh cáo User
           </button>
         </div>
+        )}
       </div>
 
       <div className="space-y-1.5 border-l-2 border-[#534AB7] pl-3.5">
@@ -398,7 +460,7 @@ export default function AdminPostsPage() {
             </button>
             <button
               onClick={() => {
-                if (post?.id) setRemoveReportPostId(post.id)
+                if (post?.id) openRemoveForm(post.id)
                 else toast.error('Không tìm thấy bài viết để gỡ')
               }}
               className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[11px] font-bold transition-all"
@@ -514,10 +576,10 @@ export default function AdminPostsPage() {
               <h4 className="text-[14px] font-bold text-white">{detailReport.post.title}</h4>
               <p className="text-[13px] text-zinc-300 whitespace-pre-wrap">{detailReport.post.content}</p>
               {detailReport.post.imageUrls?.map((url, i) => (
-                <img key={i} src={url} alt="" className="rounded-lg max-h-48 object-cover" />
+                <img key={i} src={toMediaUrl(url)} alt="" className="rounded-lg max-h-48 object-cover" />
               ))}
               {detailReport.post.videoUrl && (
-                <a href={detailReport.post.videoUrl} target="_blank" rel="noreferrer" className="text-indigo-400 text-[12px]">
+                <a href={toMediaUrl(detailReport.post.videoUrl)} target="_blank" rel="noreferrer" className="text-indigo-400 text-[12px]">
                   Xem video
                 </a>
               )}
@@ -537,7 +599,7 @@ export default function AdminPostsPage() {
                 Bỏ qua báo cáo
               </button>
               <button
-                onClick={() => detailReport.post?.id && setRemoveReportPostId(detailReport.post.id)}
+                onClick={() => detailReport.post?.id && openRemoveForm(detailReport.post.id)}
                 className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold"
               >
                 Gỡ bài đăng
@@ -557,13 +619,13 @@ export default function AdminPostsPage() {
 
       {rejectPostId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRejectPostId(null)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeRejectForm} />
           <div className="relative w-full max-w-md rounded-2xl p-5 bg-[#1a1a24] border border-white/[.08] shadow-2xl">
             <h3 className="text-[14px] font-bold text-white mb-3">Lý do từ chối bài viết</h3>
             <textarea rows={3} value={rejectReason} onChange={e => setRejectReason(e.target.value)} placeholder="Nhập lý do từ chối..." className="w-full p-2.5 rounded-xl border text-[12px] bg-[#14141e] border-white/[.08] text-white outline-none" />
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setRejectPostId(null)} className="px-3.5 py-1.5 rounded-lg bg-zinc-700 text-white text-[11px] font-bold">Hủy</button>
-              <button onClick={() => rejectMutation.mutate({ postId: rejectPostId, reason: rejectReason })} className="px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold">Xác nhận từ chối</button>
+              <button onClick={closeRejectForm} className="px-3.5 py-1.5 rounded-lg bg-zinc-700 text-white text-[11px] font-bold">Hủy</button>
+              <button onClick={handleRejectPost} disabled={rejectMutation.isPending} className="px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold disabled:opacity-50">Xác nhận từ chối</button>
             </div>
           </div>
         </div>
@@ -571,13 +633,13 @@ export default function AdminPostsPage() {
 
       {revisionPostId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRevisionPostId(null)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeRevisionForm} />
           <div className="relative w-full max-w-md rounded-2xl p-5 bg-[#1a1a24] border border-white/[.08] shadow-2xl">
             <h3 className="text-[14px] font-bold text-white mb-3">Yêu cầu người dùng sửa đổi bài viết</h3>
             <textarea rows={3} value={revisionMessage} onChange={e => setRevisionMessage(e.target.value)} placeholder="Nhập lời nhắc sửa đổi cho tác giả..." className="w-full p-2.5 rounded-xl border text-[12px] bg-[#14141e] border-white/[.08] text-white outline-none" />
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setRevisionPostId(null)} className="px-3.5 py-1.5 rounded-lg bg-zinc-700 text-white text-[11px] font-bold">Hủy</button>
-              <button onClick={() => requestRevisionMutation.mutate({ postId: revisionPostId, message: revisionMessage })} className="px-3.5 py-1.5 rounded-lg bg-amber-600 text-white text-[11px] font-bold">Gửi yêu cầu</button>
+              <button onClick={closeRevisionForm} className="px-3.5 py-1.5 rounded-lg bg-zinc-700 text-white text-[11px] font-bold">Hủy</button>
+              <button onClick={handleRequestRevision} disabled={requestRevisionMutation.isPending} className="px-3.5 py-1.5 rounded-lg bg-amber-600 text-white text-[11px] font-bold disabled:opacity-50">Gửi yêu cầu</button>
             </div>
           </div>
         </div>
@@ -585,15 +647,15 @@ export default function AdminPostsPage() {
 
       {removeReportPostId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRemoveReportPostId(null)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeRemoveForm} />
           <div className="relative w-full max-w-md rounded-2xl p-5 bg-[#1a1a24] border border-white/[.08] shadow-2xl">
             <h3 className="text-[14px] font-bold text-white mb-3">Lý do gỡ bài đăng</h3>
             <textarea rows={3} value={removeReason} onChange={e => setRemoveReason(e.target.value)} placeholder="Nhập lý do gỡ bài..." className="w-full p-2.5 rounded-xl border text-[12px] bg-[#14141e] border-white/[.08] text-white outline-none" />
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setRemoveReportPostId(null)} className="px-3.5 py-1.5 rounded-lg bg-zinc-700 text-white text-[11px] font-bold">Hủy</button>
+              <button onClick={closeRemoveForm} className="px-3.5 py-1.5 rounded-lg bg-zinc-700 text-white text-[11px] font-bold">Hủy</button>
               <button
-                onClick={() => removeMutation.mutate({ postId: removeReportPostId, reason: removeReason || 'Vi phạm tiêu chuẩn cộng đồng' })}
-                className="px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold"
+                onClick={handleRemovePost}
+                disabled={removeMutation.isPending} className="px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold disabled:opacity-50"
               >
                 Xác nhận gỡ
               </button>
@@ -604,7 +666,7 @@ export default function AdminPostsPage() {
 
       {warningUserId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setWarningUserId(null)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={closeWarningForm} />
           <div className="relative w-full max-w-md rounded-2xl p-5 bg-[#1a1a24] border border-white/[.08] shadow-2xl space-y-4">
             <h3 className="text-[14px] font-bold text-white border-b border-white/[.06] pb-2 flex items-center gap-1.5">
               <AlertCircle className="text-red-400" size={15} />
@@ -633,8 +695,8 @@ export default function AdminPostsPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 border-t border-white/[.06] pt-3">
-              <button onClick={() => setWarningUserId(null)} className="px-3.5 py-1.5 rounded-lg bg-zinc-700 text-white text-[11px] font-bold">Hủy</button>
-              <button onClick={handleSendWarning} className="px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold flex items-center gap-1">Gửi cảnh cáo</button>
+              <button onClick={closeWarningForm} className="px-3.5 py-1.5 rounded-lg bg-zinc-700 text-white text-[11px] font-bold">Hủy</button>
+              <button onClick={handleSendWarning} disabled={sendWarningMutation.isPending} className="px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-50">Gửi cảnh cáo</button>
             </div>
           </div>
         </div>

@@ -22,8 +22,30 @@ public class StudyDocument {
     private String name;
     /** Nhãn chủ đề do người dùng gắn trước khi dùng AI đọc tài liệu */
     private String topicLabel;
+
+    /**
+     * URL dùng để frontend mở/tải file.
+     * Sau khi chuyển sang Cloudinary, field này sẽ lưu secure_url của Cloudinary.
+     */
     private String fileUrl;
+
+    /**
+     * Loại file hiển thị ở frontend: PDF, DOCX, PPTX, EXCEL, IMAGE, TEXT, OTHER.
+     */
     private String type;
+
+    /**
+     * Lưu public_id để khi xoá document có thể xoá luôn file trên Cloudinary.
+     * Với các file cũ đang lưu local, field này có thể null.
+     */
+    private String cloudinaryPublicId;
+
+    /**
+     * Lưu resource_type Cloudinary trả về: image, video hoặc raw.
+     * Cần dùng khi destroy file trên Cloudinary.
+     */
+    private String cloudinaryResourceType;
+
     private String uploaderId;
     private String uploaderName;
     private long sizeKb;

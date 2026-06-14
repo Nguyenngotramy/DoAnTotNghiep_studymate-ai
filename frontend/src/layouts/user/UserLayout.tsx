@@ -5,13 +5,13 @@ import FloatingAgent from '@/components/FloatingAgent'
 import { useAuthStore } from '@/store/authStore'
 import { authApi, notificationApi, dmApi } from '@/api/services'
 import toast from 'react-hot-toast'
-import UserAvatar from '@/components/UserAvatar'
+import { initials } from '@/utils/helpers'
 import {
   LayoutDashboard, BookOpen, Compass, Users, MessageCircle,
   UsersRound, KanbanSquare, Layers, HelpCircle, BarChart2,
   BrainCircuit, User, Settings, LogOut, Search, Bell,
   Zap, Flame, X, ChevronRight, CheckCircle2, AlertCircle,
-  FileText, Heart, Check,   FolderOpen,
+  FileText, Heart, Check, FolderOpen,
   Crown, PenSquare,
 } from 'lucide-react'
 import clsx from 'clsx'
@@ -20,6 +20,63 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 type NavItemProps = { to: string; icon: React.ElementType; label: string; badge?: number }
 
 const BACKEND = '/api'
+
+// Đổi tên app tại đây nếu muốn.
+const APP_NAME = 'StudyMate AI'
+
+// Nếu muốn dùng ảnh logo riêng:
+// 1. Đặt file vào public/images/studymate-logo.png
+// 2. Giữ đường dẫn bên dưới.
+// Nếu ảnh không tồn tại hoặc load lỗi, hệ thống sẽ tự dùng icon mặc định.
+const APP_LOGO_SRC = '/images/studymate-logo.png'
+
+function BrandLogo() {
+  const [logoError, setLogoError] = useState(false)
+
+  return (
+    <Link
+      to="/dashboard"
+      className="flex items-center gap-2.5 min-w-0 group"
+      title={APP_NAME}
+    >
+      <div
+        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm transition-transform group-hover:scale-105"
+        style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
+      >
+        {!logoError ? (
+          <img
+            src={APP_LOGO_SRC}
+            alt={APP_NAME}
+            className="w-full h-full object-cover"
+            onError={() => setLogoError(true)}
+          />
+        ) : (
+          <svg viewBox="0 0 18 18" fill="none" className="w-4.5 h-4.5">
+            <path
+              d="M9 2L15.5 5.5V12.5L9 16L2.5 12.5V5.5L9 2Z"
+              stroke="white"
+              strokeWidth="1.4"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M9 7v4M7 9h4"
+              stroke="white"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+            />
+          </svg>
+        )}
+      </div>
+
+      <span
+        className="text-[14px] font-bold tracking-tight truncate"
+        style={{ color: 'var(--text)' }}
+      >
+        {APP_NAME}
+      </span>
+    </Link>
+  )
+}
 
 function NavItem({ to, icon: Icon, label, badge }: NavItemProps) {
   return (
@@ -216,6 +273,55 @@ function notifMeta(type?: string) {
   }
 }
 
+function resolveAvatarUrl(avatar?: string | null) {
+  if (!avatar) return ''
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar
+  return `${BACKEND}${avatar.startsWith('/') ? avatar : `/${avatar}`}`
+}
+
+function Avatar({
+  name,
+  avatar,
+  size = 28,
+}: {
+  name?: string
+  avatar?: string | null
+  size?: number
+}) {
+  const text = name ? initials(name) : '?'
+  const [imgError, setImgError] = useState(false)
+  const url = resolveAvatarUrl(avatar)
+
+  return (
+    <div
+      className="rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
+      style={{
+        width: size,
+        height: size,
+        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+      }}
+    >
+      {url && !imgError ? (
+        <img
+          src={url}
+          alt={name ?? 'avatar'}
+          className="w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <span
+          className="text-white font-semibold"
+          style={{
+            fontSize: size <= 28 ? '10px' : '11px',
+          }}
+        >
+          {text}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function NotifDropdown({
   unread,
   notifications,
@@ -323,25 +429,12 @@ function NotifDropdown({
 }
 
 export default function UserLayout() {
-  const { user, refreshToken, logout, updateUser } = useAuthStore()
+  const { user, refreshToken, logout } = useAuthStore()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
   const [showSearch, setShowSearch] = useState(false)
   const [showNotif, setShowNotif] = useState(false)
-
-  const { data: freshUser } = useQuery({
-    queryKey: ['auth-me-sync'],
-    queryFn: () => authApi.me(),
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
-  })
-
-  useEffect(() => {
-    if (freshUser) updateUser(freshUser)
-  }, [freshUser, updateUser])
-
-  const displayUser = freshUser ?? user
 
   const { data: notificationsPage } = useQuery({
     queryKey: ['notifications', 0],
@@ -443,21 +536,10 @@ export default function UserLayout() {
         style={{ background: 'var(--bg2)', borderRight: '0.5px solid var(--border)' }}
       >
         <div
-          className="px-4 h-12 flex items-center gap-2.5 flex-shrink-0"
+          className="px-4 h-14 flex items-center gap-2.5 flex-shrink-0"
           style={{ borderBottom: '0.5px solid var(--border)' }}
         >
-          <div
-            className="w-7 h-7 rounded-[8px] flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
-          >
-            <svg viewBox="0 0 18 18" fill="none" className="w-4 h-4">
-              <path d="M9 2L15.5 5.5V12.5L9 16L2.5 12.5V5.5L9 2Z" stroke="white" strokeWidth="1.4" strokeLinejoin="round" />
-              <path d="M9 7v4M7 9h4" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-          </div>
-          <span className="text-[13px] font-semibold" style={{ color: 'var(--text)' }}>
-            StudyMate AI
-          </span>
+          <BrandLogo />
         </div>
 
         <nav className="flex-1 px-2 py-2 overflow-y-auto">
@@ -484,19 +566,18 @@ export default function UserLayout() {
 
           <NavSection title="Tài khoản" />
           <NavItem to="/profile" icon={User} label="Hồ sơ cá nhân" />
-          <NavItem to="/membership" icon={Crown} label="Nâng cấp gói" />
           <NavItem to="/settings" icon={Settings} label="Cài đặt" />
         </nav>
 
         <div className="p-2 flex-shrink-0" style={{ borderTop: '0.5px solid var(--border)' }}>
           <div className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-white/[.04] transition-colors cursor-pointer">
-            <UserAvatar name={displayUser?.fullName} avatar={displayUser?.avatar} size={28} tier={displayUser?.membershipTier} />
+            <Avatar name={user?.fullName} avatar={user?.avatar} size={28} />
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-medium truncate" style={{ color: 'var(--text)' }}>
-                {displayUser?.fullName}
+                {user?.fullName}
               </div>
               <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
-                {(displayUser?.xp ?? 0).toLocaleString()} XP
+                {(user?.xp ?? 0).toLocaleString()} XP
               </div>
             </div>
             <button
@@ -582,7 +663,7 @@ export default function UserLayout() {
 
           <Link to="/profile">
             <div className="cursor-pointer hover:ring-2 hover:ring-indigo-500/50 rounded-full transition-all">
-              <UserAvatar name={displayUser?.fullName} avatar={displayUser?.avatar} size={28} tier={displayUser?.membershipTier} />
+              <Avatar name={user?.fullName} avatar={user?.avatar} size={28} />
             </div>
           </Link>
         </header>

@@ -297,13 +297,13 @@ function GroupCard({
 
         <div className="grid grid-cols-2 gap-1.5">
           <Link
-            to={`/groups/${g.id}/kanban`}
+            to={`/groups/${g.id}/projects`}
             className="flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all hover:scale-105"
             style={{ background: '#6366f112', border: '0.5px solid #6366f125' }}
           >
             <KanbanSquare size={14} style={{ color: '#6366f1' }} />
             <span className="text-[10px] font-medium" style={{ color: '#6366f1' }}>
-              Task
+              Dự án và Task
             </span>
           </Link>
 
