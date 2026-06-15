@@ -9,7 +9,12 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Literal, Optional
-from multi_agent import get_orchestrator, reset_chat_metadata, get_chat_metadata
+from multi_agent import (
+    generate_compact_json,
+    get_orchestrator,
+    reset_chat_metadata,
+    get_chat_metadata,
+)
 from chat_store import chat_store
 from classifier_agent import (
     build_kb_filter,
@@ -710,6 +715,13 @@ def _friendly_ai_error(e: Exception, used_user_key: bool = False) -> str:
             "Hạn mức AI miễn phí của hệ thống đang tạm hết. Hãy thử lại sau, nâng cấp gói, "
             "hoặc mở mục KEY để nhập OpenRouter/Anthropic API key của riêng bạn."
         )
+    if "402" in msg or "credits" in msg or "afford" in msg or "billing" in msg:
+        if used_user_key:
+            return "API key của bạn không đủ credit cho model đã chọn. Hãy nạp thêm credit hoặc chọn OpenRouter Free."
+        return (
+            "Credit của model AI hiện tại không đủ. Hệ thống đang chuyển sang model miễn phí; "
+            "nếu lỗi tiếp diễn, hãy thử lại sau hoặc nhập API key riêng."
+        )
     if "api key" in msg or "authentication" in msg or "401" in msg:
         return "API key không hợp lệ hoặc thiếu quyền truy cập model. Vui lòng kiểm tra lại key."
     return "AI service đang bận hoặc provider tạm thời không phản hồi. Vui lòng thử lại sau."
@@ -898,15 +910,49 @@ def _json_response_from_structured(structured: dict | None) -> str | None:
     return json.dumps(structured, ensure_ascii=False)
 
 
+def _low_credit_structured_mode() -> bool:
+    try:
+        ceiling = int(os.getenv("LLM_MAX_PROVIDER_OUTPUT_TOKENS", "0"))
+    except ValueError:
+        return False
+    return 0 < ceiling <= 160
+
+
+async def _compact_quiz_fallback(text: str, context: dict | None) -> list[dict]:
+    prompt = (
+        'JSON only, Vietnamese, concise: '
+        '{"question":"...","options":["...","...","...","..."],"correct_index":0}. '
+        f"Make one easy quiz for: {text[:500]}"
+    )
+    raw = await generate_compact_json(prompt, context)
+    data = _extract_json(raw)
+    return parse_quiz(json.dumps({"questions": [data]}, ensure_ascii=False))
+
+
+async def _compact_flashcard_fallback(text: str, context: dict | None) -> list[dict]:
+    prompt = (
+        'JSON only, Vietnamese, max 12 words per value: '
+        '{"front":"...","back":"..."}. '
+        f"Make one flashcard for: {text[:500]}"
+    )
+    raw = await generate_compact_json(prompt, context)
+    data = _extract_json(raw)
+    return parse_flashcards(json.dumps({"flashcards": [data]}, ensure_ascii=False))
+
+
 async def _run_fast_chat_route(route: str, orch, text: str, context: dict | None, history: list) -> tuple[str, str, dict | None, list[dict]]:
     manual_sources: list[dict] = []
     if route == "quiz":
-        n = _extract_requested_count(text, default=20, max_value=20)
-        kb_content, manual_sources = await _search_kb_context(
-            query=text,
-            kb_filter=(context or {}).get("kb_filter"),
-            n_results=DEFAULT_KB_RESULTS,
-        )
+        requested = _extract_requested_count(text, default=20, max_value=20)
+        n = 1 if _low_credit_structured_mode() else requested
+        if _low_credit_structured_mode():
+            kb_content = ""
+        else:
+            kb_content, manual_sources = await _search_kb_context(
+                query=text,
+                kb_filter=(context or {}).get("kb_filter"),
+                n_results=DEFAULT_KB_RESULTS,
+            )
         kb_note = (
             f"\n\nNOI DUNG TU KNOWLEDGE BASE:\n{kb_content}\n\n"
             "Chi tao cau hoi dua tren noi dung knowledge base neu phu hop."
@@ -917,21 +963,37 @@ async def _run_fast_chat_route(route: str, orch, text: str, context: dict | None
             f"CHỈ trả JSON thuần đúng schema {QUIZ_JSON_SCHEMA}.\nYêu cầu: {text}"
             f"{kb_note}"
         )
-        raw = await orch.quiz.run(message=task, context=context)
-        questions = parse_quiz(raw)
+        raw = ""
+        questions = []
+        if _low_credit_structured_mode():
+            try:
+                questions = await _compact_quiz_fallback(text, context)
+            except Exception:
+                logger.exception("Compact quiz fallback failed")
+        else:
+            raw = await orch.quiz.run(message=task, context=context)
+            questions = parse_quiz(raw)
         if not questions and STRUCTURED_OUTPUT_RETRIES > 0:
             retry = f"{task}\n\nOutput trước chưa hợp lệ. Chỉ trả JSON hợp lệ theo schema: {QUIZ_JSON_SCHEMA}"
             raw = await orch.quiz.run(message=retry, context=context)
             questions = parse_quiz(raw)
         structured = _structured_quiz(questions)
-        response = _json_response_from_structured(structured) or json.dumps(
-            {"type": "quiz", "questions": [], "error": "invalid_model_output"},
-            ensure_ascii=False,
-        )
+        response = _json_response_from_structured(structured)
+        if not response:
+            response = (
+                "Không tạo được quiz vì credit AI hiện không đủ cho JSON hợp lệ. "
+                "Hãy nạp thêm OpenRouter credit hoặc nhập API key riêng."
+            )
+        elif requested > n:
+            response = (
+                f"Credit AI đang thấp nên hệ thống tạo {len(questions)}/{requested} câu.\n"
+                f"{response}"
+            )
         return response, "QuizAgent", structured, manual_sources
 
     if route == "flashcard":
-        n = _extract_requested_count(text, default=5, max_value=20)
+        requested = _extract_requested_count(text, default=5, max_value=20)
+        n = 1 if _low_credit_structured_mode() else requested
         language_result = await _language_vocabulary_flashcards(text, n, context)
         if language_result is not None:
             language_cards, pipeline = language_result
@@ -956,8 +1018,16 @@ async def _run_fast_chat_route(route: str, orch, text: str, context: dict | None
             "hint chỉ được là phát âm hoặc để trống. Không tạo mẹo nhớ, không trộn ký tự Trung/Ả Rập, không bịa nghĩa.\n"
             f"Yêu cầu: {text}"
         )
-        raw = await orch.flashcard.run(message=task, context=context)
-        cards = parse_flashcards(raw)
+        raw = ""
+        cards = []
+        if _low_credit_structured_mode():
+            try:
+                cards = await _compact_flashcard_fallback(text, context)
+            except Exception:
+                logger.exception("Compact flashcard fallback failed")
+        else:
+            raw = await orch.flashcard.run(message=task, context=context)
+            cards = parse_flashcards(raw)
         if _flashcards_have_suspicious_text(cards, n) and STRUCTURED_OUTPUT_RETRIES > 0:
             retry = (
                 f"{task}\n\nOutput trước không đạt chất lượng. Tạo lại đủ {n} thẻ, "
@@ -969,10 +1039,17 @@ async def _run_fast_chat_route(route: str, orch, text: str, context: dict | None
             cards = []
             logger.warning("Flashcard output could not be parsed: %r", raw[:1000])
         structured = _structured_flashcards(cards)
-        response = _json_response_from_structured(structured) or json.dumps(
-            {"type": "flashcard", "flashcards": [], "error": "invalid_model_output"},
-            ensure_ascii=False,
-        )
+        response = _json_response_from_structured(structured)
+        if not response:
+            response = (
+                "Không tạo được flashcard vì credit AI hiện không đủ cho JSON hợp lệ. "
+                "Hãy nạp thêm OpenRouter credit hoặc nhập API key riêng."
+            )
+        elif requested > n:
+            response = (
+                f"Credit AI đang thấp nên hệ thống tạo {len(cards)}/{requested} thẻ.\n"
+                f"{response}"
+            )
         return response, "FlashcardAgent", structured, manual_sources
 
     if route == "summary":
@@ -981,8 +1058,12 @@ async def _run_fast_chat_route(route: str, orch, text: str, context: dict | None
         return raw, "SummaryAgent", None, manual_sources
 
     if route == "tutor":
-        raw = await orch.tutor.run(message=text, context=context, history=history)
-        return raw, "TutorAgent", None, manual_sources
+        tutor = getattr(orch, "tutor", None)
+        if tutor is not None:
+            raw = await tutor.run(message=text, context=context, history=history)
+            return raw, "TutorAgent", None, manual_sources
+        raw = await orch.run(text, context=context, history=history)
+        return raw, "Orchestrator", None, manual_sources
 
     raw = await orch.run(text, context=context, history=history)
     return raw, "Orchestrator", None, manual_sources
@@ -1100,7 +1181,9 @@ async def chat(msg: ChatMessage):
     reset_chat_metadata()
     enriched_text = f"{subject_context}\n{msg.text}".strip() if subject_context else msg.text
     kb_filter     = _build_scoped_kb_filter(clf, tenant_id)
-    route         = _detect_chat_route(msg.text)
+    # Ordinary chat does not need an extra LLM orchestration round-trip.
+    # Specialized requests still use deterministic routes below.
+    route         = _detect_chat_route(msg.text) or "tutor"
     run_context   = {}
     if kb_filter:
         run_context["kb_filter"] = kb_filter
@@ -1123,10 +1206,12 @@ async def chat(msg: ChatMessage):
                     f"{kb_content}\n\n"
                     "Chi tra loi theo tai lieu tren; neu tai lieu khong du thi noi ro."
                 )
-                run_context = dict(run_context or {})
-                run_context["kb_filter"] = {
-                    "tenant_id": {"$eq": "__no_tenant_access__"}
-                }
+            # Retrieval already happened above. Disable agent-side KB tools to
+            # avoid a second network/tool round-trip and duplicate retrieval.
+            run_context = dict(run_context or {})
+            run_context["kb_filter"] = {
+                "tenant_id": {"$eq": "__no_tenant_access__"}
+            }
 
         is_direct_vocabulary = (
             route == "flashcard"
@@ -1962,4 +2047,9 @@ def list_agents():
 
 # ════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=3000, reload=True)
+    uvicorn.run(
+        "main:app",
+        host=os.getenv("AI_AGENT_HOST", "0.0.0.0"),
+        port=int(os.getenv("AI_AGENT_PORT", "8001")),
+        reload=os.getenv("AI_AGENT_RELOAD", "true").strip().lower() in {"1", "true", "yes"},
+    )

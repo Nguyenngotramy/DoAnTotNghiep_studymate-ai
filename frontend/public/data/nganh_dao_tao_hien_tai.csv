@@ -6140,3 +6140,725 @@ y học",100,Học bạ; ĐT THPT,A00; B00; B08; D07
 Mặt",60,ĐT THPT,B00; B08
 ,DDY-Trường Y Dược Đà Nẵng,7310401,Tâm lý học,100,Học bạ; ĐT THPT,B00; B03; B08; D01
 ,DDY-Trường Y Dược Đà Nẵng,7720101,Y khoa,210,ĐT THPT,B00; B08
+DBL,Trường Đại Học Bạc Liêu,51140201,Giáo dục mầm non,100,Kết Hợp,M00
+DBD,Trường Đại Học Bình Dương,7220201,Ngôn ngữ Anh,0,ĐT THPT ĐGNL HCM Học Bạ,A01; D01; D07; D09; D14; D15; D66
+DBD,Trường Đại Học Bình Dương,7310301,Xã hội học,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A09; C01; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7310613,Nhật Bản học,0,Học Bạ ĐT THPT ĐGNL HCM,A01; A09; C00; D01; D14; D15; D66
+DBD,Trường Đại Học Bình Dương,7310614,Hàn Quốc học,0,ĐT THPT ĐGNL HCM Học Bạ,A01; A09; C00; D01; D14; D15; D66
+DBD,Trường Đại Học Bình Dương,7340101,Quản trị Kinh doanh,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A09; C01; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7340201,Tài chính - Ngân hàng,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A09; C01; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7340301,Kế toán,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A09; C01; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7380101,Luật,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A09; C00; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7380107,Luật Kinh tế,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A09; C00; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7480201,Công nghệ Thông tin,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A01; C01; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7510102,Công nghệ Kỹ thuật Công trình Xây dựng,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A01; C01; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7510205,Công nghệ Kỹ thuật Ô tô,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A09; C01; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7510301,"Công nghệ Kỹ thuật Điện, Điện tử",0,ĐT THPT ĐGNL HCM Học Bạ,A00; A01; C01; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7510605,Logistics và Quản lý Chuỗi Cung ứng,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A09; A01; C01; C14; D01; D66
+DBD,Trường Đại Học Bình Dương,7540101,Công nghệ Thực phẩm,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A01; B00; B03; C02; C14; D01
+DBD,Trường Đại Học Bình Dương,7580101,Kiến trúc,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A01; C01; C03; C04; C14; D01
+DBD,Trường Đại Học Bình Dương,7720201,Dược học,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A02; B00; B03; C02; C08; D07
+DBD,Trường Đại Học Bình Dương,7720203,Hoá dược,0,ĐT THPT ĐGNL HCM Học Bạ,A00; A02; B00; B03; C02; C08; D07
+LCH,Trường Sĩ Quan Chính Trị - Đại Học Chính Trị,7310202,Xây dựng Đảng và Chính quyền Nhà nước (miền Bắc),428,ĐGNL HCM Ưu Tiên; ĐGNL HN; ĐT THPT,Q00; A00; C00; C03; C04; D01
+LCH,Trường Sĩ Quan Chính Trị - Đại Học Chính Trị,7310202,Xây dựng Đảng và Chính quyền Nhà nước (miền Nam),351,ĐGNL HCM Ưu Tiên; ĐGNL HN; ĐT THPT,Q00; A00; C00; C03; C04; D01
+DDA,Trường Đại Học Công Nghệ Đông Á,7220201,Ngôn ngữ Anh,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,C00; C01; C02; C03; C04; C14; C19; C20; D01; D14; D15; D04; D06; D78; D83; D66
+DDA,Trường Đại Học Công Nghệ Đông Á,7220204,Ngôn Ngữ Trung Quốc,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,C00; C01; C02; C03; C04; C14; C19; C20; D01; D14; D15; D04; D06; D78; D83; D66
+DDA,Trường Đại Học Công Nghệ Đông Á,7220209,Ngôn ngữ Nhật,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,C00; C01; C02; C03; C04; C14; C19; C20; D01; D14; D15; D04; D06; D78; D83; D66
+DDA,Trường Đại Học Công Nghệ Đông Á,7220210,Ngôn ngữ Hàn Quốc,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,C00; C01; C02; C03; C04; C14; C19; C20; D01; D14; D15; D04; D06; D78; D83; D66
+DDA,Trường Đại Học Công Nghệ Đông Á,7340101,Quản trị kinh doanh,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C14; D01; D07; D10
+DDA,Trường Đại Học Công Nghệ Đông Á,7340115,Marketing,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C14; D01; D07; D10
+DDA,Trường Đại Học Công Nghệ Đông Á,7340201,Tài chính Ngân hàng,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C14; D01; D07; D10
+DDA,Trường Đại Học Công Nghệ Đông Á,7340205,Công nghệ tài chính,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C14; D01; D07; D10
+DDA,Trường Đại Học Công Nghệ Đông Á,7340301,Kế Toán,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C14; D01; D07; D10
+DDA,Trường Đại Học Công Nghệ Đông Á,7340404,Quản trị nhân lực,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C14; D01; D07; D10
+DDA,Trường Đại Học Công Nghệ Đông Á,7380101,Luật,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C14; D01; D07; D10
+DDA,Trường Đại Học Công Nghệ Đông Á,7480201,Công nghệ thông tin,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C03; C14; D01; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7510202,Công nghệ Chế tạo máy,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C03; C14; D01; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7510205,Công nghệ kỹ thuật Ô tô,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C03; C14; D01; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7510206,Công nghệ Kỹ thuật Nhiệt (Nhiệt – Điện lạnh),0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C03; C14; D01; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7510301,Công nghệ Kỹ thuật Điện – Điện tử,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C03; C14; D01; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7510303,Công nghệ kỹ thuật Điều khiển và Tự Động hóa,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C03; C14; D01; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7510406,Công nghệ kỹ thuật Môi trường(Chuyên ngành Công nghệ nước),0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C03; C14; D01; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7510605,Logistics và Quản lý chuỗi cung ứng,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C14; D01; D07; D10
+DDA,Trường Đại Học Công Nghệ Đông Á,7540101,Công nghệ Thực phẩm,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C03; C14; D01; D07; B00; D08
+DDA,Trường Đại Học Công Nghệ Đông Á,7580101,Kiến trúc,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C03; C14; D01; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7580201,Kỹ thuật Xây dựng,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A01; A02; A03; A05; A06; A07; A08; A09; A10; A11; C01; C02; C03; C14; D01; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7720201,Dược học,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A02; A03; B00; B01; B02; B03; B04; B08; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7720301,Điều dưỡng,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,A00; A02; A03; B00; B01; B02; B03; B04; B08; D07
+DDA,Trường Đại Học Công Nghệ Đông Á,7810103,Quản trị dịch vụ du lịch và lữ hành,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,C00; C01; C02; C03; C04; C14; C19; C20; D01; D14; D15; D04; D06; D78; D83; D66
+DDA,Trường Đại Học Công Nghệ Đông Á,7810201,Quản trị khách sạn,0,Học Bạ ĐT THPT ĐGNL HN ĐGTD BK ĐGNL SPHN Kết Hợp,C00; C01; C02; C03; C04; C14; C19; C20; D01; D14; D15; D04; D06; D78; D83; D66
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCAI2,Trí tuệ nhân tạo,180,ĐT THPT,A00; A01; C01; C02; D01; D07; X02; X03; X26; X27
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCAI3,Trí tuệ nhân tạo,180,Học Bạ,A00; A01; C01; C02; D01; D07; X02; X03; X26; X27
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCAI4,Trí tuệ nhân tạo,180,ĐGNL HN,Q00
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCAI5,Trí tuệ nhân tạo,180,ĐGTD BK,K00
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCAI6,Trí tuệ nhân tạo,180,ĐGNL SPHN,A00; A01; C01; C02; D01; D07; X02; X03; X26; X27
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCAI7,Trí tuệ nhân tạo,180,Ưu Tiên,
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCEN2,Ngôn ngữ Anh,80,ĐT THPT Học Bạ ĐGNL SPHN,A01; D01; D07; X25; X26; X27
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCLA2,Luật,60,ĐT THPT Học Bạ ĐGNL SPHN,C00; C03; C04; D01; X01; X25
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCMQ2,Công nghệ và quản lý thiết bị xây dựng,40,ĐT THPT,A00; A01; C01; C02; D01; D07; X02; X03; X26; X27
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCMQ3,Công nghệ và quản lý thiết bị xây dựng,40,Học Bạ,A00; A01; C01; C02; D01; D07; X02; X03; X26; X27
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCMQ4,Công nghệ và quản lý thiết bị xây dựng,40,ĐGNL HN,Q00
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCMQ5,Công nghệ và quản lý thiết bị xây dựng,40,ĐGTD BK,K00
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCQS2,Quản lý xây dựng số,40,ĐT THPT,A00; A01; C01; C02; D01; D07; X02; X03; X26; X27
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCQS3,Quản lý xây dựng số,40,Học Bạ,A00; A01; C01; C02; D01; D07; X02; X03; X26; X27
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCQS4,Quản lý xây dựng số,40,ĐGNL HN,Q00
+GTA,Trường Đại học Công nghệ Giao thông vận tải,GTADCQS5,Quản lý xây dựng số,40,ĐGTD BK,K00
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7320104,Truyền thông đa phương tiện,60,Ưu Tiên; Kết Hợp,"A01, D01, X26, D09, D10, X02"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7340122,Thương mại điện tử,140,Ưu Tiên; Kết Hợp,"A00, A01, D01, D07, X06, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7460108,Khoa học dữ liệu,55,Ưu Tiên; Kết Hợp,"A00, A01, D01, X26, X06, D07, A02"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7460108TA,Khoa học dữ liệu (Chương trình đào tạo bằng Tiếng Anh),30,Ưu Tiên; Kết Hợp,"A01, D01, X26, D07"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480101,Khoa học Máy tính,280,Ưu Tiên; Kết Hợp,"A00, A01, D01, D07, X06, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480101TA,Khoa học Máy tính (Chương trình đào tạo bằng Tiếng Anh),50,Ưu Tiên; Kết Hợp,"A01, D01, X26, D07"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480102,Mạng máy tính và truyền thông dữ liệu,200,Ưu Tiên; Kết Hợp,"A00, A01, D01, D07, X06, X14, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480103,Kỹ thuật phần mềm,240,Ưu Tiên; Kết Hợp,"A00, A01, D01, D07, X06, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480103QT,Kỹ thuật phần mềm (Quốc tế),20,Thi Riêng,
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480103TA,Kỹ thuật phần mềm (Chương trình đào tạo bằng Tiếng Anh),50,Ưu Tiên; Kết Hợp,"A01, D01, X26, D07"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480104,Hệ thống thông tin,180,Ưu Tiên; Kết Hợp,"A00, A01, D01, D07, D08, X06, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480104TT,Hệ thống thông tin (Tiên tiến),80,Ưu Tiên; Kết Hợp,"A01, D01, D07, D08, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480106,Kỹ thuật máy tính,220,Ưu Tiên; Kết Hợp,"A00, A01, X06, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480107,Trí tuệ nhân tạo,40,Ưu Tiên; Kết Hợp,"A00, A01, D01, D07, X06, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480201,Công nghệ Thông tin,120,Ưu Tiên; Kết Hợp,"A00, A01, D01, D07, X06, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480201VN,Công nghệ Thông tin (Việt Nhật),130,Ưu Tiên; Kết Hợp,"A00, A01, D01, D06, D07, X06, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480202,An toàn thông tin,170,Ưu Tiên; Kết Hợp,"A00, A01, D01, D07, X06, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,7480202TA,An toàn thông tin (Chương trình đào tạo bằng Tiếng Anh),50,Ưu Tiên; Kết Hợp,"A01, D01, X26, D07"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,75202a1,Thiết kế vi mạch,70,Ưu Tiên; Kết Hợp,"A00, A01, X06, X26"
+QSC,Trường Đại Học Công Nghệ Thông Tin - ĐHQG TPHCM,75202a1TA,Thiết kế vi mạch (Chương trình đào tạo bằng Tiếng Anh),40,Ưu Tiên; Kết Hợp,"A01, X26"
+DTC,Trường Đại học Công Nghệ Thông Tin và Truyền Thông Thái Nguyên,7220204,Ngôn ngữ Trung Quốc (Tiếng Trung truyền thông),0,ĐT THPT Học Bạ Ưu Tiên V-SAT,
+DCN,Đại Học Công Nghiệp Hà Nội,7220204LK,Ngôn ngữ Trung Quốc (LK2+2 với ĐHKHKT Quảng Tây),30,ĐT THPT Kết Hợp,D01; D04
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7140114,Quản lý giáo dục,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A07; A08; A09; A10; C00; C03; C04; C14; C19; C20; D01; D10; D13; D14; D84; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7310101,Kinh tế,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A07; A08; A09; A10; C00; C03; C04; C14; C19; C20; D01; D10; D13; D14; D84; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7310109,Kinh tế số,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A07; A08; A09; A10; C00; C03; C04; C14; C19; C20; D01; D10; D13; D14; D84; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7340101,Quản trị kinh doanh,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A07; A08; A09; A10; C00; C03; C04; C14; C19; C20; D01; D10; D13; D14; D84; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7340115,Marketing,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A07; A08; A09; A10; C00; C03; C04; C14; C19; C20; D01; D10; D13; D14; D84; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7340201,Tài chính ngân hàng,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A07; A08; A09; A10; C00; C03; C04; C14; C19; C20; D01; D10; D13; D14; D84; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7340205,Công nghệ tài chính,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A07; A08; A09; A10; C00; C03; C04; C14; C19; C20; D01; D10; D13; D14; D84; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7340301,Kế toán,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A07; A08; A09; A10; C00; C03; C04; C14; C19; C20; D01; D10; D13; D14; D84; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7460108,Khoa học dữ liệu,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7480101,Khoa học máy tính,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7480201,Công nghệ thông tin,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7510103,Công nghệ kỹ thuật xây dựng (*),0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7510201,Công nghệ kỹ thuật cơ khí,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7510205,Công nghệ kỹ thuật ô tô,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7510301,"Công nghệ kỹ thuật điện, điện tử",0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7510302,Công nghệ kỹ thuật điện tử viễn thông,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7520103,Kỹ thuật cơ khí,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7520114,Kỹ thuật cơ điện tử,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7520115,Kỹ thuật nhiệt,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7520130,Kỹ thuật ô tô,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+VHD,Trường Đại Học Công Nghiệp Việt - Hung,7520320,Kỹ thuật môi trường,0,ĐGNL SPHN V-SAT; ĐT THPT Học Bạ Kết Hợp; ĐGTD BK; ĐGNL HN,A00; A01; A03; A04; A07; A08; A09; A10; C01; C03; C04; C14; D01; D84; X06; K00; Q00
+DDN,Trường Đại Học Đại Nam,7210403,Thiết kế đồ họa,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,C01; C03; C04; C14; D01; H01; X01
+DDN,Trường Đại Học Đại Nam,7220201,Ngôn ngữ Anh,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,C00; D01; D14; D15; D66; X78; X79
+DDN,Trường Đại Học Đại Nam,7220204,Ngôn ngữ Trung Quốc,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,C00; D01; D04; D14; D15; D66; X79
+DDN,Trường Đại Học Đại Nam,7220210,Ngôn ngữ Hàn Quốc,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,C00; D01; D04; D14; D15; D66; X79
+DDN,Trường Đại Học Đại Nam,7310101,Kinh tế,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,A00; A01; C01; C03; C04; D01; X26
+DDN,Trường Đại Học Đại Nam,7310109,Kinh tế số,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,A00; A01; C01; C03; C04; D01; X26
+DDN,Trường Đại Học Đại Nam,7310401,Tâm lý học,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,B03; C00; C01; C03; C04; D01; X01
+DDN,Trường Đại Học Đại Nam,73401015,Marketing,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,A00; A01; C01; C03; C04; D01; D07
+DDN,Trường Đại Học Đại Nam,7340201,Tài chính ngân hàng,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,A00; A01; C01; C03; C04; D01; X26
+DDN,Trường Đại Học Đại Nam,7340205,Công nghệ tài chính,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,A00; A01; C01; C03; C04; D01; X26
+DDN,Trường Đại Học Đại Nam,7340301,Kế toán,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,A00; A01; C01; C03; C04; D01; X26
+DDN,Trường Đại Học Đại Nam,7480101,Khoa học máy tính,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,A00; A01; C01; D01; D07; X06; X26
+DDN,Trường Đại Học Đại Nam,7480201,Công nghệ thông tin,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,A00; A01; C01; D01; D07; X06; X26
+DDN,Trường Đại Học Đại Nam,7510303,Công nghệ kỹ thuật điều khiển và tự động hóa,0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,A00; A01; C01; D01; D07; X05; X06
+DDN,Trường Đại Học Đại Nam,7720101QT,Y khoa (Đào tạo bằng Tiếng Anh),0,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK ĐGNL SPHN V-SAT,A00; B00; B03; B08; D07; X09; X13
+DDT,Đại Học Duy Tân,7210205,Ngành Thanh nhạc,0,Kết Hợp,N00
+DPX,Trường Đại Học Phú Xuân,7220201,Ngôn ngữ Anh,100,ĐT THPT ĐGNL HCM Học Bạ Kết Hợp,A01; C03; C04; D01; D09; D10; D14; D15; X25; X26
+DPX,Trường Đại Học Phú Xuân,7220204,Ngôn ngữ Trung Quốc,140,ĐT THPT ĐGNL HCM Học Bạ Kết Hợp,A01; C00; C03; C04; D01; D04; D45; D65; X01; X37
+DPX,Trường Đại Học Phú Xuân,7320104,Truyền thông đa phương tiện,80,ĐT THPT ĐGNL HCM Học Bạ Kết Hợp,A00; A01; D01; D09; D10; D45; D65; X01; X25; X37
+DPX,Trường Đại Học Phú Xuân,7340101,Quản trị kinh doanh,150,ĐT THPT ĐGNL HCM Học Bạ Kết Hợp,A00; A01; D01; D09; D10; D45; D65; X01; X25; X37
+DPX,Trường Đại Học Phú Xuân,7480201,Công nghệ thông tin,216,ĐT THPT ĐGNL HCM Học Bạ Kết Hợp,A00; A01; A02; C01; C02; D01; X02; X06; X10; X26
+DPX,Trường Đại Học Phú Xuân,7510205,Công nghệ kỹ thuật ô tô,210,ĐT THPT ĐGNL HCM Học Bạ Kết Hợp,A00; A01; A02; C01; D01; D07; D10; X06; X25; X26
+DPX,Trường Đại Học Phú Xuân,7510601,Quản lý công nghiệp,100,ĐT THPT ĐGNL HCM Học Bạ Kết Hợp,A00; A01; A02; C01; D01; D07; D10; X06; X25; X26
+DPX,Trường Đại Học Phú Xuân,7810103,Quản trị dịch vụ Du lịch và Lữ hành,282,ĐT THPT ĐGNL HCM Học Bạ Kết Hợp,A01; C00; C03; C04; D01; D04; D45; D65; X25; X37
+DNU,Trường Đại Học Đồng Nai,51140201,Giáo dục mầm non,107,ĐT THPT,M05; M07; M08; M13
+DNU,Trường Đại Học Đồng Nai,7140201,Giáo dục mầm non,100,ĐT THPT,M05; M07; M08; M13
+DNU,Trường Đại Học Đồng Nai,7140209,Sư phạm Toán học,51,ĐT THPT,A00; A01; C01; D07; D01
+DNU,Trường Đại Học Đồng Nai,7140217,Sư phạm Ngữ văn,55,ĐT THPT,D01; D14; D15; C00
+DNU,Trường Đại Học Đồng Nai,7140231,Sư phạm Tiếng Anh,77,ĐT THPT,D01; D14; D15; A01
+DNU,Trường Đại Học Đồng Nai,7220201,Ngôn ngữ Anh,250,ĐT THPT,D01; D14; D15; A01
+DNU,Trường Đại Học Đồng Nai,7340101,Quản trị kinh doanh,220,ĐT THPT,A00; A01; D01
+DNU,Trường Đại Học Đồng Nai,7340301,Kế toán,220,ĐT THPT,A00; A01; D01
+DNU,Trường Đại Học Đồng Nai,7510301,"Công nghệ kỹ thuật điện, điện tử",150,ĐT THPT Học Bạ,A00; A01; D01; D07
+DNU,Trường Đại Học Đồng Nai,7520103,Kỹ thuật cơ khí,120,ĐT THPT Học Bạ,A00; A01; D01; D07
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS01,Sư phạm Toán học,120,Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; B00; B03; C01; C02; D01; Q01; Q21
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS02,Sư phạm Vật lí,32,Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A02; C01; Q01
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS03,Sư phạm Hoá học,36,Ưu Tiên; ĐT THPT; ĐGNL HN,A00; B00; C02; D07; Q01
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS04,Sư phạm Sinh học,50,Ưu Tiên; ĐT THPT; ĐGNL HN,A02; B00; B03; B08; Q01
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS05,Sư phạm Khoa học Tự nhiên,100,Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A02; B00; Q01
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS06,Sư phạm Ngữ văn,150,Ưu Tiên; ĐT THPT; ĐGNL HN,C00; C03; C04; D01; D14; D15; Q08; Q09; Q10; Q21
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS07,Sư phạm Lịch sử,45,Ưu Tiên; ĐT THPT; ĐGNL HN,A07; C00; C03; D09; D14; Q08; Q09; Q10
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS08,Sư phạm Lịch sử - Địa lý,85,Ưu Tiên; ĐT THPT; ĐGNL HN,A07; C00; Q08; Q09; Q10
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS09,Giáo dục Mầm non,150,Ưu Tiên; ĐT THPT; ĐGNL HN,A00; B00; C00; C01; C02; C03; C04; D01; D04; Q01; Q02; Q03; Q04; Q05; Q06; Q07; Q08; Q09; Q10; Q21
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS10,Giáo dục Tiểu học,150,Ưu Tiên; ĐT THPT; ĐGNL HN,A00; B00; C00; C01; C02; C03; C04; D01; D04; Q01; Q02; Q03; Q04; Q05; Q06; Q07; Q08; Q09; Q10; Q21
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS11,Khoa học giáo dục và khác,550,Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; B00; C00; C01; C02; C03; C04; D01; D04; Q01; Q02; Q03; Q04; Q05; Q06; Q07; Q08; Q09; Q10; Q21
+QHS,Trường Đại Học Giáo Dục - ĐHQG Hà Nội,QHS12,Tâm lý học và tâm lý học giáo dục,400,Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; B00; C00; C01; C02; C03; C04; D01; D04; Q01; Q02; Q03; Q04; Q05; Q06; Q07; Q08; Q09; Q10; Q21
+GTS,Trường Đại Học Giao Thông Vận Tải TPHCM,75201031,"Nhóm ngành liên quan đường sắt tốc độ cao và đường sắt đô thị (Công nghệ thông tin;Viễn thông, Điện; năng lượng, Cơ khí)",0,Ưu Tiên,
+GTS,Trường Đại Học Giao Thông Vận Tải TPHCM,7520103I,"Nhóm ngành liên quan đường sắt tốc độ cao và đường sắt đô thị (Công nghệ thông tin;Viễn thông, Điện; năng lượng, Cơ khí)",0,Kết Hợp,C01; C02; B03; C03; C04; C14; X01; X02; X03; X04; D01; A00; A02; A03; A04; A10; X05; X06; X07; X08; A01; B00; A05; A06; A11; X09; X10; X11; X12; D07; B01; B02; B04; X13; X14; X15 ; X16 ; B08; A07; A08; X17 ; X18 ; X19 ; X20 ; D09; A09; X21 ; X22 ; X23 ; X
+NHF,Trường Đại Học Hà Nội,7220101,Tiếng Việt và Văn hoá Việt Nam (dành cho người nước ngoài),250,Học Bạ,
+HDT,Trường Đại Học Hồng Đức,7140201,Giáo dục Mầm non,200,ĐT THPT Thi Riêng,M00; M05; M07; M11; M30
+HDT,Trường Đại Học Hồng Đức,7140202,Giáo dục Tiểu học,250,ĐT THPT Thi Riêng,B03; C02; C04; D01; M00
+HDT,Trường Đại Học Hồng Đức,7140206,Giáo dục Thể chất,40,ĐT THPT Thi Riêng,T02; T07; T10; T11; T12
+THV,Trường Đại Học Hùng Vương,7140201,Giáo dục Mầm non,30,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,M00; M07; M09; M05
+THV,Trường Đại Học Hùng Vương,7140202,Giáo dục Tiểu học,160,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,C01; X01; D01; C03
+THV,Trường Đại Học Hùng Vương,7140206,Giáo dục Thể chất,20,ĐT THPT Kết Hợp Ưu Tiên Thi Riêng,T00; T03; T05; T08
+THV,Trường Đại Học Hùng Vương,7140209,Sư phạm Toán học,40,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,A00; X06; D01; X25
+THV,Trường Đại Học Hùng Vương,7140217,Sư phạm Ngữ Văn,40,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,C00; D14; X70; X74
+THV,Trường Đại Học Hùng Vương,7140221,Sư phạm Âm nhạc,20,ĐT THPT Kết Hợp Ưu Tiên Thi Riêng,N10; N11; N12; N13
+THV,Trường Đại Học Hùng Vương,7140222,Sư phạm Mỹ thuật,20,ĐT THPT Kết Hợp Ưu Tiên Thi Riêng,V10; V11; V12; V13
+THV,Trường Đại Học Hùng Vương,7140231,Sư phạm Tiếng Anh,80,ĐT THPT Học Bạ CCQT Ưu Tiên Thi Riêng,D01; D15; D14; X78
+THV,Trường Đại Học Hùng Vương,7140247,Sư phạm Khoa học tự nhiên,20,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,A00; B00; A01; X14
+THV,Trường Đại Học Hùng Vương,7140249,Sư phạm Lịch sử - Địa lí,20,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,C00; X70; D14; X74
+THV,Trường Đại Học Hùng Vương,7220201,Ngôn ngữ Anh,200,ĐT THPT Học Bạ CCQT Ưu Tiên Thi Riêng,D01; D15; D14; X78
+THV,Trường Đại Học Hùng Vương,7220204,Ngôn ngữ Trung Quốc,500,ĐT THPT Học Bạ CCQT Ưu Tiên Thi Riêng,D01; D04; D14; X78
+THV,Trường Đại Học Hùng Vương,7310101,Kinh tế,135,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,D01; X01; X25; X53
+THV,Trường Đại Học Hùng Vương,7310401,Tâm lý học,40,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,C00; D01; X70; X74
+THV,Trường Đại Học Hùng Vương,7340101,Quản trị kinh doanh,180,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,D01; X01; X25; X53
+THV,Trường Đại Học Hùng Vương,7340201,Tài chính - Ngân hàng,120,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,D01; X01; X25; X53
+THV,Trường Đại Học Hùng Vương,7340301,Kế toán,300,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,D01; X01; X25; X53
+THV,Trường Đại Học Hùng Vương,7480201,Công nghệ thông tin,240,ĐT THPT Học Bạ CCQT Ưu Tiên Thi Riêng,A00; D01; X26; X25
+THV,Trường Đại Học Hùng Vương,7510201,Công nghệ Kỹ thuật Cơ khí,70,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,A00; X06; A01; D01
+THV,Trường Đại Học Hùng Vương,7510301,"Công nghệ Kỹ thuật điện, điện tử",200,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,A00; X06; A01; D01
+THV,Trường Đại Học Hùng Vương,7620105,Chăn nuôi,20,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,B00; D01; X14; X55
+THV,Trường Đại Học Hùng Vương,7620110,Khoa học cây trồng,20,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,B00; D01; X14; X55
+THV,Trường Đại Học Hùng Vương,7640101,Thú y,60,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,B00; D01; X14; X55
+THV,Trường Đại Học Hùng Vương,7720301,Điều dưỡng,180,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,B00; B03; D01; X14
+THV,Trường Đại Học Hùng Vương,7760101,Công tác xã hội,80,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,C00; D01; X70; X74
+THV,Trường Đại Học Hùng Vương,7810101,Du lịch,100,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,C00; D01; X70; X74
+THV,Trường Đại Học Hùng Vương,7810103,Quản trị dịch vụ du lịch và lữ hành,180,ĐT THPT Học Bạ Ưu Tiên Thi Riêng,C00; D01; X70; X74
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7210403,Thiết kế đồ họa,0,Học Bạ Kết Hợp,"V00, V01, V02, V03, V04, H00"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7220201,Ngôn ngữ Anh,0,ĐT THPT Học Bạ,"D01, A01, D14, D15, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7220204,Ngôn ngữ Trung Quốc,0,ĐT THPT Học Bạ,"D01, A01, D14, D15, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7340101,Quản trị kinh doanh,0,ĐT THPT Học Bạ,"A00, A01, B00, D01, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7340201,Tài chính - Ngân hàng,0,ĐT THPT Học Bạ,"A00, A01, B00, D01, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7340301,Kế toán,0,ĐT THPT Học Bạ,"A00, A01, B00, D01, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7480201,Công nghệ thông tin,0,ĐT THPT Học Bạ,"A00, A01, B00, D01, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7510301,"CNKT điện, điện tử",0,ĐT THPT Học Bạ,"A00, A01, B00, D01, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7510605,Logistics & QL chuỗi cung ứng,0,ĐT THPT Học Bạ,"A00, A01, B00, D01, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7580101,Kiến trúc,0,ĐT THPT Học Bạ Kết Hợp,"A01, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7580201,Kỹ thuật xây dựng,0,ĐT THPT Học Bạ,"A00, A01, B00, D01, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7580205,KTXD công trình giao thông,0,ĐT THPT Học Bạ,"A00, A01, B00, D01, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7810103,Quản trị DV du lịch & lữ hành,0,ĐT THPT Học Bạ,"A00, A01, B00, D01, X06, X07, X26, X27"
+KTD,Trường Đại Học Kiến Trúc Đà Nẵng,7810201,Quản trị khách sạn,0,ĐT THPT Học Bạ,"A00, A01, B00, D01, X06, X07, X26, X27"
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7210105,Điêu khắc,0,Kết Hợp Ưu Tiên,H00; H02
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7210105_1,Mỹ thuật đô thị (Chuyên ngành thuộc ngành Điêu khắc),0,Kết Hợp Ưu Tiên,H00; H02
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7210403_1,Nghệ thuật số (Chuyên ngành thuộc Thiết kế đồ họa),0,Kết Hợp Ưu Tiên,H00; H02
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7210404,Thiết kế thời trang,0,Kết Hợp Ưu Tiên,H00; H02
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7580101,Kiến trúc,0,Kết Hợp Ưu Tiên,V00; V01; V02
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7580101_1,Chương trình tiên tiến ngành Kiến trúc,0,Kết Hợp Ưu Tiên,V00; V01; V02
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7580102,Kiến trúc cảnh quan,0,Kết Hợp Ưu Tiên,V00; V01; V02
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7580105,Quy hoạch vùng và đô thị,0,Kết Hợp Ưu Tiên,V00; V01; V02
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7580105_1,Thiết kế đô thị (Chuyên ngành thuộc ngành Quy hoạch vùng và đô thị),0,Kết Hợp Ưu Tiên,V00; V01; V02
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7580213,Kỹ thuật cấp thoát nước,0,ĐT THPT Ưu Tiên,A00; C01; C02; D01; X03; X04
+KTA,Trường Đại Học Kiến Trúc Hà Nội,7580301,Kinh tế Xây dựng,0,ĐT THPT Ưu Tiên,A00; C01; C02; D01; X03; X04
+DQK,Trường Đại Học Kinh Doanh và Công Nghệ Hà Nội,7720101,Bác sĩ Y khoa,144,ĐT THPT Học Bạ,A00; A02; B00; B03; D08: X13
+DQK,Trường Đại Học Kinh Doanh và Công Nghệ Hà Nội,7720201,Dược sĩ,180,ĐT THPT Học Bạ,A00; A01; A02; B00; D07; X06; X09; X10; X13
+DQK,Trường Đại Học Kinh Doanh và Công Nghệ Hà Nội,7720301,Cử nhân Điều dưỡng,64,ĐT THPT Học Bạ,A00; A01; A02; B00; D07; X06; X09; X10; X13
+DQK,Trường Đại Học Kinh Doanh và Công Nghệ Hà Nội,7720501,Bác sĩ Răng - Hàm - Mặt,60,ĐT THPT Học Bạ,A00; A02; B00; D08
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7310101,Kinh tế,170,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7310101TA,"Kinh tế, chuyên ngành Kế hoạch - Đầu tư",30,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7310102,Kinh tế chính trị,40,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7310106,Kinh tế quốc tế,70,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7310107,Thống kê kinh tế,40,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7310109,Kinh tế số,50,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340101,Quản trị kinh doanh,280,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340101TA,Quản trị kinh doanh,30,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340115,Marketing,250,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340120,Kinh doanh quốc tế,50,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340121,Kinh doanh thương mại,140,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340122,Thương mại điện tử,220,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340201,Tài chính - Ngân hàng,160,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340301,Kế toán,300,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340301TA,Kế toán,30,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340302,Kiểm toán,80,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340404,Quản trị nhân lực,80,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7340405,Hệ thống thông tin quản lý,50,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7349001,Tài chính - Ngân hàng,30,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7510605,Logistics và Quản lý chuỗi cung ứng,350,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7620115,Kinh tế nông nghiệp,20,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+DHK,Trường Đại Học Kinh Tế - Đại Học Huế,7903124,Song ngành Kinh tế - Tài chính,30,ĐGNL HCM Kết Hợp Ưu Tiên CCQT; ĐT THPT Học Bạ,A00; A01; C03; C04; D01; D03; D07; D09; D10; X01; X26
+QHE,Trường Đại Học Kinh Tế - ĐHQG Hà Nội,7310101,Ngành Kinh tế,2,Thi Riêng; Ưu Tiên; Kết Hợp; ĐT THPT; ĐGNL HN,A01; D01; D09; D10; C01; C03; C04; X01; Q00
+QHE,Trường Đại Học Kinh Tế - ĐHQG Hà Nội,7310105,Ngành Kinh tế phát triển,2,Thi Riêng; Ưu Tiên; Kết Hợp; ĐT THPT; ĐGNL HN,A01; D01; D09; D10; C01; C03; C04; X01; Q00
+QHE,Trường Đại Học Kinh Tế - ĐHQG Hà Nội,7310106,Ngành Kinh tế quốc tế,2,Thi Riêng; Ưu Tiên; Kết Hợp; ĐT THPT; ĐGNL HN,A01; D01; D09; D10; C01; C03; C04; X01; Q00
+QHE,Trường Đại Học Kinh Tế - ĐHQG Hà Nội,7340101,Ngành Quản trị kinh doanh,2,Thi Riêng; Ưu Tiên; Kết Hợp; ĐT THPT; ĐGNL HN,A01; D01; D09; D10; C01; C03; C04; X01; Q00
+QHE,Trường Đại Học Kinh Tế - ĐHQG Hà Nội,7340101.68,Ngành Quản trị kinh doanh (do Đại học Troy cấp bằng),150,Thi Riêng Ưu Tiên CCQT; Học Bạ; ĐT THPT; ĐGNL HN,A01; D01; D08; D09; D10; C01; C03; C04; X01; Q00
+QHE,Trường Đại Học Kinh Tế - ĐHQG Hà Nội,7340101.98,Ngành Quản trị kinh doanh (do Đại học St.Francis cấp bằng),350,Thi Riêng Ưu Tiên CCQT; Học Bạ; ĐT THPT; ĐGNL HN,A01; D01; D08; D09; D10; C01 C03; C04; X01; C01; C03; Q00
+QHE,Trường Đại Học Kinh Tế - ĐHQG Hà Nội,7340201,Ngành Tài chính – Ngân hàng,2,Thi Riêng; Ưu Tiên; Kết Hợp; ĐT THPT; ĐGNL HN,A01; D01; D09; D10; C01; C03; C04; X01; Q00
+QHE,Trường Đại Học Kinh Tế - ĐHQG Hà Nội,7340301,Ngành Kế toán,2,Thi Riêng; Ưu Tiên; Kết Hợp; ĐT THPT; ĐGNL HN,A01; D01; D09; D10; C01; C03; C04; X01; Q00
+DKT,Trường Đại Học Hải Dương,734030111,Kế toán,135,ĐT THPT Học Bạ Kết Hợp,"A00, A01, C01, C14, D01, X01; C02; C03; C04"
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7340101,Quản trị kinh doanh,100,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,C00; C03; C04; D01; X01; X02
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7340201,Tài chính ngân hàng,50,Ưu Tiên ĐGNL HCM ĐT THPT Học Bạ,C00; C03; C04; D01; X01; X02
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7340301,Kế toán,100,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,C00; C03; C04; D01; X01; X02
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7480104,Hệ thống thông tin,50,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,A00; A01; C01; D01; X02; X03; X04
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7510605,Logistics & quản lý chuỗi cung ứng,50,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,C00; C03; C04; D01; X01; X02
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7580108,Thiết kế nội thất,50,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,A00; A01; C01; D01; X02; X03; X04
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7620105,Chăn nuôi,50,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,B00; B03; C02; D01; X02; X03; X04
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7620110,Khoa học cây trồng,50,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,B00; B03; C02; D01; X02; X03; X04
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7620112,Bảo vệ thực vật,50,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,B00; B03; C02; D01; X02; X03; X04
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7620205,Lâm sinh,100,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,B00; B03; C02; D01; X02; X03; X04
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7620211,Quản lí tài nguyên rừng,100,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,B00; B03; C02; D01; X02; X03; X04
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7640101,Thú y,100,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,B00; B03; C02; D01; X02; X03; X04
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7810103,Quản trị dịch vụ du lịch & lữ hành,50,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,C00; C03; C04; D01; X01; X02
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7850101,Quản lí tài nguyên & Môi trường,50,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,B00; B03; C02; D01; X02; X03; X04
+LNS,Phân hiệu Đại Học Lâm nghiệp tại Đồng Nai,7850103,Quản lí đất đai,100,ĐT THPT Học Bạ Ưu Tiên ĐGNL HCM,A00; A01; C01; D01; X02; X03; X04
+MTC,Trường Đại Học Mỹ Thuật Công Nghiệp,7210103,Ngành Hội họa,80,Kết Hợp,H00; H07
+MTC,Trường Đại Học Mỹ Thuật Công Nghiệp,7210105,Ngành Điêu khắc,30,Kết Hợp,H00; H07
+MTC,Trường Đại Học Mỹ Thuật Công Nghiệp,7210107,Ngành Gốm,40,Kết Hợp,H00; H07
+MTC,Trường Đại Học Mỹ Thuật Công Nghiệp,7210402,Ngành Thiết kế Công nghiệp,80,Kết Hợp,H00; H07
+MTC,Trường Đại Học Mỹ Thuật Công Nghiệp,7210403,Ngành Thiết kế Đồ họa,200,Kết Hợp,H00; H07
+MTC,Trường Đại Học Mỹ Thuật Công Nghiệp,7210404,Ngành Thiết kế Thời trang,120,Kết Hợp,H00; H07
+MTC,Trường Đại Học Mỹ Thuật Công Nghiệp,7580108,Ngành Thiết kế Nội thất,200,Kết Hợp,H00; H07
+MTS,Trường Đại Học Mỹ Thuật TPHCM,7140222,Sư phạm Mỹ thuật,25,ĐT THPT Học Bạ,
+MTS,Trường Đại Học Mỹ Thuật TPHCM,7210101,"Lý luận, lịch sử và phê bình mỹ thuật",10,ĐT THPT Học Bạ,
+MTS,Trường Đại Học Mỹ Thuật TPHCM,7210103,Hội hoạ,50,ĐT THPT Học Bạ,
+MTS,Trường Đại Học Mỹ Thuật TPHCM,7210104,Đồ hoạ,45,ĐT THPT Học Bạ,
+MTS,Trường Đại Học Mỹ Thuật TPHCM,7210105,Điêu khắc,10,ĐT THPT Học Bạ,
+MTS,Trường Đại Học Mỹ Thuật TPHCM,7210403,Thiết kế đồ họa,140,ĐT THPT Học Bạ,
+DHN,Trường Đại Học Nghệ Thuật Huế,7140222,Sư phạm Mỹ thuật,135,Kết Hợp,H00
+DHN,Trường Đại Học Nghệ Thuật Huế,7210103,Hội họa,15,Kết Hợp,H00
+DHN,Trường Đại Học Nghệ Thuật Huế,7210105,Ngành Điêu khắc,7,Kết Hợp,H00
+DHN,Trường Đại Học Nghệ Thuật Huế,7210403,Thiết kế Đồ họa,145,Kết Hợp,H00
+DHN,Trường Đại Học Nghệ Thuật Huế,7210404,Thiết kế Thời trang,15,Kết Hợp,H00
+DHN,Trường Đại Học Nghệ Thuật Huế,7580108,Thiết kế Nội thất,15,Kết Hợp,H00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7140231,Sư phạm tiếng Anh,150,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7140234,Sư phạm tiếng Trung Quốc,25,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; D04; D45; D65; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7140235,Sư phạm tiếng Đức,25,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; D05; D41; D61; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7140236,Sư phạm tiếng Nhật,25,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; D06; D43; D63; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7140237,Sư phạm tiếng Hàn Quốc,25,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; DD2; DH1; DH5; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7220101,Tiếng Việt và Văn hóa Việt Nam,50,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7220201,Ngôn ngữ Anh,770,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7220202,Ngôn ngữ Nga,70,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; D02; D42; D62; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7220203,Ngôn ngữ Pháp,150,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; D03; D44; D64; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7220204,Ngôn ngữ Trung Quốc,300,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; D04; D45; D65; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7220205,Ngôn ngữ Đức,120,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; D05; D41; D61; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7220209,Ngôn ngữ Nhật,300,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; D06; D43; D63; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7220210,Ngôn ngữ Hàn Quốc,280,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; DD2; DH1; DH5; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7220211,Ngôn ngữ Ả Rập,60,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7220212,Văn hóa và truyền thông xuyên quốc gia,50,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,A01; D01; D07; D08; D14; D15; Q00
+QHF,Trường Đại Học Ngoại Ngữ - ĐH Quốc gia Hà Nội,7310403,Tâm lý học giáo dục,50,Ưu Tiên; ĐT THPT CCQT; ĐGNL HN,"D15, D14, D07, D01, D08, A01, D09, D10, D84, D11, D12, D13, D66; Q00"
+NTU,Trường Đại Học Nguyễn Trãi,7220209,Ngôn ngữ Nhật,100,ĐT THPT Học Bạ Ưu Tiên,C00; C03; C04; D01; DD2; D14; D15; D63; D66; X78
+NTU,Trường Đại Học Nguyễn Trãi,7220210,Ngôn ngữ Hàn Quốc,150,ĐT THPT Học Bạ Ưu Tiên,C00; C03; C04; D01; DD2; D14; D15; D63; D66; X78
+NTU,Trường Đại Học Nguyễn Trãi,7310601,Quốc tế học,182,ĐT THPT Học Bạ Ưu Tiên,C00; C03; C04; D01; DD2; D14; D15; D63; D66; X78
+NTU,Trường Đại Học Nguyễn Trãi,7320108,Quan hệ công chúng,103,ĐT THPT,C00; C01; C03; C04; C14; C19; C20; D01; D15; X70; X74
+NTU,Trường Đại Học Nguyễn Trãi,7340101,Quản trị kinh doanh,250,ĐT THPT Học Bạ Ưu Tiên,A00; A01; C01; D01; X02; X06; X26; X27; X56
+NTU,Trường Đại Học Nguyễn Trãi,7340201,Tài chính - Ngân hàng,100,ĐT THPT Học Bạ Ưu Tiên,A00; A01; C01; D01; X02; X06; X26; X27; X56
+NTU,Trường Đại Học Nguyễn Trãi,7340301,Kế toán,100,ĐT THPT,A00; A01; C01; C04; D01; D07; D10; X25; X26
+NTU,Trường Đại Học Nguyễn Trãi,7480201,Công nghệ thông tin,150,ĐT THPT Học Bạ Ưu Tiên,A00; A01; C01; D01; X02; X06; X26; X27; X56
+TSN,Trường Đại Học Nha Trang,7810201,Quản trị khách sạn,0,ĐT THPT; ĐGNL HCM ĐGNL HN Ưu Tiên,D01; X01; X02; C03; C04
+TSN,Trường Đại Học Nha Trang,7810201A,Quản trị khách sạn (Chương trình đặc biệt),0,ĐGNL HCM ĐGNL HN Ưu Tiên; ĐT THPT,D01; X01; C03; C04
+DHL,Trường Đại Học Nông Lâm Huế,7340116,Bất động sản,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A01, C00, C01, C03, C04, C14, X01, D01"
+DHL,Trường Đại Học Nông Lâm Huế,7510201,Công nghệ kỹ thuật cơ khí,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, A01, X04, X01, C04, C01, D01, C02"
+DHL,Trường Đại Học Nông Lâm Huế,7520114,Kỹ thuật cơ – điện tử,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, A01, X04, X01, C04, C01, D01, C02"
+DHL,Trường Đại Học Nông Lâm Huế,7540101,Công nghệ thực phẩm,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, A01, X04, X01, C04, C01, D01, C02"
+DHL,Trường Đại Học Nông Lâm Huế,7540106,Đảm bảo chất lượng và an toàn thực phẩm,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, A01, X04, X01, C04, C01, D01, C02"
+DHL,Trường Đại Học Nông Lâm Huế,7620102,Khuyến nông,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A07, C00, C03, C04, X04, Y09, C12, D01"
+DHL,Trường Đại Học Nông Lâm Huế,7620105,Chăn nuôi,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, B00, C04, D01, X04, X12, D07, B08"
+DHL,Trường Đại Học Nông Lâm Huế,7620110,Khoa học cây trồng,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"C01, X17, B00, B03, C03, C04, D01, X04"
+DHL,Trường Đại Học Nông Lâm Huế,7620112,Bảo vệ thực vật,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"C01, X17, B00, B03, C03, C04, D01, X04"
+DHL,Trường Đại Học Nông Lâm Huế,7620116,Phát triển nông thôn,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A07, C00, C03, C04, X04, Y09, C12, D01"
+DHL,Trường Đại Học Nông Lâm Huế,7620118,Nông nghiệp công nghệ cao,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"C01, X17, B00, B03, C03, C04, D01, X04"
+DHL,Trường Đại Học Nông Lâm Huế,7620210,Lâm nghiệp,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, B00, C03, C04, C14, X01, X04, X12"
+DHL,Trường Đại Học Nông Lâm Huế,7620211,Quản lý tài nguyên rừng,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, B00, C03, C04, C14, X01, X04, X12"
+DHL,Trường Đại Học Nông Lâm Huế,7620301,Nuôi trồng thủy sản,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, B00, B03, D01, X04, X12, X55, X21"
+DHL,Trường Đại Học Nông Lâm Huế,7620302,Bệnh học thủy sản,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, B00, B03, D01, X04, X12, X55, X21"
+DHL,Trường Đại Học Nông Lâm Huế,7620305,Quản lý thủy sản,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, B00, B03, D01, X04, X12, X55, X21"
+DHL,Trường Đại Học Nông Lâm Huế,7640101,Thú y,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A00, B00, C04, D01, X04, X12, C07, B08"
+DHL,Trường Đại Học Nông Lâm Huế,7850103,Quản lý đất đai,0,ĐT THPT Ưu Tiên Học Bạ Kết Hợp,"A01, C00, C01, C03, C04, C14, X01, D01"
+DPQ,Trường Đại Học Phạm Văn Đồng,51140201,Giáo dục Mầm non,130,Kết Hợp,M01; M09
+DPT,Trường Đại Học Phan Thiết,7801103,Quản trị dịch vụ du lịch và lữ hành,0,Học Bạ,C00; C04; D01; D08; D10; D14; D15
+DQB,Trường Đại Học Quảng Bình,7140201,Giáo dục mầm non,50,ĐT THPT Ưu Tiên,M05; M06; M07; M10; M11; M13; M14
+DQB,Trường Đại Học Quảng Bình,7140202,Giáo dục Tiểu học,60,ĐT THPT Ưu Tiên,A00; A01; C00; C01; C04; C14; C20; D01; X01
+DQB,Trường Đại Học Quảng Bình,7140209,Sư phạm Toán học,20,ĐT THPT Ưu Tiên,A00; A01; A02; D07; X05; X09; X26; X27
+DQB,Trường Đại Học Quảng Bình,7140217,Sư phạm Ngữ văn,20,ĐT THPT Ưu Tiên,C00; C12; C13; D14; D15; X70; X71; X74; X75; X78
+DQB,Trường Đại Học Quảng Bình,7140231,Sư phạm Tiếng Anh,30,ĐT THPT Ưu Tiên,A01; D01; D09; D10; D14; D15
+DQB,Trường Đại Học Quảng Bình,7140247,Sư phạm khoa học tự nhiên,20,ĐT THPT Ưu Tiên,A00; A01; A02; B00; B08; D07; X08; X11; X12; X15
+DQB,Trường Đại Học Quảng Bình,7140249,Sư phạm Lịch sử - Địa lí,20,ĐT THPT Ưu Tiên,A09; C00; C03; C04; C19; C20; D14; D15; X70; X74
+DQB,Trường Đại Học Quảng Bình,7220201,Ngôn ngữ Anh,100,ĐT THPT Học Bạ Ưu Tiên,A01; D01; D09; D10; D14; D15
+DQB,Trường Đại Học Quảng Bình,7220204,Ngôn ngữ Trung Quốc,40,ĐT THPT Học Bạ Ưu Tiên,D01; D04; D14; D15; D45; D65; D66; X78
+DQB,Trường Đại Học Quảng Bình,7340101,Quản trị kinh doanh,40,ĐT THPT Học Bạ Ưu Tiên,A01; A03; C03; D01; D10; X01; X25
+DQB,Trường Đại Học Quảng Bình,7340301,Kế toán,100,ĐT THPT Học Bạ Ưu Tiên,A01; A03; A09; C02; D01; D10; X01
+DQB,Trường Đại Học Quảng Bình,7480201,Công nghệ thông tin,100,ĐT THPT Học Bạ Ưu Tiên,A00; A01; D01; X02; X06; X10; X22; X26; X75; X79
+DQB,Trường Đại Học Quảng Bình,7620101,Nông nghiệp,40,ĐT THPT Học Bạ Ưu Tiên,B03; C01; C02; C03; D01; X01; X02; X04; X17; X21
+DQB,Trường Đại Học Quảng Bình,7810103,Quản trị dịch vụ du lịch và lữ hành,40,ĐT THPT Học Bạ Ưu Tiên,C00; C03; C04; D01; D14; D15
+DQB,Trường Đại Học Quảng Bình,7850101,Quản lý tài nguyên và môi trường,40,ĐT THPT Học Bạ Ưu Tiên,B03; C01; C02; C03; D01; X01; X02; X04; X17; X21
+DBH,Trường Đại Học Quốc Tế Bắc Hà,7340101,Quản trị kinh doanh,0,ĐT THPT Học Bạ,A00; D01; C00; C14; C20
+DBH,Trường Đại Học Quốc Tế Bắc Hà,7340201,Tài chính ngân hàng,0,ĐT THPT Học Bạ,A00; D01; C00; C14; C20
+DBH,Trường Đại Học Quốc Tế Bắc Hà,7340301,Kế toán,0,ĐT THPT Học Bạ,A00; D01; C00; C14; C20
+DBH,Trường Đại Học Quốc Tế Bắc Hà,7480201,Công nghệ thông tin,0,ĐT THPT Học Bạ,A00; A01; A02; A03; A04
+DBH,Trường Đại Học Quốc Tế Bắc Hà,7520207,Kỹ thuật điện tử viễn thông,0,ĐT THPT Học Bạ,A00; A01; A02; A03; A04
+DBH,Trường Đại Học Quốc Tế Bắc Hà,7580201,Kỹ thuật xây dựng,0,ĐT THPT Học Bạ,A00; A01; A04; A06; D01
+DBH,Trường Đại Học Quốc Tế Bắc Hà,7580205,Kỹ thuật xây dựng công trình giao thông,0,ĐT THPT Học Bạ,A00; A01; A04; A06; D01
+DBH,Trường Đại Học Quốc Tế Bắc Hà,7580301,Kinh tế xây dựng,0,ĐT THPT Học Bạ,A00; A01; A04; A06; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7220201,Ngôn ngữ Anh,110,Ưu Tiên; Kết Hợp,D09; D10; D01; D14; D15
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7310101,Kinh tế (Phân tích dữ liệu trong kinh tế),80,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340101,Quản trị kinh doanh,290,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340115,Marketing,140,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340122,Thương mại điện tử,50,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340201,Tài chính – Ngân hàng,170,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340301,Kế toán,60,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7420201,Công nghệ sinh học,100,Ưu Tiên; Kết Hợp,A00; B00; D07; B08; C08; D12; D13
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7440112,Hóa học (Hóa sinh),0,Ưu Tiên; Kết Hợp,A00; B00; D07; B08; C08; D12; D13
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7460108,Khoa học dữ liệu,50,Ưu Tiên; Kết Hợp,A00; A01; X26; X06; X10
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7460112,Toán ứng dụng (Kỹ thuật Tài chính và Quản trị rủi ro),50,Ưu Tiên; Kết Hợp,A00; A01; X26; X06; X10
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7460201,Thống kê (Thống kê ứng dụng),30,Ưu Tiên; Kết Hợp,A00; A01; X26; X06; X10
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7480101,Khoa học máy tính,50,Ưu Tiên; Kết Hợp,A00; A01; X26; X06; X10
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7480201,Công nghệ thông tin,50,Ưu Tiên; Kết Hợp,A00; A01; X26; X06; X10
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7510605,Logistics và Quản lý chuỗi cung ứng,150,Ưu Tiên; Kết Hợp,A00; A01; B00; D07; B08; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7520118,Kỹ thuật hệ thống công nghiệp,40,Ưu Tiên; Kết Hợp,A00; A01; B00; D07; B08; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7520121,Kỹ thuật không gian (Phân tích và ứng dụng dữ liệu lớn),50,Ưu Tiên; Kết Hợp,A00; A01; B00; D07; B08; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7520207,Kỹ thuật điện tử – viễn thông,80,Ưu Tiên; Kết Hợp,A00; A01; B00; D07; B08; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7520212,Kỹ thuật y sinh,80,Ưu Tiên; Kết Hợp,A00; A01; B00; D07; B08; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7520216,Kỹ thuật điều khiển và tự động hóa,90,Ưu Tiên; Kết Hợp,A00; A01; B00; D07; B08; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7520301,Kỹ thuật hóa học,60,Ưu Tiên; Kết Hợp,A00; B00; D07; B08; C08; D12; D13
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7540101,Công nghệ thực phẩm,40,Ưu Tiên; Kết Hợp,A00; B00; D07; B08; C08; D12; D13
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7580201,Kỹ thuật xây dựng,40,Ưu Tiên; Kết Hợp,A00; A01; B00; D07; B08; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7580302,Quản lý xây dựng,30,Ưu Tiên; Kết Hợp,A00; A01; B00; D07; B08; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7220201_WE3,Ngôn ngữ Anh (CTLK với ĐH West of England) (3+1),20,Ưu Tiên; Kết Hợp,D09; D10; D01; D14; D15
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7220201_WE4,Ngôn ngữ Anh (CTLK với ĐH West of England) (4+0),60,Ưu Tiên; Kết Hợp,D09; D10; D01; D14; D15
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340101_AND,Quản trị kinh doanh (CTLK với ĐH Andrews) (4+0),30,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340101_MQ,"Quản trị kinh doanh (CTLK với ĐH Macquarie) (2+1;2+1,5)",20,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340101_SY,Quản trị kinh doanh (CTLK với ĐH Sydney) (2+2),20,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340101_WE,Quản trị kinh doanh (CTLK với ĐH West of England) (2+2),20,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340101_WE4,Quản trị kinh doanh (CTLK với ĐH West of England) (4+0),60,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340201_MQ,Tài chính (CTLK với ĐH Macquarie) (2+1),20,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7340301_MQ,Kế toán (CTLK với ĐH Macquarie) (2+1),10,Ưu Tiên; Kết Hợp,A01; D07; D09; D10; X25; D01
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7420201_WE2,Công nghệ sinh học (CTLK với ĐH West of England) (2+2),20,Ưu Tiên; Kết Hợp,A00; B00; D07; B08; C08; D12; D13
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7420201_WE4,Công nghệ sinh học định hướng Y Sinh (CTLK với ĐH West of England) (4+0),20,Ưu Tiên; Kết Hợp,A00; B00; D07; B08; C08; D12; D13
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7480201_DK,Công nghệ thông tin (CTLK với ĐH Deakin) (2+2),20,Ưu Tiên; Kết Hợp,A00; A01; X26; X06; X10
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7480201_MQ,Công nghệ thông tin (CTLK với ĐH Macquarie) (2+1),20,Ưu Tiên; Kết Hợp,A00; A01; X26; X06; X10
+QSQ,Trường Đại Học Quốc Tế - ĐHQG TPHCM,7480201_WE4,Công nghệ thông tin (CTLK với ĐH West of England) (4+0),30,Ưu Tiên; Kết Hợp,A00; A01; X26; X06; X10
+DQN,Trường Đại Học Quy Nhơn,7140201,Giáo dục Mầm non,0,Kết Hợp,M00
+DQN,Trường Đại Học Quy Nhơn,7140206,Giáo dục Thể chất,0,Kết Hợp,T00; T01; T02; T03; T04; T05
+SGD,Trường Đại Học Sài Gòn,7140201,Giáo dục mầm non,0,ĐT THPT,"M01; (Toán, Kể chuyện, Hát); (Văn, Kể chuyện, Hát)"
+SGD,Trường Đại Học Sài Gòn,7140205,Giảo dục chính trị,0,ĐT THPT,"C01; (Toán, Văn, 1 môn bất kì); (Văn, GDKT&PL, môn bất kì)"
+SGD,Trường Đại Học Sài Gòn,7440112,Hóa học,0,Ưu Tiên V-SAT,
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210226B,Diễn viên chèo,15,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210226C,Diễn viên rối,10,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210226E,Nhạc công kịch hát dân tộc,10,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210227A,"Đạo diễn âm thanh, ánh sáng sân khấu",15,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210227B,Đạo diễn sự kiện lễ hội,15,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210233A,Biên kịch điện ảnh,15,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210233B,Biên tập truyền hình,20,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210234,"Diễn viên kịch, điện ảnh – truyền hình",40,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210234A,Diễn viên nhạc kịch,15,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210235A,Đạo diễn điện ảnh,15,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210235B,Đạo diễn truyền hình,15,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210235C,"Đạo diễn, sản xuất nội dung số",15,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210236A,Quay phim điện ảnh,20,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210236B,Quay phim truyền hình,15,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210243,Biên đạo múa,10,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210243A,Biên đạo múa đại chúng,30,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210244,Huấn luyện múa,10,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210301A,Nhiếp ảnh nghệ thuật,20,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210301B,Nhiếp ảnh báo chí,20,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210301C,Nhiếp ảnh truyền thông đa phương tiện,20,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210302A,Công nghệ dựng phim,20,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210302B,Âm thanh điện ảnh – truyền hình,10,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210406A,Thiết kế mỹ thuật sân khấu,10,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210406B,Thiết kế mỹ thuật hoạt hình,10,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210406C,Thiết kế mỹ thuật hoạt hình,10,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210406D,Thiết kế trang phục nghệ thuật,10,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210406E,Thiết kế đồ hoạ kỹ xảo,20,Thi Riêng,S00
+SKD,Trường Đại Học Sân Khấu Điện Ảnh Hà Nội,7210406F,Nghệ thuật hóa trang,25,Thi Riêng,S00
+DSD,Trường Đại Học Sân Khấu Điện Ảnh TPHCM,7210227,Đạo diễn sân khấu,15,Kết Hợp,S00
+DSD,Trường Đại Học Sân Khấu Điện Ảnh TPHCM,7210234,"Diễn viên kịch, điện ảnh - truyền hình",15,Kết Hợp,S00
+DSD,Trường Đại Học Sân Khấu Điện Ảnh TPHCM,7210235,"Đạo diễn điện ảnh, truyền hình",40,Kết Hợp,S00
+DSD,Trường Đại Học Sân Khấu Điện Ảnh TPHCM,7210236,Quay phim,25,Kết Hợp,S00
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140103,Công nghệ giáo dục,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,D01; C01; C02; X02; X03
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140201,Giáo dục Mầm non,0,Ưu Tiên; ĐT THPT ĐGNL SPHN ĐGNL SPHCM,M09; M01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140202,Giáo dục Tiểu học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,D01; C03; C04; X02; X03
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140204,Giáo dục Công dân,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; C19; X70; C03
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140205,Giáo dục Chính trị,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; C19; X70; C03
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140206,Giáo dục thể chất,0,Ưu Tiên; ĐT THPT ĐGNL SPHN ĐGNL SPHCM,T01; T08
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140209,Sư phạm Toán học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,A00; A01; X06
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140210,Sư phạm Tin học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,A00; X06; A01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140211,Sư phạm Vật lý,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,A01; A00; X06; C01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140212,Sư phạm Hóa học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,A00; B00; D07; C02
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140213,Sư phạm Sinh học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,B00; B03; B08; X16; X14
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140217,Sư phạm Ngữ văn,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; D14; C03
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140218,Sư phạm Lịch sử,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; D14; C19; X70
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140219,Sư phạm Địa lý,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; D15; C04
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140221,Sư phạm Âm nhạc,0,Ưu Tiên; ĐT THPT ĐGNL SPHN ĐGNL SPHCM,N00; N01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140222,Sư phạm Mỹ thuật,0,Ưu Tiên; ĐT THPT ĐGNL SPHN ĐGNL SPHCM,H00; H07
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140247,Sư phạm Khoa học tự nhiên,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,A00; B00; D07; C02
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140248,Giáo dục Pháp luật,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C03; C14; X01; C04
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140249,Sư phạm Lịch sử - Địa lý,0,Ưu Tiên; ĐGNL SPHCM ĐGNL SPHN; ĐT THPT,C00; D14; C19; X70; D143
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7140250,Sư phạm Tin học và Công nghệ Tiểu học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,D01; C01; C02; X02; X03
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7229010,Quan hệ quốc tế/Lịch sử,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; D14; C19; X70
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7229030,Văn học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; D14; C03
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7229040,Văn hóa học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; D14; C03
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7310401,"Tâm lý học, gồm các chuyên ngành: 1. Tâm lý học trường học và tổ chức 2. Tâm lý học lâm sàng",0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C02; D01; B03; C03; C04; C14; X01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7310501,Địa lý du lịch/Địa lý học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; C20; X74; C04
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7310630,Văn hóa du lịch/Việt Nam học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; D14; C19; X70
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7320101,Báo chí,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C00; D14; C03
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7320108,Quan hệ công chúng,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,D14; D15; D01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7420201,Công nghệ Sinh học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,B00; B03; B08; X14; A02
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7440112A,Hóa Dược/Hóa học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,A00; B00; D07; C02; X11
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7440112B,Hóa phân tích - Ứng dụng/Hóa học,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,A00; B00; D07; C02; X11
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7460108,Khoa học dữ liệu,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,C01; D01; X02
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7480201,Công nghệ thông tin,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,A00; X06; A01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7520401,Vật lý kỹ thuật,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,A00; A01; X06; C01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7620101,Nông nghiệp thông minh/Nông nghiệp,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,B03; C04; X04; D01; C01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7760101,Công tác xã hội,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,D01; B03; C03; C04; C02; C14; X01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7760103,Hỗ trợ giáo dục người khuyết tật,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,D01; B03; C03; C04; C02; C14; X01
+DDS,Trường Đại Học Sư Phạm - Đại Học Đà Nẵng,7850101,Quản lý tài nguyên và môi trường,0,Ưu Tiên; ĐGNL SPHCM ĐT THPT ĐGNL SPHN,B03; C04; X04; D01; C02
+SPH,Trường Đại Học Sư Phạm Hà Nội,7220101,Tiếng Việt và văn hóa Việt Nam - Tuyển sinh người nước ngoài,10,Ưu Tiên,Theo quy định riêng
+SPH,Trường Đại Học Sư Phạm Hà Nội,7310630,Việt Nam học (Tuyển sinh người nước ngoài),10,Ưu Tiên,Theo quy định riêng
+GNT,Trường Đại Học Sư Phạm Nghệ Thuật Trung Ương,7210207,Biểu diễn nhạc cụ phương Tây,0,Kết Hợp,N03
+GNT,Trường Đại Học Sư Phạm Nghệ Thuật Trung Ương,7210408,Nghệ thuật số,0,Kết Hợp,H00
+SPS,Trường Đại Học Sư Phạm TPHCM,7220101,Tiếng Việt và văn hóa Việt Nam,10,Ưu Tiên,
+TDD,Trường Đại học Thành Đô,7140101,Giáo dục học,60,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A01; C0G; C00; D01; D09
+TDD,Trường Đại học Thành Đô,7310630,Việt Nam học (Hướng dẫn du lịch),80,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A01; C0G; C00; D01; D09
+TDD,Trường Đại học Thành Đô,7340101,Quản trị Kinh doanh,100,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A01; C03; C00; D01; D09
+TDD,Trường Đại học Thành Đô,7340301,Kế toán,120,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A01; C03; C00; D01; D09
+TDD,Trường Đại học Thành Đô,7340406,Quản trị Văn phòng,120,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A01; C03; C00; D01; D09
+TDD,Trường Đại học Thành Đô,7380101,Luật,60,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A01; C03; C00; D01; D09
+TDD,Trường Đại học Thành Đô,7480201,Công nghệ thông tin,200,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A01; A0C; C03; D01; D07
+TDD,Trường Đại học Thành Đô,7510205,Công nghệ kỹ thuật Ô tô,100,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A01; A0C; C03; D01; D07
+TDD,Trường Đại học Thành Đô,7510301,"Công nghệ kỹ thuật Điện, Điện tử",60,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A01; A0C; C03; D01; D07
+TDD,Trường Đại học Thành Đô,7720201,Dược học,640,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A02; A03; B00; B08; D07
+TDD,Trường Đại học Thành Đô,7720301,Điều dưỡng,80,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A02; A03; B00; B08; D07
+TDD,Trường Đại học Thành Đô,7810201,Quản trị khách sạn,100,ĐT THPT Học Bạ ĐGNL HN ĐGTD BK Ưu Tiên,A00; A01; C0G; C00; D01; D09
+DDB,Trường Đại Học Thành Đông,7220201,Ngôn ngữ Anh,0,ĐT THPT Học Bạ Ưu Tiên,D01; D07; D14; D15
+DDB,Trường Đại Học Thành Đông,7220204,Ngôn ngữ Trung Quốc,0,ĐT THPT Học Bạ Ưu Tiên,C00; D01; D14; D15
+DDB,Trường Đại Học Thành Đông,7220210,Ngôn ngữ Hàn Quốc,0,ĐT THPT Học Bạ Ưu Tiên,C00; D01; D14; D15
+DDB,Trường Đại Học Thành Đông,7310205,Quản lý nhà nước,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; C00; D01
+DDB,Trường Đại Học Thành Đông,7340101,Quản trị kinh doanh,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; A07; D01
+DDB,Trường Đại Học Thành Đông,7340122,Thương mại điện tử,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; A07; D01
+DDB,Trường Đại Học Thành Đông,7340201,Tài chính - Ngân hàng,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; A07; D01
+DDB,Trường Đại Học Thành Đông,7340301,Kế toán,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; A07; D01
+DDB,Trường Đại Học Thành Đông,7380101,Luật,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; C00; D01
+DDB,Trường Đại Học Thành Đông,7380107,Luật kinh tế,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; C00; D01
+DDB,Trường Đại Học Thành Đông,7480201,Công nghệ thông tin,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; D07; D08
+DDB,Trường Đại Học Thành Đông,7510103,Công nghệ kỹ thuật xây dựng,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; D07; D08
+DDB,Trường Đại Học Thành Đông,7510201,Công nghệ kỹ thuật cơ khí,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; D07; D08
+DDB,Trường Đại Học Thành Đông,7510203,Công nghệ kỹ thuật cơ - điện tử,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; D07; D08
+DDB,Trường Đại Học Thành Đông,7510205,Công nghệ kỹ thuật ô tô,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; C01; D01
+DDB,Trường Đại Học Thành Đông,7520216,Kỹ thuật điều khiển và tự động hoá,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; D07; D08
+DDB,Trường Đại Học Thành Đông,7720115,Y học cổ truyền,0,ĐT THPT Học Bạ Ưu Tiên,A00; A02; B00
+DDB,Trường Đại Học Thành Đông,7720201,Dược học,0,ĐT THPT Học Bạ Ưu Tiên,A00; A02; B00
+DDB,Trường Đại Học Thành Đông,7720301,Điều dưỡng,0,ĐT THPT Học Bạ Ưu Tiên,A00; A02; B00
+DDB,Trường Đại Học Thành Đông,7720401,Dinh dưỡng,0,ĐT THPT Học Bạ Ưu Tiên,A00; A02; B00
+DDB,Trường Đại Học Thành Đông,7720601,Kỹ thuật xét nghiệm y học,0,ĐT THPT Học Bạ Ưu Tiên,A00; A02; B00
+DDB,Trường Đại Học Thành Đông,7720602,Kỹ thuật hình ảnh y học,0,ĐT THPT Học Bạ Ưu Tiên,A00; A02; B00
+DDB,Trường Đại Học Thành Đông,7810103,Quản trị dịch vụ du lịch và lữ hành,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; C00; D01
+DDB,Trường Đại Học Thành Đông,7810201,Quản trị khách sạn,0,ĐT THPT Học Bạ Ưu Tiên,A00; A01; C00; D01
+DDB,Trường Đại Học Thành Đông,7850103,Quản lý đất đai,0,ĐT THPT Học Bạ Ưu Tiên,A00; A04; B00; D01
+TTD,Trường Đại Học Thể Dục Thể Thao Đà Nẵng,7140206,Giáo dục thể chất,100,Kết Hợp Ưu Tiên,T01; T02
+TDM,Trường Đại học Thủ Dầu Một,7140201,Giáo dục Mầm non*,0,ĐT THPT,M00; M01; M02; M03; M04; M05; M06
+TDM,Trường Đại học Thủ Dầu Một,7140202,Giáo dục Tiểu học*,0,ĐT THPT,A00; A01; C01; C02; C03; C04; D01; D09; D10; X01
+TDM,Trường Đại học Thủ Dầu Một,7140209,Sư phạm Toán,0,ĐT THPT,A00 ; A01; A02; C01; D01; D07; X02; X03; X05; X16
+TDM,Trường Đại học Thủ Dầu Một,7140217,Sư phạm Ngữ văn*,0,ĐT THPT,C00; C03; C04; C07; C10; D01; D14; D15; X70; X74
+TDM,Trường Đại học Thủ Dầu Một,7140218,Sư phạm Lịch sử,0,ĐT THPT,C00; C03; C07; C10; C12; D14; X71; X70; X72; X73
+DVT,Đại Học Trà Vinh,7140201,Giáo dục Mầm non,0,Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT ĐGNL HCM,C00; C14; M00; M05; X01; X71; Y07
+DVT,Đại Học Trà Vinh,7140202,Giáo Dục Tiểu Học,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; D84; X06; X13; X17; X26
+DVT,Đại Học Trà Vinh,7140217,Sư Phạm Ngữ Văn,0,ĐT THPT ĐGNL HCM Học Bạ Thi Riêng V-SAT Ưu Tiên,C00; C20; D14; D15; X70; X71; Y07
+DVT,Đại Học Trà Vinh,7140226,Sư phạm Tiếng Khmer,0,ĐT THPT ĐGNL HCM Học Bạ Thi Riêng V-SAT Ưu Tiên,C00; C20; D14; D15; X70; X74; Y07
+DVT,Đại Học Trà Vinh,7220106,Ngôn ngữ Khmer,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,C00; D01; D14; X01; X70; X75; X79
+DVT,Đại Học Trà Vinh,7220201,Ngôn ngữ Anh,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,D01; D09; D10; D14; D15; X26; X78
+DVT,Đại Học Trà Vinh,7220204,Ngôn ngữ Trung Quốc,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,D01; D04; D14; D15; X78; X79; X91
+DVT,Đại Học Trà Vinh,7229040,Văn hóa học,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,C00; C04; D01; D14; D15; X70; X74
+DVT,Đại Học Trà Vinh,7310101,Kinh tế,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; C01; D01; X25; X26; X53
+DVT,Đại Học Trà Vinh,7310201,Chính trị học,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,C00; C20; D01; X74; Y07; Y08; Y09
+DVT,Đại Học Trà Vinh,7310205,Quản lý nhà nước,0,ĐGNL HCM Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT,C00; C04; D01; X70; X71; X78; X79
+DVT,Đại Học Trà Vinh,7340101,Quản trị kinh doanh,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; A08; D01; X02; X25; X27
+DVT,Đại Học Trà Vinh,7340122,Thương mại điện tử,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; C14; X06; X07; X26; X56
+DVT,Đại Học Trà Vinh,7340201,Tài chính - Ngân hàng,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; C01; D01; X25; X53; X55
+DVT,Đại Học Trà Vinh,7340301,Kế Toán,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; C01; D01; X25; X26; X53
+DVT,Đại Học Trà Vinh,7340406,Quản trị văn phòng,0,ĐGNL HCM Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT,C00; C04; D01; X70; X71; X78; X79
+DVT,Đại Học Trà Vinh,7380101,Luật,0,ĐT THPT ĐGNL HCM Học Bạ Thi Riêng V-SAT Ưu Tiên,A00; A01; C00; D01; X25; X70; X78
+DVT,Đại Học Trà Vinh,7420201,Công nghệ sinh học,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A02; B00; B08; X12; X14; X16; X28
+DVT,Đại Học Trà Vinh,7480107,Trí tuệ nhân tạo,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; D01; D07; X06; X26; X27
+DVT,Đại Học Trà Vinh,7480201,Công nghệ thông tin,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; D01; D07; X06; X26; X27
+DVT,Đại Học Trà Vinh,7510102,Công nghệ kỹ thuật công trình xây dựng,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; A03; A04; X05; X06; X07
+DVT,Đại Học Trà Vinh,7510201,Công nghệ kỹ thuật cơ khí,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; A02; A03; X05; X06; X07
+DVT,Đại Học Trà Vinh,7510203,Công nghệ kỹ thuật cơ điện tử,0,ĐT THPT ĐGNL HCM Học Bạ Thi Riêng V-SAT Ưu Tiên,A00; A01; A02; A03; X05; X06; X07
+DVT,Đại Học Trà Vinh,7510205,Công nghệ kỹ thuật ô tô,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; A02; A03; X05; X06; X07
+DVT,Đại Học Trà Vinh,7510301,"Công nghệ Kỹ thuật điện, điện tử",0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; A03; C01; X05; X06; X07
+DVT,Đại Học Trà Vinh,7510303,Công nghệ kỹ thuật điều khiển và tự động hoá,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; A03; C01; X05; X06; X07
+DVT,Đại Học Trà Vinh,7510401,Công nghệ kỹ thuật hóa học,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; B00; C02; D07; X09; X10; X11
+DVT,Đại Học Trà Vinh,7510605,Logistics và Quản lý chuỗi cung ứng,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; C14; D01; D84; X03; X23; X26
+DVT,Đại Học Trà Vinh,7520320,Kỹ thuật môi trường,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A01; A02; B00; B08; X06; X10; X14
+DVT,Đại Học Trà Vinh,7540101,Công nghệ thực phẩm,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A02; B00; B08; X12; X14; X16; X28
+DVT,Đại Học Trà Vinh,7580205,Kỹ thuật xây dựng công trình giao thông,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A00; A01; A03; A04; X05; X06; X07
+DVT,Đại Học Trà Vinh,7620101,Nông nghiệp,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A02; B00; B08; X12; X14; X16; X28
+DVT,Đại Học Trà Vinh,7620112,Bảo vệ thực vật,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A02; B00; B08; X12; X14; X16; X28
+DVT,Đại Học Trà Vinh,7620301,Nuôi Trồng Thủy Sản,0,ĐT THPT Học Bạ V-SAT ĐGNL HCM Thi Riêng Ưu Tiên,A02; B00; B08; X12; X14; X16; X28
+DVT,Đại Học Trà Vinh,7640101,Thú y,0,ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên ĐGNL HCM,A02; B00; B08; X12; X14; X16; X28
+DVT,Đại Học Trà Vinh,7720101,Y khoa,0,ĐGNL HCM ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên,B00; B08
+DVT,Đại Học Trà Vinh,7720110,Y học dự phòng,0,ĐGNL HCM ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên,B00; B08
+DVT,Đại Học Trà Vinh,7720201,Dược học,0,ĐGNL HCM Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT,A00; B00
+DVT,Đại Học Trà Vinh,7720203,Hóa dược,0,ĐGNL HCM Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT,A00; A11; B00; D07; X09; X10; X11
+DVT,Đại Học Trà Vinh,7720301,Điều dưỡng,0,ĐGNL HCM ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên,B00; B08
+DVT,Đại Học Trà Vinh,7720501,Răng - Hàm - Mặt,0,ĐGNL HCM ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên,B00; B08
+DVT,Đại Học Trà Vinh,7720601,Kỹ thuật xét nghiệm y học,0,ĐGNL HCM Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT,A00; B00
+DVT,Đại Học Trà Vinh,7720602,Kỹ thuật hình ảnh y học,0,ĐGNL HCM Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT,A00; B00
+DVT,Đại Học Trà Vinh,7720603,Kỹ thuật phục hồi chức năng,0,ĐGNL HCM Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT,A00; B00
+DVT,Đại Học Trà Vinh,7720701,Y tế Công cộng,0,ĐGNL HCM ĐT THPT Học Bạ V-SAT Thi Riêng Ưu Tiên,A00; B00
+DVT,Đại Học Trà Vinh,7760101,Công tác xã hội,0,ĐGNL HCM Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT,C00; C08; C20; D66; X66; X74; X78
+DVT,Đại Học Trà Vinh,7810103,Quản trị dịch vụ du lịch và lữ hành,0,Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT ĐGNL HCM,C00; C04; D01; D14; D15; X70; X74
+DVT,Đại Học Trà Vinh,7810301,Quản lý thể dục thể thao,0,ĐGNL HCM Thi Riêng Ưu Tiên ĐT THPT Học Bạ V-SAT,B03; B08; C00; C14; D14; X01; X58
+DVT,Đại Học Trà Vinh,7850101,Quản lý tài nguyên và môi trường,0,ĐT THPT Học Bạ V-SAT ĐGNL HCM Thi Riêng Ưu Tiên,A00; B00; B02; B08; X06; X10; X14
+VPH,Trường Sĩ Quan Kĩ Thuật Quân Sự - Hệ Quân sự - Đại Học Trần Đại Nghĩa,7510201,Công nghệ kỹ thuật cơ khí (Thí sinh miền Bắc),21,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN; ĐGNL BQP,A00; A01; A0T; Q00; QDA
+VPH,Trường Sĩ Quan Kĩ Thuật Quân Sự - Hệ Quân sự - Đại Học Trần Đại Nghĩa,7510201,Công nghệ kỹ thuật cơ khí (Thí sinh miền Nam),22,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN; ĐGNL BQP,A00; A01; A0T; Q00; QDA
+DVH,Trường Đại Học Văn Hiến,7210208,Piano,0,Kết Hợp ĐT THPT Học Bạ,N00
+DVH,Trường Đại Học Văn Hiến,7210235,"Đạo diễn điện ảnh, truyền hình",0,Kết Hợp ĐT THPT Học Bạ,A00; D01; M20; M21; C16; X01; X70; X74
+DVH,Trường Đại Học Văn Hiến,7210302,"Công nghệ điện ảnh, truyền hình",0,Kết Hợp ĐT THPT Học Bạ,A00; D01; V00; H01; C16; X01; X70; X74
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7220201,Ngôn ngữ Anh,0,ĐT THPT Học Bạ,A01; D01; D10; D14
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7220210,Ngôn ngữ Hàn Quốc,0,ĐT THPT Học Bạ,C00; D01; D15; DH5
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7340101,Quản trị kinh doanh,0,ĐT THPT Học Bạ,A01; C00; D01; X78
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7340115,Marketing,0,ĐT THPT Học Bạ,A01; D01; D10; X01
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7340301,Kế toán,0,ĐT THPT Học Bạ,A01; C00; D01; X78
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7380101,Luật,0,ĐT THPT Học Bạ,C00; D01; D15; X01
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7480201,Công nghệ thông tin,0,ĐT THPT Học Bạ,A00; A01; D01; X06
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7510303,Công nghệ kỹ thuật điều khiển và tự động hóa,0,ĐT THPT Học Bạ,A00; A01; D01; X26
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7520103,Kỹ thuật cơ khí,0,ĐT THPT Học Bạ,A00; A01; D01; X07
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7520114,Kỹ thuật cơ điện tử,0,ĐT THPT Học Bạ,A00; A01; D01; X26
+DVB,Trường Đại Học Kinh tế công nghệ Thái Nguyên,7520201,Kỹ thuật điện,0,ĐT THPT Học Bạ,A00; A01; D01; X07
+VTT,Trường Đại Học Võ Trường Toản,7340101,Quản trị kinh doanh,0,ĐT THPT Học Bạ,A00
+VTT,Trường Đại Học Võ Trường Toản,7340201,Tài chính - Ngân hàng,0,ĐT THPT Học Bạ,A00
+VTT,Trường Đại Học Võ Trường Toản,7340301,Kế toán,0,ĐT THPT Học Bạ,A00
+VTT,Trường Đại Học Võ Trường Toản,7380101,Luật,0,ĐT THPT Học Bạ,A00
+VTT,Trường Đại Học Võ Trường Toản,7480201,Công nghệ thông tin,0,ĐT THPT Học Bạ,A00
+VTT,Trường Đại Học Võ Trường Toản,7510205,Công nghệ kỹ thuật ô tô,0,ĐT THPT Học Bạ,A00
+VTT,Trường Đại Học Võ Trường Toản,7720101,Y khoa,0,ĐT THPT Học Bạ Ưu Tiên CCQT,B00
+VTT,Trường Đại Học Võ Trường Toản,7720101LT,Y khoa,0,ĐT THPT CCQT,B00
+VTT,Trường Đại Học Võ Trường Toản,7720201,Dược học,0,ĐT THPT Học Bạ Ưu Tiên CCQT,B00
+VTT,Trường Đại Học Võ Trường Toản,7720501,Răng - Hàm - Mặt,0,ĐT THPT Học Bạ Ưu Tiên CCQT,B00
+YCT,Trường Đại Học Y Dược Cần Thơ,7310401,Tâm lý học,50,ĐT THPT Ưu Tiên V-SAT,B00; C00; D01
+YCT,Trường Đại Học Y Dược Cần Thơ,7520212,Kỹ thuật Y sinh,60,ĐT THPT Ưu Tiên V-SAT,A00; B00; X06
+YCT,Trường Đại Học Y Dược Cần Thơ,7720101,Y khoa,1.030,ĐT THPT Ưu Tiên V-SAT,B00
+YCT,Trường Đại Học Y Dược Cần Thơ,7720101E,Y khoa tiếng Anh,100,Xét TN THPT,
+YCT,Trường Đại Học Y Dược Cần Thơ,7720110,Y học dự phòng,150,ĐT THPT Ưu Tiên V-SAT,A00; B00; B08; D07
+YCT,Trường Đại Học Y Dược Cần Thơ,7720115,Y học cổ truyền,150,ĐT THPT Ưu Tiên V-SAT,B00
+YCT,Trường Đại Học Y Dược Cần Thơ,7720201,Dược học,200,ĐT THPT Ưu Tiên V-SAT,A00; B00; B08; D07
+YCT,Trường Đại Học Y Dược Cần Thơ,7720301,Điều dưỡng,120,ĐT THPT Ưu Tiên V-SAT,A00; B00; B08; D07
+YCT,Trường Đại Học Y Dược Cần Thơ,7720302,Hộ sinh,100,ĐT THPT Ưu Tiên V-SAT,A00; B00; B08; D07
+YCT,Trường Đại Học Y Dược Cần Thơ,7720401,Dinh dưỡng,50,ĐT THPT Ưu Tiên V-SAT,A00; B00; B08; D07
+YCT,Trường Đại Học Y Dược Cần Thơ,7720501,Răng hàm mặt,170,ĐT THPT Ưu Tiên V-SAT,B00
+YCT,Trường Đại Học Y Dược Cần Thơ,7720601,Kỹ thuật Xét nghiệm y học,120,ĐT THPT Ưu Tiên V-SAT,A00; B00; B08; D07
+YCT,Trường Đại Học Y Dược Cần Thơ,7720602,Kỹ thuật Hình ảnh y học,60,ĐT THPT Ưu Tiên V-SAT,A00; B00; X06
+YCT,Trường Đại Học Y Dược Cần Thơ,7720603,Kỹ thuật Phục hồi chức năng,50,ĐT THPT Ưu Tiên V-SAT,A00; B00; B08; D07
+YCT,Trường Đại Học Y Dược Cần Thơ,7720701,Y tế công cộng,50,ĐT THPT Ưu Tiên V-SAT,B00; C00; D01
+TYS,Trường Đại Học Y Khoa Phạm Ngọc Thạch,7720101,Y khoa,830,ĐT THPT,B00
+DTS,Đại Học Sư Phạm Thái Nguyên,7140101,Giáo dục học,60,ĐT THPT ĐGNL SPHN,C00; X70; X74
+DTS,Đại Học Sư Phạm Thái Nguyên,7140201,Giáo dục Mầm non,500,ĐT THPT ĐGNL SPHN,D01; X01; C03
+DTS,Đại Học Sư Phạm Thái Nguyên,7140202,Giáo dục Tiểu học,500,ĐT THPT ĐGNL SPHN V-SAT,D01; C01; C03
+DTS,Đại Học Sư Phạm Thái Nguyên,7140204,Giáo dục Công dân,150,ĐT THPT ĐGNL SPHN,X70; X74; X01
+DTS,Đại Học Sư Phạm Thái Nguyên,7140205,Giáo dục Chính trị,60,ĐT THPT ĐGNL SPHN,X70; X74; X01
+DTS,Đại Học Sư Phạm Thái Nguyên,7310403,Tâm lí học giáo dục,60,ĐT THPT ĐGNL SPHN,C00; X70; X74
+HVA,Học Viện Âm Nhạc Huế,7140221,Sư phạm Âm nhạc,0,Kết Hợp,
+HVA,Học Viện Âm Nhạc Huế,7210201,Âm nhạc học,2,Kết Hợp,
+HVA,Học Viện Âm Nhạc Huế,7210203,Sáng tác âm nhạc,8,Kết Hợp,
+HVA,Học Viện Âm Nhạc Huế,7210205,Thanh nhạc,24,Kết Hợp,
+HVA,Học Viện Âm Nhạc Huế,7210207,Biểu diễn nhạc cụ phương Tây,10,Kết Hợp,
+HVA,Học Viện Âm Nhạc Huế,7210208,Piano,8,Kết Hợp,
+HVA,Học Viện Âm Nhạc Huế,7210210,Biểu diễn nhạc cụ truyền thống,8,Kết Hợp,
+NVH,Học Viện Âm Nhạc Quốc Gia Việt Nam,7210201,Âm nhạc học,0,Kết Hợp Ưu Tiên,"(Văn, Kiến thức âm nhạc tổng hợp, Piano phổ thông, Môn chuyên ngành)"
+NVH,Học Viện Âm Nhạc Quốc Gia Việt Nam,7210203,Sáng tác âm nhạc,0,Kết Hợp Ưu Tiên,"(Văn, Kiến thức âm nhạc tổng hợp, Piano phổ thông, Môn chuyên ngành)"
+NVH,Học Viện Âm Nhạc Quốc Gia Việt Nam,7210204,Chỉ huy âm nhạc,0,Kết Hợp Ưu Tiên,"(Văn, Kiến thức âm nhạc tổng hợp, Piano phổ thông, Môn chuyên ngành)"
+NVH,Học Viện Âm Nhạc Quốc Gia Việt Nam,7210205,Thanh nhạc,0,Kết Hợp Ưu Tiên,"(Văn, Môn chuyên ngành)"
+NVH,Học Viện Âm Nhạc Quốc Gia Việt Nam,7210207,Biểu diễn nhạc cụ phương Tây,0,Ưu Tiên Kết Hợp,"(Văn, Môn chuyên ngành)"
+NVH,Học Viện Âm Nhạc Quốc Gia Việt Nam,7210208,Piano,0,Kết Hợp Ưu Tiên,"(Văn, Môn chuyên ngành)"
+NVH,Học Viện Âm Nhạc Quốc Gia Việt Nam,7210209,Nhạc Jazz,0,Kết Hợp Ưu Tiên,"(Văn, Môn chuyên ngành)"
+NVH,Học Viện Âm Nhạc Quốc Gia Việt Nam,7210210,Biểu diễn nhạc cụ truyền thống,0,Kết Hợp Ưu Tiên,"(Văn, Môn chuyên ngành)"
+HCH,Học Viện Hành Chính và Quản trị công,74814HN,Hệ thống thông tin,100,ĐT THPT,A00; A01; D01; X26
+HFH,Học Viện Hậu Cần - Hệ Dân sự,7340201,Tài chính - Ngân hàng (Đào tạo hệ Dân sự),0,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; C01; X06; Q00
+HFH,Học Viện Hậu Cần - Hệ Dân sự,7340301,Kế toán (Đào tạo hệ Dân sự),0,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; C01; X06; Q00
+HFH,Học Viện Hậu Cần - Hệ Dân sự,7580201,Kỹ thuật xây dựng (Đào tạo hệ Dân sự),0,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; C01; X06; Q00
+HEH,Học Viện Hậu Cần - Hệ Quân sự,7860218_Nam_B,Hậu cần quân sự (Thí sinh Nam miền Bắc),0,Ưu Tiên ĐGNL HCM ĐGNL BQP; ĐT THPT; ĐGNL HN,A00; A01; C01; X06; Q00
+HEH,Học Viện Hậu Cần - Hệ Quân sự,7860218_Nam_N,Hậu cần quân sự (Thí sinh Nam miền Nam),0,Ưu Tiên ĐGNL HCM ĐGNL BQP; ĐT THPT; ĐGNL HN,A00; A01; C01; X06; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS01,Hệ thống Công nghệ thông tin,60,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS02,Trí tuệ nhân tạo,60,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS03,An toàn không gian mạng,60,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS04,Điện tử - Viễn thông,60,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS05,Thiết kế vi mạch và hệ thống nhúng,60,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS06,Công nghệ bán dẫn và Nano,60,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS07,Tự động hóa,80,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS08,Kỹ thuật cơ điện tử,60,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS09,Công nghệ chế tạo máy,60,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS10,Kỹ thuật xây dựng,60,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS11,Kỹ thuật ô tô,60,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+DQH,Học Viện Kỹ Thuật Quân Sự - Hệ Dân sự,DS12,Điện tử y sinh,40,ĐGNL HCM Ưu Tiên; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+KQH,Học Viện Kỹ Thuật Quân Sự - Hệ Quân sự,QS,Kỹ sư quân sự (đào tạo chất lượng cao),30,ĐGNL HCM Ưu Tiên Xét TN THPT; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+KQH,Học Viện Kỹ Thuật Quân Sự - Hệ Quân sự,QS,Kỹ sư quân sự (liên kết),5,ĐGNL HCM Ưu Tiên Xét TN THPT; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+KQH,Học Viện Kỹ Thuật Quân Sự - Hệ Quân sự,QS,"Kỹ sư quân sự (miền Bắc, thí sinh Nam)",251,ĐGNL HCM Ưu Tiên Xét TN THPT; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+KQH,Học Viện Kỹ Thuật Quân Sự - Hệ Quân sự,QS,"Kỹ sư quân sự (miền Nam, thí sinh Nam)",135,ĐGNL HCM Ưu Tiên Xét TN THPT; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+KQH,Học Viện Kỹ Thuật Quân Sự - Hệ Quân sự,QS,Kỹ sư quân sự (đào tạo tại nước ngoài),195,ĐGNL HCM Ưu Tiên Xét TN THPT; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+KQH,Học Viện Kỹ Thuật Quân Sự - Hệ Quân sự,QS,"Kỹ sư quân sự (miền Bắc, thí sinh Nữ)",9,ĐGNL HCM Ưu Tiên Xét TN THPT; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+KQH,Học Viện Kỹ Thuật Quân Sự - Hệ Quân sự,QS,"Kỹ sư quân sự (miền Nam, thí sinh Nữ)",5,ĐGNL HCM Ưu Tiên Xét TN THPT; ĐT THPT; ĐGNL HN,A00; A01; A0T; Q00
+KMA,Học Viện Kỹ Thuật Mật Mã,7480202KP,An toàn thông tin,80,ĐGNL HCM ĐGNL HN ĐGTD BK ĐGNL SPHN Ưu Tiên,
+NHP,Học Viện Ngân Hàng (Phân Viện Phú Yên),ACT02,Kế toán,40,ĐT THPT Học Bạ Ưu Tiên V-SAT,A00; A01; D01; D07
+NHP,Học Viện Ngân Hàng (Phân Viện Phú Yên),BANK02,Ngân hàng,80,ĐT THPT Học Bạ Ưu Tiên V-SAT,A00; A01; D01; D07
+NHP,Học Viện Ngân Hàng (Phân Viện Phú Yên),BUS02,Quản trị kinh doanh,40,ĐT THPT Học Bạ Ưu Tiên V-SAT,A00; A01; D01; D07
+NHP,Học Viện Ngân Hàng (Phân Viện Phú Yên),BUS07,Marketing,40,ĐT THPT Học Bạ Ưu Tiên V-SAT,A00; A01; D01; D07
+NHP,Học Viện Ngân Hàng (Phân Viện Phú Yên),FIN02,Tài chính,40,ĐT THPT Học Bạ Ưu Tiên V-SAT,A00; A01; D01; D07
+DYH,Học Viện Quân Y - Hệ Dân sự,7720101,Y khoa,0,ĐGNL HCM ĐGNL HN Ưu Tiên; ĐT THPT,A00; B00; D07
+DYH,Học Viện Quân Y - Hệ Dân sự,7720201,Dược sĩ đại học,0,ĐGNL HCM ĐGNL HN Ưu Tiên; ĐT THPT,A00; D07
+YQH,Học Viện Quân Y - Hệ Quân sự,7720101,"Ngành Y khoa (Bác sỹ đa khoa) (Thí sinh Nam, miền Bắc)",0,ĐGNL HCM ĐGNL BQP ĐGNL HN Ưu Tiên; ĐT THPT,A00; B00; D07
+YQH,Học Viện Quân Y - Hệ Quân sự,7720101,"Ngành Y khoa (Bác sỹ đa khoa) (Thí sinh Nam, miền Nam)",0,ĐGNL HCM ĐGNL BQP ĐGNL HN Ưu Tiên; ĐT THPT,A00; B00; D07
+YQH,Học Viện Quân Y - Hệ Quân sự,7720101,"Ngành Y khoa (Bác sỹ đa khoa) (Thí sinh Nữ, miền Bắc)",0,ĐGNL HCM ĐGNL BQP ĐGNL HN Ưu Tiên; ĐT THPT,A00; B00; D07
+YQH,Học Viện Quân Y - Hệ Quân sự,7720101,"Ngành Y khoa (Bác sỹ đa khoa) (Thí sinh Nữ, miền Nam)",0,ĐGNL HCM ĐGNL BQP ĐGNL HN Ưu Tiên; ĐT THPT,A00; B00; D07
+DHD,Trường Du Lịch - Đại Học Huế,7340101,Quản trị kinh doanh,90,Kết Hợp Ưu Tiên; ĐT THPT Học Bạ,A01; B08; D01; D07; D08; D09; D10; D84; X25; X26; X27; X28
+DHD,Trường Du Lịch - Đại Học Huế,7810101,Du lịch,110,Kết Hợp Ưu Tiên; ĐT THPT Học Bạ,C00; C01; C02; C04; C14; C19; C20; D01; D14; D15; D66; X01; X70; X74; X78
+DHD,Trường Du Lịch - Đại Học Huế,7810102,Du lịch điện tử,30,Kết Hợp Ưu Tiên; ĐT THPT Học Bạ,A01; B08; D01; D07; D08; D09; D10; D84; X25; X26; X27; X28
+DHD,Trường Du Lịch - Đại Học Huế,7810103,Quản trị dịch vụ du lịch và lữ hành,340,Kết Hợp Ưu Tiên; ĐT THPT Học Bạ,C00; C01; C02; C04; C14; C19; C20; D01; D14; D15; D66; X01; X70; X74; X78
+DHD,Trường Du Lịch - Đại Học Huế,7810104,Quản trị du lịch và khách sạn (Giảng dạy bằng Tiếng Anh),50,Kết Hợp Ưu Tiên; ĐT THPT Học Bạ,D01; D14; D15; D66; X78
+DHD,Trường Du Lịch - Đại Học Huế,7810201,Quản trị khách sạn,240,Kết Hợp Ưu Tiên; ĐT THPT Học Bạ,C00; C01; C02; C04; C14; C19; C20; D01; D14; D15; D66; X01; X70; X74; X78
+DHD,Trường Du Lịch - Đại Học Huế,7810202,Quản trị nhà hàng và dịch vụ ăn uống,90,Kết Hợp Ưu Tiên; ĐT THPT Học Bạ,C00; C01; C02; C04; C14; C19; C20; D01; D14; D15; D66; X01; X70; X74; X78
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ01,Kinh doanh quốc tế,170,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; D01; D07; C01; C02; X02; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ02,"Kế toán, Phân tích và Kiểm toán",150,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; D01; D07; C01; C02; X02; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ03,Hệ thống thông tin quản lý,100,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; A02; D01; D07; C01; C02; X02; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ04,Tin học và Kỹ thuật máy tính,80,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; A02; D07; C01; C02; X02; X06; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ05,Phân tích dữ liệu kinh doanh,100,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; A02; D01; D07; C01; C02; X02; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ06,"Marketing (song bằng do ĐHQGHN và Đại học HELP, Malaysia cùng cấp bằng)",90,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; D01; D07; D09; C01; C02; X02; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ07,"Quản lý (song bằng do ĐHQGHN và Đại học Keuka, Hoa Kỳ cùng cấp bằng)",50,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; D01; D07; D09; C01; C02; X02; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ08,Tự động hóa và Tin học,100,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; A02; D07; C01; C02; X02; X06; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ09,Ngôn ngữ Anh (chuyên sâu Kinh doanh – Công nghệ thông tin),100,Ưu Tiên ĐGNL HN; ĐT THPT,A01; D01; D07; D08; D09; D10; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ10,Công nghệ thông tin ứng dụng,100,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; A02; D07; C01; C02; X02; X06; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ11,Công nghệ tài chính và Kinh doanh số,90,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; A02; D01; D07; C01; C02; X02; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ12,Kỹ thuật hệ thống công nghiệp và Logistics,70,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; A02; D07; C01; C02; X02; X06; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ13,Kinh doanh số,50,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; D01; D03; D07; D29; C01; C02; X02; X26
+QHQ,Trường Quốc Tế - ĐHQG Hà Nội,QHQ14,Truyền thông số,50,Ưu Tiên ĐGNL HN; ĐT THPT,A00; A01; D01; D03; D07; D29; C01; C02; X02; X26
+DTQ,Khoa Quốc Tế - Đại Học Thái Nguyên,7220201,Ngôn ngữ Anh Quốc,150,Ưu Tiên V-SAT; ĐT THPT Học Bạ; ĐGTD BK; ĐGNL HN,"A01, D01, D04, D07, D10, D14, D15, C14, C00, C01, C03, X01, X70; K00; Q00"
+DTQ,Khoa Quốc Tế - Đại Học Thái Nguyên,7220204,Ngôn ngữ Trung Quốc,150,Ưu Tiên V-SAT; ĐT THPT Học Bạ; ĐGTD BK; ĐGNL HN,"A01, D01, D04, D07, D10, D14, D15, C14, C00, C01, C03, X01, X70; K00; Q00"
+DTQ,Khoa Quốc Tế - Đại Học Thái Nguyên,7310601,Quốc tế học,20,Ưu Tiên V-SAT; ĐT THPT Học Bạ; ĐGTD BK; ĐGNL HN,"C00, C01, C03, C14, D01, D10, D09, D15, X01, X70; K00; Q00"
+DTQ,Khoa Quốc Tế - Đại Học Thái Nguyên,7340101,Quản trị kinh doanh,30,Ưu Tiên V-SAT; ĐT THPT Học Bạ; ĐGTD BK; ĐGNL HN,"A00, A01, D01, D04, D07, D10, D15, C00, C01, C03, C14, X01, X70; K00; Q00"
+DTQ,Khoa Quốc Tế - Đại Học Thái Nguyên,7340120,Kinh doanh quốc tế,40,Ưu Tiên V-SAT; ĐT THPT Học Bạ; ĐGTD BK; ĐGNL HN,"A00, A01, D01, D04, D07, D10, D15, C00, C01, C03, C14, X01, X70; K00; Q00"
+DTQ,Khoa Quốc Tế - Đại Học Thái Nguyên,7340205,Công nghệ tài chính,20,Ưu Tiên V-SAT; ĐT THPT Học Bạ; ĐGTD BK; ĐGNL HN,"A00, A01, D01, D04, D07, D10, D15, C14; K00; Q00"
+DTQ,Khoa Quốc Tế - Đại Học Thái Nguyên,7340301,Kế toán,20,V-SAT Ưu Tiên; ĐT THPT Học Bạ; ĐGTD BK; ĐGNL HN,"A00, A01, D01, D04, D07, D10, D15, C14; K00; Q00"
+DTQ,Khoa Quốc Tế - Đại Học Thái Nguyên,7510406,Công nghệ kỹ thuật môi trường,40,Ưu Tiên V-SAT; ĐT THPT Học Bạ; ĐGTD BK; ĐGNL HN,"B00, B01, B02, B08, A00, D01, D07, D08; K00; Q00"
+DTQ,Khoa Quốc Tế - Đại Học Thái Nguyên,7850101,Quản lý Tài nguyên và Môi trường,20,Ưu Tiên V-SAT; ĐT THPT Học Bạ; ĐGTD BK; ĐGNL HN,"B00, B01, B02, B08, A00, D01, D07, D08; K00; Q00"
+QHY,Trường Đại học Y Dược - ĐHQG Hà Nội,7720101,Y khoa,6,Ưu Tiên; ĐT THPT; ĐGNL HN,B00; D08; Q00
+QHY,Trường Đại học Y Dược - ĐHQG Hà Nội,7720201,Dược học,4,Ưu Tiên; ĐT THPT; ĐGNL HN,A00; D07; Q00
+QHY,Trường Đại học Y Dược - ĐHQG Hà Nội,7720301,Điều dưỡng,1,Ưu Tiên; ĐT THPT; ĐGNL HN,B00; D08; Q00
+QHY,Trường Đại học Y Dược - ĐHQG Hà Nội,7720501,Răng Hàm Mặt,1,Ưu Tiên; ĐT THPT; ĐGNL HN,B00; D08; Q00
+QHY,Trường Đại học Y Dược - ĐHQG Hà Nội,7720601,Kỹ thuật Xét nghiệm Y học,1,Ưu Tiên; ĐT THPT; ĐGNL HN,B00; D08; Q00
+QHY,Trường Đại học Y Dược - ĐHQG Hà Nội,7720602,Kỹ thuật Hình ảnh Y học,1,Ưu Tiên; ĐT THPT; ĐGNL HN,B00; D08; Q00
+NVS,Nhạc Viện TPHCM,7210201,Âm nhạc học,6,Kết Hợp,
+NVS,Nhạc Viện TPHCM,7210203,Sáng tác âm nhạc,9,Kết Hợp,
+NVS,Nhạc Viện TPHCM,7210204,Chỉ huy âm nhạc,7,Kết Hợp,
+NVS,Nhạc Viện TPHCM,7210205,Thanh nhạc,35,Kết Hợp,
+NVS,Nhạc Viện TPHCM,7210207,Biểu diễn nhạc cụ Phương tây,28,Kết Hợp,
+NVS,Nhạc Viện TPHCM,7210208,Piano,10,Kết Hợp,
+NVS,Nhạc Viện TPHCM,7210210,Biểu diễn nhạc cụ truyền thống,12,Kết Hợp,
+SNH,Trường Sĩ Quan Công Binh - Hệ Quân sự - Đại học Ngô Quyền,7860228,Chỉ huy kỹ thuật Công binh (Thí sinh miền Bắc),118,ĐGNL HCM Ưu Tiên; ĐT THPT Học Bạ; ĐGNL HN,A00; A01; C01; Q00
+SNH,Trường Sĩ Quan Công Binh - Hệ Quân sự - Đại học Ngô Quyền,7860228,Chỉ huy kỹ thuật Công binh (Thí sinh miền Nam),78,ĐGNL HCM Ưu Tiên; ĐT THPT Học Bạ; ĐGNL HN,A00; A01; C01; Q00
+KGH,Trường Sĩ Quan Không Quân - Hệ Đại học,7860203AV_B,Thiết bị bay không người lái (miền Bắc),60,Ưu Tiên ĐGNL BQP ĐGNL HCM; ĐT THPT; ĐGNL HN,A01; A00; Q00
+KGH,Trường Sĩ Quan Không Quân - Hệ Đại học,7860203AV_N,Thiết bị bay không người lái (miền Nam),60,Ưu Tiên ĐGNL BQP ĐGNL HCM; ĐT THPT; ĐGNL HN,A01; A00; Q00
+KGH,Trường Sĩ Quan Không Quân - Hệ Đại học,7860203PC,Phi công quân sự,40,Ưu Tiên ĐGNL BQP ĐGNL HCM; ĐT THPT; ĐGNL HN,A01; A00; Q00
+LAH,Trường Sĩ Quan Lục Quân 1 - Đại học Trần Quốc Tuấn,7860201,Chỉ huy Tham mưu Lục quân,0,ĐGNL HCM Ưu Tiên ĐGNL BQP; ĐT THPT; ĐGNL HN,A00; A01; C01; Q00
+LBH,Trường Sĩ Quan Lục Quân 2 - Đại học Nguyễn Huệ,7860201,Chỉ huy Tham mưu Lục quân (QK4),37,Ưu Tiên ĐGNL BQP ĐGNL HCM; ĐT THPT; ĐGNL HN,A00; A01; C01; Q00
+LBH,Trường Sĩ Quan Lục Quân 2 - Đại học Nguyễn Huệ,7860201,Chỉ huy Tham mưu Lục quân (QK5),304,Ưu Tiên ĐGNL BQP ĐGNL HCM; ĐT THPT; ĐGNL HN,A00; A01; C01; Q00
+LBH,Trường Sĩ Quan Lục Quân 2 - Đại học Nguyễn Huệ,7860201,Chỉ huy Tham mưu Lục quân (QK7),252,Ưu Tiên ĐGNL BQP ĐGNL HCM; ĐT THPT; ĐGNL HN,A00; A01; C01; Q00
+LBH,Trường Sĩ Quan Lục Quân 2 - Đại học Nguyễn Huệ,7860201,Chỉ huy Tham mưu Lục quân (QK9),149,Ưu Tiên ĐGNL BQP ĐGNL HCM; ĐT THPT; ĐGNL HN,A00; A01; C01; Q00
+TGH,Trường Sĩ Quan Tăng - Thiết Giáp,7860206,Chỉ huy tham mưu Tăng Thiết giáp (Thí sinh nam miền Bắc),95,ĐGNL HCM ĐGNL BQP; ĐT THPT Học Bạ; ĐGNL HN,A00; A01; C01; Q00
+TGH,Trường Sĩ Quan Tăng - Thiết Giáp,7860206,Chỉ huy tham mưu Tăng Thiết giáp (Thí sinh nam miền Nam),63,ĐGNL HCM ĐGNL BQP; ĐT THPT Học Bạ; ĐGNL HN,A00; A01; C01; Q00
+TTH,Trường Sĩ Quan Thông Tin - Hệ Quân sự - Đại Học Thông Tin Liên Lạc,7860219,Chỉ huy - Tham mưu Thông tin (miền Bắc),0,ĐGNL HCM Ưu Tiên ĐGNL BQP; ĐT THPT; ĐGNL HN,A00; A01; C01; X06; Q00
+TTH,Trường Sĩ Quan Thông Tin - Hệ Quân sự - Đại Học Thông Tin Liên Lạc,7860219,Chỉ huy - Tham mưu Thông tin (miền Nam),0,ĐGNL HCM Ưu Tiên ĐGNL BQP; ĐT THPT; ĐGNL HN,A00; A01; C01; X06; Q00
+MHN,Trường Đại Học Mở Hà Nội,7340204,Bảo hiểm,45,ĐT THPT Thi Riêng,A00; A01; D01
+MHN,Trường Đại Học Mở Hà Nội,7340301,Kế toán,260,ĐT THPT Thi Riêng,A00; A01; D01; X26
+MHN,Trường Đại Học Mở Hà Nội,7380101,Luật,230,ĐT THPT Thi Riêng,D01; C01; C00; X01
+MHN,Trường Đại Học Mở Hà Nội,7380108,Luật quốc tế,100,ĐT THPT Thi Riêng,D01; C01; C00; X01
+MHN,Trường Đại Học Mở Hà Nội,7580101,Kiến trúc,85,Kết Hợp,V00; V01; V02
+MHN,Trường Đại Học Mở Hà Nội,7810103,Quản trị dịch vụ du lịch và lữ hành,225,ĐT THPT Thi Riêng,D01; D09; D10
+MHN,Trường Đại Học Mở Hà Nội,7810201,Quản trị khách sạn,150,ĐT THPT Thi Riêng,D01; D09; D10

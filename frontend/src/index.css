@@ -101,3 +101,57 @@ input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.2); }
   0%,60%,100% { transform: translateY(0); }
   30% { transform: translateY(-6px); }
 }
+
+/* Legacy pages use fixed dark utility colors. Keep status/brand colors, but
+   map structural surfaces and text to the active system theme. */
+:root[data-theme='light'] [class~="bg-[#0a0a0f]"],
+:root[data-theme='light'] [class~="bg-[#0f0f13]"],
+:root[data-theme='light'] [class~="bg-[#111118]"] {
+  background-color: var(--bg) !important;
+}
+
+:root[data-theme='light'] [class~="bg-[#12121a]"],
+:root[data-theme='light'] [class~="bg-[#14141e]"],
+:root[data-theme='light'] [class~="bg-[#16161d]"],
+:root[data-theme='light'] [class~="bg-[#1a1a24]"] {
+  background-color: var(--bg2) !important;
+}
+
+:root[data-theme='light'] [class~="bg-[#1e1e28]"],
+:root[data-theme='light'] [class~="bg-[#1e1e2e]"],
+:root[data-theme='light'] [class~="bg-white/[.02]"],
+:root[data-theme='light'] [class~="bg-white/[.025]"],
+:root[data-theme='light'] [class~="bg-white/[.03]"],
+:root[data-theme='light'] [class~="bg-white/[.04]"],
+:root[data-theme='light'] [class~="bg-white/[.05]"],
+:root[data-theme='light'] [class~="bg-white/[.06]"],
+:root[data-theme='light'] [class~="bg-white/[.08]"] {
+  background-color: var(--bg3) !important;
+}
+
+:root[data-theme='light'] [class~="text-[#f0f0f5]"] {
+  color: var(--text) !important;
+}
+
+:root[data-theme='light'] [class~="text-[#d8d8e2]"],
+:root[data-theme='light'] [class~="text-[#c7c7d1]"],
+:root[data-theme='light'] [class~="text-[#b9b9c8]"] {
+  color: var(--text2) !important;
+}
+
+:root[data-theme='light'] [class~="text-[#8b8b9e]"],
+:root[data-theme='light'] [class~="text-[#6b6b80]"],
+:root[data-theme='light'] [class~="text-[#6b6b7c]"],
+:root[data-theme='light'] [class~="text-[#5a5a6e]"] {
+  color: var(--text3) !important;
+}
+
+:root[data-theme='light'] [class~="border-white/[.04]"],
+:root[data-theme='light'] [class~="border-white/[.05]"],
+:root[data-theme='light'] [class~="border-white/[.06]"],
+:root[data-theme='light'] [class~="border-white/[.07]"],
+:root[data-theme='light'] [class~="border-white/[.08]"],
+:root[data-theme='light'] [class~="border-white/[.1]"],
+:root[data-theme='light'] [class~="border-white/[.12]"] {
+  border-color: var(--border) !important;
+}

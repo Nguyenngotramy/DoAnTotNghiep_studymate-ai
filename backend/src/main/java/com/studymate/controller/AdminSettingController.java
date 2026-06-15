@@ -86,6 +86,7 @@ public class AdminSettingController {
 
         values.put("maxFileUploadMb", 25);
         values.put("allowedFileTypes", "PDF,DOC,DOCX,PPT,PPTX,TXT,PNG,JPG,JPEG,ZIP");
+        values.put("appearanceTheme", "dark");
 
         values.put("membershipBank", MembershipPaymentService.defaultBank());
         values.put("membershipPricing", MembershipPaymentService.defaultPricing());

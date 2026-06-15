@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { adminApi } from '@/api/services'
+import { useUiStore } from '@/store/uiStore'
 import {
   Settings,
   Save,
@@ -9,9 +11,14 @@ import {
   Upload,
   Bell,
   AlertTriangle,
+  Moon,
+  Sun,
 } from 'lucide-react'
 
 export default function AdminSettings() {
+  const { darkMode, setDarkMode } = useUiStore()
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState({
     weakGpaThreshold: 5.5,
     criticalGpaThreshold: 4.5,
@@ -42,7 +49,20 @@ export default function AdminSettings() {
 
     maxFileUploadMb: 25,
     allowedFileTypes: 'PDF,DOC,DOCX,PPT,PPTX,TXT,PNG,JPG,JPEG,ZIP',
+    appearanceTheme: 'dark',
   })
+
+  useEffect(() => {
+    adminApi.getAdminSettings()
+      .then(data => {
+        setSettings(prev => ({ ...prev, ...data }))
+        if (data.appearanceTheme === 'light' || data.appearanceTheme === 'dark') {
+          setDarkMode(data.appearanceTheme === 'dark')
+        }
+      })
+      .catch(() => toast.error('Không thể tải cài đặt hệ thống'))
+      .finally(() => setLoading(false))
+  }, [setDarkMode])
 
   const updateField = (key: keyof typeof settings, value: any) => {
     setSettings(prev => ({
@@ -51,13 +71,28 @@ export default function AdminSettings() {
     }))
   }
 
-  const handleSave = () => {
-    toast.success('Đã lưu cài đặt hệ thống')
-    console.log('Admin settings:', settings)
+  const handleThemeChange = (theme: 'light' | 'dark') => {
+    setDarkMode(theme === 'dark')
+    updateField('appearanceTheme', theme)
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await adminApi.saveAdminSettings({
+        ...settings,
+        appearanceTheme: darkMode ? 'dark' : 'light',
+      })
+      toast.success('Đã lưu cài đặt hệ thống')
+    } catch {
+      toast.error('Không thể lưu cài đặt hệ thống')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-[#0a0a0f] text-[#f0f0f5] p-5">
+    <div className="h-full overflow-y-auto bg-[var(--bg)] text-[var(--text)] p-5">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-[22px] font-semibold flex items-center gap-2">
@@ -71,14 +106,49 @@ export default function AdminSettings() {
 
         <button
           onClick={handleSave}
+          disabled={loading || saving}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-[13px] font-medium"
         >
           <Save size={15} />
-          Lưu cài đặt
+          {saving ? 'Đang lưu...' : 'Lưu cài đặt'}
         </button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <section className="xl:col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--bg2)] p-5">
+          <h2 className="text-[16px] font-semibold mb-2">Giao diện toàn hệ thống</h2>
+          <p className="text-[12px] text-[var(--text2)] mb-4">
+            Theme được áp dụng đồng bộ cho khu vực người dùng và quản trị trên thiết bị này.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handleThemeChange('light')}
+              className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+                !darkMode ? 'border-red-500 bg-red-500/10' : 'border-[var(--border)] bg-[var(--bg3)]'
+              }`}
+            >
+              <Sun size={18} className="text-amber-500" />
+              <span>
+                <strong className="block text-[13px]">Sáng</strong>
+                <span className="text-[11px] text-[var(--text2)]">Nền sáng, phù hợp ban ngày</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleThemeChange('dark')}
+              className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+                darkMode ? 'border-red-500 bg-red-500/10' : 'border-[var(--border)] bg-[var(--bg3)]'
+              }`}
+            >
+              <Moon size={18} className="text-indigo-400" />
+              <span>
+                <strong className="block text-[13px]">Tối</strong>
+                <span className="text-[11px] text-[var(--text2)]">Giảm chói khi dùng ban đêm</span>
+              </span>
+            </button>
+          </div>
+        </section>
         <section className="rounded-2xl border border-white/[.08] bg-[#12121a] p-5">
           <h2 className="text-[16px] font-semibold flex items-center gap-2 mb-4">
             <AlertTriangle size={18} className="text-yellow-400" />

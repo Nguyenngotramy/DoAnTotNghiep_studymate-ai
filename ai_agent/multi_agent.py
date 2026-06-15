@@ -75,6 +75,38 @@ async_client = AsyncOpenAI(
 MAX_PROMPT_CHARS = max(2000, int(os.getenv("MAX_PROMPT_CHARS", "14000")))
 MAX_MESSAGE_CHARS = max(800, int(os.getenv("MAX_MESSAGE_CHARS", "3500")))
 DEFAULT_MAX_OUTPUT_TOKENS = max(256, int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "900")))
+PROVIDER_OUTPUT_TOKEN_CEILING = max(
+    0,
+    int(os.getenv("LLM_MAX_PROVIDER_OUTPUT_TOKENS", "0")),
+)
+
+
+def _cap_output_tokens(value: int) -> int:
+    if PROVIDER_OUTPUT_TOKEN_CEILING <= 0:
+        return value
+    return min(value, PROVIDER_OUTPUT_TOKEN_CEILING)
+
+
+async def generate_compact_json(prompt: str, context: dict | None = None) -> str:
+    """Generate one small JSON object without agent tools or a long system prompt."""
+    client = _client_for_context(context)
+    model = _selected_model(context) or SYSTEM_MODEL
+    max_tokens = _cap_output_tokens(96)
+    try:
+        async with llm_capacity_slot(context):
+            response = await client.chat.completions.create(
+                model=model,
+                max_tokens=max_tokens,
+                messages=[{"role": "user", "content": prompt}],
+            )
+        record_provider_success()
+    except Exception as exc:
+        record_provider_failure(exc)
+        raise
+
+    if not response.choices:
+        raise RuntimeError("Provider returned no choices.")
+    return response.choices[0].message.content or ""
 
 
 def _is_rate_limit_error(e: Exception) -> bool:
@@ -137,22 +169,22 @@ def _trim_messages_for_budget(messages: list[dict]) -> list[dict]:
 # === FALLBACK CHUNG ===
 SYSTEM_MODEL = os.getenv("AI_AGENT_MODEL", "openrouter/free").strip() or "openrouter/free"
 
-FALLBACK_MODELS = [SYSTEM_MODEL]
+FALLBACK_MODELS = list(dict.fromkeys([SYSTEM_MODEL, "openrouter/free"]))
 
 # === TUTOR AGENT (Socratic reasoning — cần CoT tốt) ===
-TUTOR_MODELS = [SYSTEM_MODEL]
+TUTOR_MODELS = FALLBACK_MODELS
 
 # === QUIZ AGENT (JSON output nghiêm ngặt — cần tool-calling ổn định) ===
-QUIZ_MODELS = [SYSTEM_MODEL]
+QUIZ_MODELS = FALLBACK_MODELS
 
 # === SUMMARY AGENT (nhanh, nhẹ, throughput cao) ===
-SUMMARY_MODELS = [SYSTEM_MODEL]
+SUMMARY_MODELS = FALLBACK_MODELS
 
 # === FLASHCARD AGENT (JSON có cấu trúc) ===
-FLASHCARD_MODELS = [SYSTEM_MODEL]
+FLASHCARD_MODELS = FALLBACK_MODELS
 
 # === KEPNER-TREGOE AGENT (phân tích logic phức tạp — cần reasoning nặng) ===
-KEPNER_TREGOE_MODELS = [SYSTEM_MODEL]
+KEPNER_TREGOE_MODELS = FALLBACK_MODELS
 
 
 def _is_credit_error(e: Exception) -> bool:
@@ -177,7 +209,7 @@ class BaseAgent:
         self.tools         = tools or []
         self.models        = models or FALLBACK_MODELS
         self.json_mode     = False
-        self.max_tokens    = max_tokens or DEFAULT_MAX_OUTPUT_TOKENS
+        self.max_tokens    = _cap_output_tokens(max_tokens or DEFAULT_MAX_OUTPUT_TOKENS)
 
     def _get_request_context(self) -> dict:
         return _request_context.get()

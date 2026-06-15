@@ -67,6 +67,9 @@ public class FriendService {
             }
 
             if (friendship.getStatus() == Friendship.Status.PENDING) {
+                if (friendship.getReceiverId().equals(requesterId)) {
+                    throw new RuntimeException("Người này đã gửi lời mời kết bạn cho bạn");
+                }
                 throw new RuntimeException("Đã gửi lời mời kết bạn");
             }
 
@@ -130,28 +133,35 @@ public class FriendService {
     }
 
     public void reject(String receiverId, String requesterId) {
-        friendRepo.findBetween(requesterId, receiverId).ifPresent(friendship -> {
-            if (!friendship.getReceiverId().equals(receiverId)) {
-                throw new RuntimeException("Bạn không có quyền từ chối lời mời này");
-            }
+        Friendship friendship = friendRepo.findBetween(requesterId, receiverId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy lời mời kết bạn"));
 
-            User receiver = userRepo.findById(receiverId)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy người nhận"));
+        if (friendship.getStatus() != Friendship.Status.PENDING) {
+            throw new RuntimeException("Lời mời này không còn ở trạng thái chờ");
+        }
 
-            friendRepo.delete(friendship);
+        if (!friendship.getReceiverId().equals(receiverId)) {
+            throw new RuntimeException("Bạn không có quyền từ chối lời mời này");
+        }
 
-            notificationService.send(
-                    requesterId,
-                    "Lời mời kết bạn bị từ chối",
-                    receiver.getFullName() + " đã từ chối lời mời kết bạn của bạn",
-                    "FRIEND_REJECTED",
-                    "/friends"
-            );
-        });
+        User receiver = userRepo.findById(receiverId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người nhận"));
+
+        friendRepo.delete(friendship);
+
+        notificationService.send(
+                requesterId,
+                "Lời mời kết bạn bị từ chối",
+                receiver.getFullName() + " đã từ chối lời mời kết bạn của bạn",
+                "FRIEND_REJECTED",
+                "/friends"
+        );
     }
 
     public void remove(String userId, String friendId) {
-        friendRepo.findBetween(userId, friendId).ifPresent(friendRepo::delete);
+        Friendship friendship = friendRepo.findBetween(userId, friendId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy quan hệ kết bạn hoặc lời mời"));
+        friendRepo.delete(friendship);
     }
 
     public List<User> getFriends(String userId, String search, int size) {
@@ -195,10 +205,25 @@ public class FriendService {
         return result.stream().limit(safeSize).collect(Collectors.toList());
     }
 
-    public Map<String, String> getStatus(String userId, String targetId) {
+    public Map<String, Object> getStatus(String userId, String targetId) {
         return friendRepo.findBetween(userId, targetId)
-                .map(f -> Map.of("status", f.getStatus().name()))
-                .orElse(Map.of("status", "NONE"));
+                .map(friendship -> {
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("status", friendship.getStatus().name());
+                    result.put(
+                            "direction",
+                            friendship.getRequesterId().equals(userId) ? "OUTGOING" : "INCOMING"
+                    );
+                    result.put("requesterId", friendship.getRequesterId());
+                    result.put("receiverId", friendship.getReceiverId());
+                    return result;
+                })
+                .orElseGet(() -> {
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("status", "NONE");
+                    result.put("direction", "NONE");
+                    return result;
+                });
     }
 
     private Map<String, Object> toPendingItem(Friendship friendship, String currentUserId, String direction) {

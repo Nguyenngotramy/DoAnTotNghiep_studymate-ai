@@ -12,7 +12,7 @@ import type {
   VocabularySet,
   StudyProfile, StudyTermRecord, StudySubjectRecord, StudyPrediction
 } from '@/types'
-import { withAiConfig } from '@/utils/aiConfig'
+import { getAiRequestHeaders, withAiConfig } from '@/utils/aiConfig'
 
 const AI_AGENT_URL = '/ai-agent'
 
@@ -331,7 +331,12 @@ export const friendApi = {
   reject: (userId: string) => api.post(`/friends/${userId}/reject`),
   remove: (userId: string) => api.delete(`/friends/${userId}`),
   status: (userId: string) =>
-    api.get(`/friends/${userId}/status`).then(r => d<{ status: string }>(r)),
+    api.get(`/friends/${userId}/status`).then(r => d<{
+      status: 'NONE' | 'PENDING' | 'ACCEPTED' | 'BLOCKED'
+      direction: 'NONE' | 'INCOMING' | 'OUTGOING'
+      requesterId?: string
+      receiverId?: string
+    }>(r)),
 }
 
 export const dmApi = {
@@ -1201,7 +1206,7 @@ export const vocabularyApi = {
   parsePaste: (text: string) =>
     fetch(`${AI_AGENT_URL}/vocabulary/parse-paste`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAiRequestHeaders(true),
       body: JSON.stringify({ text }),
     }).then(async res => {
       if (!res.ok) throw new Error(await res.text())
@@ -1211,7 +1216,11 @@ export const vocabularyApi = {
   importFile: async (file: File) => {
     const fd = new FormData()
     fd.append('file', file)
-    const res = await fetch(`${AI_AGENT_URL}/vocabulary/import`, { method: 'POST', body: fd })
+    const res = await fetch(`${AI_AGENT_URL}/vocabulary/import`, {
+      method: 'POST',
+      headers: getAiRequestHeaders(),
+      body: fd,
+    })
     if (!res.ok) throw new Error(await res.text())
     return res.json() as Promise<{ count: number; vocabulary: VocabularyPayload }>
   },
@@ -1219,7 +1228,7 @@ export const vocabularyApi = {
   extract: (body: { topic?: string; file_url?: string; text?: string; max_items?: number }) =>
     fetch(`${AI_AGENT_URL}/vocabulary/extract`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAiRequestHeaders(true),
       body: JSON.stringify(withAiConfig(body)),
     }).then(async res => {
       if (!res.ok) throw new Error(await res.text())
@@ -1229,7 +1238,7 @@ export const vocabularyApi = {
   toFlashcards: (vocabulary: VocabularyItem[], num_cards = 10) =>
     fetch(`${AI_AGENT_URL}/vocabulary/to-flashcards`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAiRequestHeaders(true),
       body: JSON.stringify({ vocabulary, num_cards }),
     }).then(async res => {
       if (!res.ok) throw new Error(await res.text())
@@ -1239,7 +1248,7 @@ export const vocabularyApi = {
   toQuiz: (vocabulary: VocabularyItem[], num_questions = 20) =>
     fetch(`${AI_AGENT_URL}/vocabulary/to-quiz`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAiRequestHeaders(true),
       body: JSON.stringify({ vocabulary, num_questions }),
     }).then(async res => {
       if (!res.ok) throw new Error(await res.text())

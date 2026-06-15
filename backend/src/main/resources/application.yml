@@ -1,6 +1,15 @@
 server:
   port: ${PORT:8080}
   forward-headers-strategy: framework
+  compression:
+    enabled: true
+    min-response-size: 1024
+  tomcat:
+    threads:
+      max: ${TOMCAT_MAX_THREADS:80}
+      min-spare: ${TOMCAT_MIN_SPARE_THREADS:10}
+    accept-count: ${TOMCAT_ACCEPT_COUNT:100}
+    connection-timeout: ${TOMCAT_CONNECTION_TIMEOUT:20s}
   servlet:
     context-path: /api
 
@@ -76,10 +85,10 @@ app:
     refresh-token-expiration: 604800000
 
   ml-service:
-    url: ${ML_SERVICE_URL}
+    url: ${ML_SERVICE_URL:}
 
   ai-agent:
-    url: ${AI_AGENT_URL:${ML_SERVICE_URL}}
+    url: ${AI_AGENT_URL:http://localhost:8001}
     service-key: ${AI_AGENT_SERVICE_KEY:}
     timeout-seconds: ${AI_AGENT_TIMEOUT_SECONDS:45}
 
@@ -128,11 +137,11 @@ payment:
 
 logging:
   level:
-    com.studymate: DEBUG
+    com.studymate: ${APP_LOG_LEVEL:INFO}
     org.springframework.data.mongodb: INFO
-    org.springframework.security: INFO
-    org.springframework.web.multipart: DEBUG
-    org.apache.catalina.connector.Request: DEBUG
+    org.springframework.security: WARN
+    org.springframework.web.multipart: WARN
+    org.apache.catalina.connector.Request: WARN
 
 management:
   health:

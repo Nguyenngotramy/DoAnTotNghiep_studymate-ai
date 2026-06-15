@@ -155,6 +155,8 @@ export default function UserProfilePage() {
   const [posts, setPosts] = useState<any[]>([])
   const [groups, setGroups] = useState<any[]>([])
   const [friendStatus, setFriendStatus] = useState<'NONE' | 'PENDING' | 'ACCEPTED'>('NONE')
+  const [friendDirection, setFriendDirection] = useState<'NONE' | 'INCOMING' | 'OUTGOING'>('NONE')
+  const [friendActionLoading, setFriendActionLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadErr, setLoadErr] = useState(false)
   const [activeTab, setActiveTab] = useState<'posts' | 'groups' | 'stats'>('posts')
@@ -207,6 +209,7 @@ export default function UserProfilePage() {
           ])
 
           setFriendStatus((statusRes as any).status ?? 'NONE')
+          setFriendDirection((statusRes as any).direction ?? 'NONE')
 
           const allPosts = (postsRes as any).content ?? []
           setPosts(
@@ -276,12 +279,61 @@ export default function UserProfilePage() {
 
   const handleAddFriend = async () => {
     if (!userId) return
+    setFriendActionLoading(true)
     try {
       await friendApi.send(userId)
       setFriendStatus('PENDING')
+      setFriendDirection('OUTGOING')
       toast.success('Đã gửi lời mời kết bạn!')
-    } catch {
-      toast.error('Lỗi khi gửi lời mời')
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Lỗi khi gửi lời mời')
+    } finally {
+      setFriendActionLoading(false)
+    }
+  }
+
+  const handleAcceptFriend = async () => {
+    if (!userId) return
+    setFriendActionLoading(true)
+    try {
+      await friendApi.accept(userId)
+      setFriendStatus('ACCEPTED')
+      setFriendDirection('NONE')
+      toast.success('Đã chấp nhận lời mời kết bạn!')
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể chấp nhận lời mời')
+    } finally {
+      setFriendActionLoading(false)
+    }
+  }
+
+  const handleRejectFriend = async () => {
+    if (!userId) return
+    setFriendActionLoading(true)
+    try {
+      await friendApi.reject(userId)
+      setFriendStatus('NONE')
+      setFriendDirection('NONE')
+      toast.success('Đã từ chối lời mời kết bạn')
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể từ chối lời mời')
+    } finally {
+      setFriendActionLoading(false)
+    }
+  }
+
+  const handleCancelFriendRequest = async () => {
+    if (!userId) return
+    setFriendActionLoading(true)
+    try {
+      await friendApi.remove(userId)
+      setFriendStatus('NONE')
+      setFriendDirection('NONE')
+      toast.success('Đã hủy lời mời kết bạn')
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Không thể hủy lời mời')
+    } finally {
+      setFriendActionLoading(false)
     }
   }
 
@@ -530,38 +582,69 @@ export default function UserProfilePage() {
                         <MessageCircle size={13} /> Nhắn tin
                       </button>
 
-                      <button
-                        onClick={friendStatus === 'NONE' ? handleAddFriend : undefined}
-                        className={clsx(
-                          'flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-medium transition-colors border',
-                          {
-                            'border-indigo-500/40 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20':
-                              friendStatus === 'NONE',
-                            'cursor-default': friendStatus === 'PENDING',
-                            'border-green-500/30 text-green-400 cursor-default': friendStatus === 'ACCEPTED',
-                          },
-                        )}
-                        style={friendStatus === 'PENDING' ? { borderColor: 'var(--border)', color: 'var(--text2)' } : {}}
-                      >
-                        {friendStatus === 'NONE' && (
-                          <>
-                            <UserPlus size={13} />
-                            Kết bạn
-                          </>
-                        )}
-                        {friendStatus === 'PENDING' && (
-                          <>
-                            <Clock size={13} />
-                            Đã gửi lời mời
-                          </>
-                        )}
-                        {friendStatus === 'ACCEPTED' && (
-                          <>
-                            <UserCheck size={13} />
-                            Bạn bè
-                          </>
-                        )}
-                      </button>
+                      {friendStatus === 'PENDING' && friendDirection === 'INCOMING' ? (
+                        <>
+                          <button
+                            onClick={handleAcceptFriend}
+                            disabled={friendActionLoading}
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-medium bg-indigo-500 hover:bg-indigo-400 text-white transition-colors disabled:opacity-60"
+                          >
+                            {friendActionLoading ? <Loader2 size={13} className="animate-spin" /> : <UserCheck size={13} />}
+                            Chấp nhận
+                          </button>
+                          <button
+                            onClick={handleRejectFriend}
+                            disabled={friendActionLoading}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-medium border transition-colors disabled:opacity-60"
+                            style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
+                          >
+                            <X size={13} />
+                            Từ chối
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={
+                            friendStatus === 'NONE'
+                              ? handleAddFriend
+                              : friendStatus === 'PENDING' && friendDirection === 'OUTGOING'
+                                ? handleCancelFriendRequest
+                                : undefined
+                          }
+                          disabled={friendActionLoading}
+                          className={clsx(
+                            'flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-medium transition-colors border disabled:opacity-60',
+                            {
+                              'border-indigo-500/40 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20':
+                                friendStatus === 'NONE',
+                              'hover:border-red-500/40 hover:text-red-400':
+                                friendStatus === 'PENDING' && friendDirection === 'OUTGOING',
+                              'border-green-500/30 text-green-400 cursor-default':
+                                friendStatus === 'ACCEPTED',
+                            },
+                          )}
+                          style={friendStatus === 'PENDING' ? { borderColor: 'var(--border)', color: 'var(--text2)' } : {}}
+                        >
+                          {friendStatus === 'NONE' && (
+                            <>
+                              {friendActionLoading ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />}
+                              Kết bạn
+                            </>
+                          )}
+                          {friendStatus === 'PENDING' && (
+                            <>
+                              {friendActionLoading ? <Loader2 size={13} className="animate-spin" /> : <Clock size={13} />}
+                              Hủy lời mời
+                            </>
+                          )}
+                          {friendStatus === 'ACCEPTED' && (
+                            <>
+                              <UserCheck size={13} />
+                              Bạn bè
+                            </>
+                          )}
+                        </button>
+                      )}
                     </>
                   )}
                 </div>

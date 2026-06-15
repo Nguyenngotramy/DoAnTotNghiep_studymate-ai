@@ -36,16 +36,16 @@ async_client = AsyncOpenAI(
     max_retries=LLM_MAX_RETRIES,
 )
 
-MODEL = os.getenv("MODEL", "anthropic/claude-haiku-4-5")
+MODEL = os.getenv("MODEL", os.getenv("AI_AGENT_MODEL", "openrouter/free"))
+CLASSIFIER_MAX_TOKENS = max(
+    64,
+    min(
+        int(os.getenv("CLASSIFIER_MAX_TOKENS", "200")),
+        int(os.getenv("LLM_MAX_PROVIDER_OUTPUT_TOKENS", "1000000")),
+    ),
+)
 
-FALLBACK_MODELS = [
-    MODEL,
-    "anthropic/claude-haiku-4-5",
-    "google/gemini-2.0-flash-001",
-    "deepseek/deepseek-chat-v3-5:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "openrouter/auto",
-]
+FALLBACK_MODELS = list(dict.fromkeys([MODEL, "openrouter/free"]))
 
 
 # ════════════════════════════════════════
@@ -242,7 +242,7 @@ class ClassifierAgent:
         async with llm_capacity_slot():
             response = await async_client.chat.completions.create(
                 model=model,
-                max_tokens=500,
+                max_tokens=CLASSIFIER_MAX_TOKENS,
                 messages=[
                     {"role": "system", "content": CLASSIFIER_SYSTEM_PROMPT},
                     {"role": "user",   "content": prompt},

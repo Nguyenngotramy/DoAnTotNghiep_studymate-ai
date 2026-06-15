@@ -26,4 +26,6 @@ backend/src/main/resources/application-local.yml
 ai_agent/__pycache__/
 ai_agent/data/
 ai_agent/studymind_db/
+data/tuyensinh247/
+.venv-scrapegraph/
 backend/.env.example

@@ -6,14 +6,13 @@ import com.studymate.model.User;
 import com.studymate.repository.UserRepository;
 import com.studymate.security.JwtService;
 import com.studymate.service.AuthService;
+import com.studymate.service.CloudinaryStorageService;
 import com.studymate.service.EmailService;
 import com.studymate.service.UserAccountLockService;
-import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.*;
 import java.util.*;
 
 @RestController
@@ -35,25 +33,7 @@ public class AuthController {
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
     private final UserAccountLockService accountLockService;
-
-    @Value("${app.upload.dir:./uploads}")
-    private String uploadDir;
-
-    private String resolveAbsDir() {
-        return uploadDir.startsWith("/")
-                ? uploadDir
-                : System.getProperty("user.dir") + "/" + uploadDir;
-    }
-
-    @PostConstruct
-    public void initUploadDir() {
-        try {
-            Files.createDirectories(Paths.get(resolveAbsDir(), "avatars"));
-            System.out.println("[UPLOAD] Directory ready: " + resolveAbsDir() + "/avatars");
-        } catch (IOException e) {
-            System.err.println("[UPLOAD] WARNING cannot create dir: " + e.getMessage());
-        }
-    }
+    private final CloudinaryStorageService cloudinaryStorageService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req) {
@@ -315,26 +295,20 @@ public class AuthController {
         try {
             User user = findCurrentUser(auth);
 
-            String safeId = user.getId().replaceAll("[^a-zA-Z0-9_\\-]", "_");
-            String ext = getExt(file.getOriginalFilename());
-            String filename = type + "_" + safeId + ext;
-
-            Path dir = Paths.get(resolveAbsDir(), "avatars");
-            Files.createDirectories(dir);
-
-            Files.copy(file.getInputStream(), dir.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
-
-            String url = "/uploads/avatars/" + filename;
+            CloudinaryStorageService.UploadResult uploaded =
+                    cloudinaryStorageService.uploadImage(file, "profiles/" + type);
+            String url = uploaded.getUrl();
 
             if ("avatar".equals(type)) user.setAvatar(url);
             else user.setCoverImage(url);
 
             userRepo.save(user);
 
-            System.out.println("[UPLOAD] Saved " + type + " → " + dir.resolve(filename));
             return ResponseEntity.ok(ApiResponse.ok(Map.of("url", url)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
         } catch (IOException e) {
-            System.err.println("[UPLOAD ERROR] " + e.getMessage());
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("Lỗi lưu file: " + e.getMessage()));
         }
@@ -355,9 +329,4 @@ public class AuthController {
         return null;
     }
 
-    private String getExt(String fn) {
-        if (fn == null) return ".jpg";
-        int dot = fn.lastIndexOf('.');
-        return dot >= 0 ? fn.substring(dot).toLowerCase() : ".jpg";
-    }
 }

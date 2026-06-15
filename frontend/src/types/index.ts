@@ -77,6 +77,9 @@ export interface Friendship {
   requesterId: string
   receiverId: string
   status: FriendStatus
+  direction?: 'INCOMING' | 'OUTGOING'
+  otherUser?: User
+  otherUserId?: string
   requester?: User
   receiver?: User
   createdAt: string

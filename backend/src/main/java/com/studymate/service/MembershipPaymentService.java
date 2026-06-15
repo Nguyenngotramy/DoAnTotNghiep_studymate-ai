@@ -166,12 +166,6 @@ public class MembershipPaymentService {
         user.setMembershipExpiresAt(newExpires);
         userRepo.save(user);
 
-        System.out.println("=== APPROVED PAYMENT ===");
-        System.out.println("User ID: " + user.getId());
-        System.out.println("New Tier: " + newTier);
-        System.out.println("New Expires: " + newExpires);
-        System.out.println("User after save: " + userRepo.findById(user.getId()).get().getMembershipTier());
-
         payment.setStatus(PaymentStatus.APPROVED);
         payment.setReviewedAt(Instant.now());
         payment.setApprovedAt(Instant.now());

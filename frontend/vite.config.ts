@@ -4,7 +4,7 @@ import { defineConfig, loadEnv } from 'vite'
 
 export default defineConfig(({ mode }) => {
   const rootEnv = loadEnv(mode, path.resolve(__dirname, '..'), '')
-  const aiAgentDevUrl = rootEnv.AI_AGENT_DEV_URL || 'http://localhost:3000'
+  const aiAgentDevUrl = rootEnv.AI_AGENT_DEV_URL || 'http://localhost:8001'
 
   return {
     plugins: [react()],

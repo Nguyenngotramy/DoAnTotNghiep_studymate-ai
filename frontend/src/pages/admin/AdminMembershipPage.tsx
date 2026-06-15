@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { adminApi, adminMembershipApi, uploadApi, authApi } from '@/api/services'
+import { adminApi, adminMembershipApi, uploadApi } from '@/api/services'
 import { resolveUserAvatar } from '@/utils/avatar'
 import toast from 'react-hot-toast'
 import { Check, ImagePlus, Loader2, Save, Trash2, Wallet, X } from 'lucide-react'
@@ -40,20 +40,11 @@ export default function AdminMembershipPage() {
   }, [])
 
   const approveMut = useMutation({
-    mutationFn: ({ id, note, userId }: { id: string; note?: string; userId?: string }) => adminMembershipApi.approve(id, note),
-    onSuccess: async (_, { userId }) => {
+    mutationFn: ({ id, note }: { id: string; note?: string }) => adminMembershipApi.approve(id, note),
+    onSuccess: () => {
       toast.success('Đã duyệt')
       qc.invalidateQueries({ queryKey: ['admin-membership-stats'] })
       refetchOrders()
-      // Refresh user data to update membership tier
-      if (userId) {
-        try {
-          const updatedUser = await authApi.me()
-          qc.setQueryData(['auth-user'], updatedUser)
-        } catch (e) {
-          console.error('Failed to refresh user data:', e)
-        }
-      }
     },
     onError: (e: any) => toast.error(e?.response?.data?.message || 'Lỗi duyệt'),
   })
@@ -339,7 +330,7 @@ export default function AdminMembershipPage() {
                     <div className="flex gap-1">
                       <button
                         type="button"
-                        onClick={() => approveMut.mutate({ id: o.id, userId: o.userId })}
+                        onClick={() => approveMut.mutate({ id: o.id })}
                         className="p-1.5 rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10"
                         title="Duyệt"
                       >

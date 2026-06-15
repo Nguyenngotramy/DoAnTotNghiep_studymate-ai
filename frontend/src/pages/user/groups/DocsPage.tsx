@@ -23,7 +23,7 @@ import {
   Pencil,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { withAiConfig } from '@/utils/aiConfig'
+import { getAiRequestHeaders, withAiConfig } from '@/utils/aiConfig'
 import { addNote } from '@/utils/notesStorage'
 
 // ─────────────────────────────────────────
@@ -76,7 +76,7 @@ async function backendSummary(
 ): Promise<string> {
   const res = await fetch(`${BACKEND_URL}/summary`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAiRequestHeaders(true),
     body: JSON.stringify(withAiConfig({
       topic:     docTopic || doc.name,
       filename:  doc.name,
@@ -118,7 +118,7 @@ async function backendFlashcard(
 ): Promise<Flashcard[]> {
   const res = await fetch(`${BACKEND_URL}/flashcard`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAiRequestHeaders(true),
     body: JSON.stringify(withAiConfig({
       topic:     docTopic || doc.name,
       filename:  doc.name,
@@ -151,7 +151,7 @@ async function backendQuiz(
 ): Promise<QuizQuestion[]> {
   const res = await fetch(`${BACKEND_URL}/quiz`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAiRequestHeaders(true),
     body: JSON.stringify(withAiConfig({
       topic:     docTopic || doc.name,
       filename:  doc.name,
@@ -195,7 +195,7 @@ async function backendChat(
 ): Promise<ChatApiResult> {
   const res = await fetch(`${BACKEND_URL}/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAiRequestHeaders(true),
     body: JSON.stringify(withAiConfig({
       text: `[Tài liệu: ${doc.name}]\nFile URL: ${doc.fileUrl ?? ''}\n\nCâu hỏi: ${question}`,
       session_id: sessionId,

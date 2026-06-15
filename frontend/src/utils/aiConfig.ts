@@ -1,3 +1,5 @@
+import { useAuthStore } from '@/store/authStore'
+
 export type AiProvider = 'openrouter' | 'anthropic'
 
 export type AiModel = {
@@ -59,8 +61,18 @@ export function withAiConfig<T extends Record<string, unknown>>(body: T): T & Pa
   }
 }
 
+export function getAiRequestHeaders(json = false): Record<string, string> {
+  const token = useAuthStore.getState().accessToken
+  return {
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 export async function loadAiProviders(): Promise<AiProviderInfo[]> {
-  const response = await fetch('/ai-agent/providers')
+  const response = await fetch('/ai-agent/providers', {
+    headers: getAiRequestHeaders(),
+  })
   if (!response.ok) throw new Error(await response.text())
   const payload = await response.json()
   return payload.providers || []
@@ -69,7 +81,7 @@ export async function loadAiProviders(): Promise<AiProviderInfo[]> {
 export async function validateAiConfig(config: AiConfig): Promise<AiConfig> {
   const response = await fetch('/ai-agent/providers/validate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAiRequestHeaders(true),
     body: JSON.stringify(config),
   })
   if (!response.ok) {

@@ -11,7 +11,14 @@ COPY --from=build /app/target/*.jar app.jar
 
 RUN apk add --no-cache ttf-dejavu
 
-RUN mkdir -p /app/uploads
+RUN addgroup -S studymate \
+    && adduser -S studymate -G studymate \
+    && mkdir -p /app/uploads \
+    && chown -R studymate:studymate /app
+
+USER studymate
+
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -Djava.security.egd=file:/dev/./urandom"
 
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

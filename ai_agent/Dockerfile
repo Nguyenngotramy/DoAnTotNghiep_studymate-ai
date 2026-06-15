@@ -4,9 +4,9 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV STUDYMIND_DB_PATH=/app/studymind_db
+ENV STUDYMIND_DB_PATH=/data/studymind_db
 ENV KB_COLLECTION_NAME=knowledge_v2
-ENV CHAT_DB_PATH=/app/data/chat_history.sqlite3
+ENV CHAT_DB_PATH=/data/chat_history.sqlite3
 ENV MAX_SESSION_MESSAGES=40
 ENV CHAT_HISTORY_FOR_LLM=8
 ENV MAX_PROMPT_CHARS=14000
@@ -43,7 +43,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p /app/data /app/studymind_db
+RUN mkdir -p /data/studymind_db
 
 EXPOSE 8001
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 8001 --workers ${UVICORN_WORKERS}"]

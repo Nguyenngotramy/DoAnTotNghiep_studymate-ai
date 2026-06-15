@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { Crown, Check, Copy, Loader2, Wallet, Eye, EyeOff, RefreshCw, Sparkles, Zap, Shield, X, CheckCircle2, PartyPopper } from 'lucide-react'
 import clsx from 'clsx'
 import { createPortal } from 'react-dom'
+import { useAuthStore } from '@/store/authStore'
 
 type TierKey = 'SILVER' | 'GOLD'
 type PeriodKey = 'WEEK' | 'MONTH' | 'YEAR'
@@ -335,6 +336,7 @@ function PaymentModal({
 
 export default function MembershipPage() {
   const qc = useQueryClient()
+  const updateUser = useAuthStore(s => s.updateUser)
   const [tier, setTier] = useState<TierKey>('GOLD')
   const [period, setPeriod] = useState<PeriodKey>('MONTH')
   const [note, setNote] = useState('')
@@ -343,6 +345,8 @@ export default function MembershipPage() {
   const { data: summary, isLoading: loadingMe } = useQuery({
     queryKey: ['membership-me'],
     queryFn: () => membershipApi.getMy(),
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
   })
 
   const { data: plans } = useQuery({
@@ -353,7 +357,17 @@ export default function MembershipPage() {
   const { data: orders = [] } = useQuery({
     queryKey: ['membership-orders'],
     queryFn: () => membershipApi.getOrders(),
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
   })
+
+  useEffect(() => {
+    if (!summary?.tier) return
+    updateUser({
+      membershipTier: summary.tier,
+      membershipExpiresAt: summary.membershipExpiresAt,
+    })
+  }, [summary?.tier, summary?.membershipExpiresAt, updateUser])
 
   const pendingOrder = orders.find((o: any) => o.status === 'PENDING')
   const isExpired = pendingOrder && new Date(pendingOrder.expiresAt) < new Date()

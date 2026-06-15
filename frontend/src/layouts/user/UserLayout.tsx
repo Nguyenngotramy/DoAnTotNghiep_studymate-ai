@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import SideToolbar from '@/components/SideToolbar'
 import FloatingAgent from '@/components/FloatingAgent'
 import { useAuthStore } from '@/store/authStore'
-import { authApi, notificationApi, dmApi } from '@/api/services'
+import { authApi, notificationApi, dmApi, membershipApi } from '@/api/services'
 import toast from 'react-hot-toast'
 import { initials } from '@/utils/helpers'
 import {
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { MembershipTier } from '@/types'
 
 type NavItemProps = { to: string; icon: React.ElementType; label: string; badge?: number }
 
@@ -282,39 +283,61 @@ function Avatar({
   name,
   avatar,
   size = 28,
+  tier,
 }: {
   name?: string
   avatar?: string | null
   size?: number
+  tier?: MembershipTier
 }) {
   const text = name ? initials(name) : '?'
   const [imgError, setImgError] = useState(false)
   const url = resolveAvatarUrl(avatar)
 
   return (
-    <div
-      className="rounded-full overflow-hidden flex items-center justify-center flex-shrink-0"
-      style={{
-        width: size,
-        height: size,
-        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-      }}
-    >
-      {url && !imgError ? (
-        <img
-          src={url}
-          alt={name ?? 'avatar'}
-          className="w-full h-full object-cover"
-          onError={() => setImgError(true)}
-        />
-      ) : (
+    <div className="relative inline-flex flex-shrink-0">
+      <div
+        className="rounded-full overflow-hidden flex items-center justify-center"
+        style={{
+          width: size,
+          height: size,
+          background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+          boxShadow: tier === 'GOLD'
+            ? '0 0 0 2px #f59e0b'
+            : tier === 'SILVER'
+              ? '0 0 0 2px #cbd5e1'
+              : undefined,
+        }}
+      >
+        {url && !imgError ? (
+          <img
+            src={url}
+            alt={name ?? 'avatar'}
+            className="w-full h-full object-cover"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <span
+            className="text-white font-semibold"
+            style={{ fontSize: size <= 28 ? '10px' : '11px' }}
+          >
+            {text}
+          </span>
+        )}
+      </div>
+      {(tier === 'SILVER' || tier === 'GOLD') && (
         <span
-          className="text-white font-semibold"
+          className="absolute -right-1.5 -top-1.5 rounded-full flex items-center justify-center border border-white"
           style={{
-            fontSize: size <= 28 ? '10px' : '11px',
+            width: Math.max(13, size * 0.45),
+            height: Math.max(13, size * 0.45),
+            background: tier === 'GOLD'
+              ? 'linear-gradient(135deg,#f59e0b,#fde68a)'
+              : 'linear-gradient(135deg,#94a3b8,#e2e8f0)',
           }}
+          title={tier === 'GOLD' ? 'Thành viên Vàng' : 'Thành viên Bạc'}
         >
-          {text}
+          <Crown size={Math.max(8, size * 0.27)} className="text-slate-800" strokeWidth={2.5} />
         </span>
       )}
     </div>
@@ -428,12 +451,34 @@ function NotifDropdown({
 }
 
 export default function UserLayout() {
-  const { user, refreshToken, logout } = useAuthStore()
+  const { user, refreshToken, logout, updateUser } = useAuthStore()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
   const [showSearch, setShowSearch] = useState(false)
   const [showNotif, setShowNotif] = useState(false)
+
+  const { data: freshUser } = useQuery({
+    queryKey: ['auth-user'],
+    queryFn: async () => {
+      const [profile, membership] = await Promise.all([
+        authApi.me(),
+        membershipApi.getMy(),
+      ])
+      return {
+        ...profile,
+        membershipTier: membership?.tier ?? profile.membershipTier,
+        membershipExpiresAt: membership?.membershipExpiresAt ?? profile.membershipExpiresAt,
+      }
+    },
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+    staleTime: 5000,
+  })
+
+  useEffect(() => {
+    if (freshUser) updateUser(freshUser)
+  }, [freshUser, updateUser])
 
   const { data: notificationsPage } = useQuery({
     queryKey: ['notifications', 0],
@@ -563,20 +608,34 @@ export default function UserLayout() {
           <NavItem to="/predict" icon={BrainCircuit} label="Đề xuất ngành học" />
 
           <NavSection title="Tài khoản" />
-          <NavItem to="/membership" icon={Crown} label="Nâng cấp ngay" />
+          <NavItem
+            to="/membership"
+            icon={Crown}
+            label={
+              user?.membershipTier === 'GOLD'
+                ? 'Gói Vàng'
+                : user?.membershipTier === 'SILVER'
+                  ? 'Gói Bạc'
+                  : 'Nâng cấp ngay'
+            }
+          />
           <NavItem to="/profile" icon={User} label="Hồ sơ cá nhân" />
           <NavItem to="/settings" icon={Settings} label="Cài đặt" />
         </nav>
 
         <div className="p-2 flex-shrink-0" style={{ borderTop: '0.5px solid var(--border)' }}>
           <div className="flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-white/[.04] transition-colors cursor-pointer">
-            <Avatar name={user?.fullName} avatar={user?.avatar} size={28} />
+            <Avatar name={user?.fullName} avatar={user?.avatar} size={28} tier={user?.membershipTier} />
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-medium truncate" style={{ color: 'var(--text)' }}>
                 {user?.fullName}
               </div>
               <div className="text-[10px]" style={{ color: 'var(--text3)' }}>
-                {(user?.xp ?? 0).toLocaleString()} XP
+                {user?.membershipTier === 'GOLD'
+                  ? 'Thành viên Vàng'
+                  : user?.membershipTier === 'SILVER'
+                    ? 'Thành viên Bạc'
+                    : `${(user?.xp ?? 0).toLocaleString()} XP`}
               </div>
             </div>
             <button
@@ -662,7 +721,7 @@ export default function UserLayout() {
 
           <Link to="/profile">
             <div className="cursor-pointer hover:ring-2 hover:ring-indigo-500/50 rounded-full transition-all">
-              <Avatar name={user?.fullName} avatar={user?.avatar} size={28} />
+              <Avatar name={user?.fullName} avatar={user?.avatar} size={28} tier={user?.membershipTier} />
             </div>
           </Link>
         </header>

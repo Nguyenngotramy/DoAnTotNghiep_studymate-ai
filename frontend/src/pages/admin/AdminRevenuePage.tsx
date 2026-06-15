@@ -122,7 +122,7 @@ export default function AdminRevenuePage() {
   const handleExportExcel = async () => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/admin/revenue/export?range=${timeMode.toLowerCase()}&taxRate=${taxRate}`,
+        `${import.meta.env.VITE_API_URL || '/api'}/admin/revenue/export?range=${timeMode.toLowerCase()}&taxRate=${taxRate}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('accessToken')}`,

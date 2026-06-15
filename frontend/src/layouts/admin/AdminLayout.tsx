@@ -1,10 +1,11 @@
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { useUiStore } from '@/store/uiStore'
 import { authApi } from '@/api/services'
 import toast from 'react-hot-toast'
 import {
   LayoutDashboard, Users, Users2, FileText, MessageCircle,
-  BrainCircuit, AlertTriangle, Bell, Settings, LogOut, Wallet, BarChart3
+  BrainCircuit, AlertTriangle, Bell, Settings, LogOut, Wallet, BarChart3, Moon, Sun
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useState } from 'react'
@@ -29,6 +30,7 @@ export default function AdminLayout() {
   const { user, refreshToken, logout } = useAuthStore()
   const navigate = useNavigate()
   const [logoError, setLogoError] = useState(false)
+  const { darkMode, toggleDarkMode } = useUiStore()
 
   const handleLogout = async () => {
     try { if (refreshToken) await authApi.logout(refreshToken) } catch {}
@@ -38,14 +40,14 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#0a0a0f' }}>
+    <div className="admin-theme flex h-screen overflow-hidden bg-[var(--bg)] text-[var(--text)]">
       {/* Sidebar Admin - màu đỏ */}
-      <aside className="w-[228px] min-w-[228px] flex flex-col" style={{ background: '#12121a', borderRight: '0.5px solid rgba(255,255,255,.06)' }}>
+      <aside className="w-[228px] min-w-[228px] flex flex-col bg-[var(--bg2)] border-r border-[var(--border)]">
         {/* Logo */}
         <Link
           to="/admin/dashboard"
           className="px-4 py-4 flex items-center gap-3 hover:bg-white/[.025] transition-colors"
-          style={{ borderBottom: '0.5px solid rgba(255,255,255,.06)' }}
+          style={{ borderBottom: '1px solid var(--border)' }}
         >
           {!logoError ? (
             <img
@@ -78,7 +80,7 @@ export default function AdminLayout() {
           )}
 
           <div className="min-w-0">
-            <div className="text-[13px] font-semibold text-[#f0f0f5] truncate">
+            <div className="text-[13px] font-semibold text-[var(--text)] truncate">
               StudyMate AI
             </div>
             <div className="text-[9px] text-[#5a5a6e] uppercase tracking-widest truncate">
@@ -119,14 +121,14 @@ export default function AdminLayout() {
         </nav>
 
         {/* User */}
-        <div className="p-2.5" style={{ borderTop: '0.5px solid rgba(255,255,255,.06)' }}>
+        <div className="p-2.5" style={{ borderTop: '1px solid var(--border)' }}>
           <div className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/[.04] cursor-pointer transition-colors">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-white flex-shrink-0"
               style={{ background: 'linear-gradient(135deg,#dc2626,#9f1239)' }}>
               AD
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[12px] font-medium text-[#f0f0f5] truncate">{user?.fullName}</div>
+              <div className="text-[12px] font-medium text-[var(--text)] truncate">{user?.fullName}</div>
               <div className="text-[10px]" style={{ color: '#f87171' }}>Quản trị viên</div>
             </div>
             <button onClick={handleLogout} className="text-[#5a5a6e] hover:text-red-400 transition-colors p-1">
@@ -138,8 +140,17 @@ export default function AdminLayout() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 min-h-14 flex items-center gap-3 px-5" style={{ borderBottom: '0.5px solid rgba(255,255,255,.06)' }}>
-          <span className="text-[13px] font-medium text-[#f0f0f5] flex-1">Bảng điều khiển quản trị</span>
+        <header className="h-14 min-h-14 flex items-center gap-3 px-5 bg-[var(--bg)] border-b border-[var(--border)]">
+          <span className="text-[13px] font-medium text-[var(--text)] flex-1">Bảng điều khiển quản trị</span>
+          <button
+            type="button"
+            onClick={toggleDarkMode}
+            className="h-9 w-9 rounded-lg border border-[var(--border)] bg-[var(--bg2)] text-[var(--text2)] hover:text-[var(--text)] flex items-center justify-center transition-colors"
+            title={darkMode ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+            aria-label={darkMode ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+          >
+            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
           <span className="text-[10px] font-semibold px-3 py-1 rounded-md" style={{ background: 'rgba(220,38,38,.15)', color: '#f87171', border: '0.5px solid rgba(220,38,38,.3)' }}>
             Chế độ Admin
           </span>

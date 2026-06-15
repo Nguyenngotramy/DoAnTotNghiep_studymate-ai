@@ -4,6 +4,7 @@ import { quizApi, flashcardApi } from "@/api/services";
 import {
   clearAiConfig,
   getAiConfig,
+  getAiRequestHeaders,
   loadAiProviders,
   saveAiConfig,
   validateAiConfig,
@@ -90,6 +91,27 @@ function ThinkingBubble() {
       </div>
     </div>
   );
+}
+
+async function readAiResponse(res) {
+  const contentType = res.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await res.json()
+    : { detail: await res.text() };
+
+  if (res.ok) return data;
+
+  const detail = data?.detail || data?.message;
+  if (res.status === 429) {
+    throw new Error(detail || "Hạn mức AI đã hết hoặc provider đang giới hạn tốc độ. Vui lòng thử lại sau.");
+  }
+  if (res.status === 502 || res.status === 503 || res.status === 504) {
+    throw new Error(detail || "AI service chưa sẵn sàng hoặc provider phản hồi quá chậm.");
+  }
+  if (res.status === 401 || res.status === 403) {
+    throw new Error(detail || "AI service chưa được cấu hình đúng khóa truy cập.");
+  }
+  throw new Error(detail || `AI service trả về lỗi HTTP ${res.status}.`);
 }
 
 function StructuredPreview({ structured }) {
@@ -320,7 +342,7 @@ export default function FloatingAgent() {
     try {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAiRequestHeaders(true),
         body: JSON.stringify(withAiConfig({
           text: msg,
           session_id: sessionId || undefined,
@@ -328,7 +350,7 @@ export default function FloatingAgent() {
           tenant_id: user?.id ? `user:${user.id}` : undefined,
         })),
       });
-      const data = await res.json();
+      const data = await readAiResponse(res);
       if (data.session_id) {
         setSessionId(data.session_id);
         localStorage.setItem(SESSION_KEY, data.session_id);
@@ -359,13 +381,15 @@ export default function FloatingAgent() {
 
       if (!open) setUnread((n) => n + 1);
       setActiveAgent(data.agent ?? null);
-    } catch {
+    } catch (error) {
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           role: "ai",
-          text: "❌ Không thể kết nối server. Kiểm tra FastAPI đang chạy chưa?",
+          text: `❌ ${error instanceof Error
+            ? error.message
+            : "Không thể kết nối AI service tại cổng 8001. Kiểm tra FastAPI đang chạy chưa."}`,
           time: timeNow(),
         },
       ]);
@@ -431,7 +455,12 @@ export default function FloatingAgent() {
   };
 
   const clearHistory = async () => {
-    try { await fetch(`${API_URL}/history`, { method: "DELETE" }); } catch {}
+    try {
+      await fetch(`${API_URL}/history`, {
+        method: "DELETE",
+        headers: getAiRequestHeaders(),
+      });
+    } catch {}
     localStorage.removeItem(SESSION_KEY);
     setSessionId("");
     setMessages([]);
