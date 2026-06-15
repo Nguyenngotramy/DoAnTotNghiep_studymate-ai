@@ -19,6 +19,9 @@ RUN addgroup -S studymate \
 USER studymate
 
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -Djava.security.egd=file:/dev/./urandom"
+ENV AI_AGENT_URL="https://nguyenngotramy2427-studymate-ai-agent.hf.space"
+ENV AI_AGENT_TIMEOUT_SECONDS=45
+ENV APP_LOG_LEVEL=INFO
 
 EXPOSE 8080
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
