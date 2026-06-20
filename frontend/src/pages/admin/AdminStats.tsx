@@ -150,7 +150,7 @@ export default function AdminStats() {
         </ChartPanel>
 
         <ChartPanel title="Số task tạo / hoàn thành / quá hạn">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <MiniBox label="Tạo" value={taskStats.total} />
             <MiniBox label="Hoàn thành" value={taskStats.done} />
             <MiniBox label="Quá hạn" value={taskStats.overdue} />

@@ -3,27 +3,8 @@
 @import 'tailwindcss/utilities';
 
 :root,
-:root[data-theme='dark'] {
-  --bg:        #0f0f13;
-  --bg2:       #16161d;
-  --bg3:       #1e1e28;
-  --bg4:       #252532;
-  --border:    rgba(255,255,255,0.07);
-  --border2:   rgba(255,255,255,0.13);
-  --text:      #f0f0f5;
-  --text2:     #8b8b9e;
-  --text3:     #5a5a6e;
-  --indigo:    #6366f1;
-  --indigo-l:  #818cf8;
-  --teal:      #14b8a6;
-  --amber:     #f59e0b;
-  --green:     #22c55e;
-  --red:       #ef4444;
-  --coral:     #f97316;
-  --purple:    #a855f7;
-}
-
 :root[data-theme='light'] {
+  color-scheme: light;
   --bg:        #f6f7fb;
   --bg2:       #ffffff;
   --bg3:       #f2f4f8;
@@ -43,7 +24,36 @@
   --purple:    #a855f7;
 }
 
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg:        #0f0f13;
+  --bg2:       #16161d;
+  --bg3:       #1e1e28;
+  --bg4:       #252532;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.13);
+  --text:      #f0f0f5;
+  --text2:     #8b8b9e;
+  --text3:     #5a5a6e;
+  --indigo:    #6366f1;
+  --indigo-l:  #818cf8;
+  --teal:      #14b8a6;
+  --amber:     #f59e0b;
+  --green:     #22c55e;
+  --red:       #ef4444;
+  --coral:     #f97316;
+  --purple:    #a855f7;
+}
+
 * { box-sizing: border-box; }
+
+html { background: var(--bg); transition: background-color .2s ease, color .2s ease; }
+body, button, input, select, textarea {
+  color-scheme: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+}
 
 html, body, #root {
   height: 100%;
@@ -51,11 +61,30 @@ html, body, #root {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  font-family: 'Nunito', 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
   overflow: hidden;
 }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Plus Jakarta Sans', 'Nunito', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+small, .text-caption {
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+/* Readable compact scale inspired by The IELTS Dictionary. */
+.text-\[9px\],
+.text-\[10px\] { font-size: 11px !important; line-height: 1.45; }
+.text-\[11px\] { font-size: 12px !important; line-height: 1.5; }
+.text-\[12px\] { font-size: 13px !important; line-height: 1.5; }
+.text-\[13px\] { font-size: 14px !important; line-height: 1.55; }
+
+::placeholder { font-family: 'Nunito', 'Inter', sans-serif; }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -155,3 +184,39 @@ input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.2); }
 :root[data-theme='light'] [class~="border-white/[.12]"] {
   border-color: var(--border) !important;
 }
+
+
+/* Mobile web baseline */
+img, video, canvas, svg { max-width: 100%; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button, [role='button'] { touch-action: manipulation; }
+
+@media (max-width: 767px) {
+  html, body, #root { width: 100%; max-width: 100%; overflow: hidden; }
+  input, select, textarea { font-size: 16px !important; }
+  table { display: block; width: 100%; max-width: 100%; overflow-x: auto; font-size: 12px; -webkit-overflow-scrolling: touch; }
+  th, td { white-space: nowrap; }
+  .page-enter { width: 100%; min-width: 0; }
+  main { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  [class*='max-w-'] { min-width: 0; }
+  [class*='rounded-[28px]'], [class*='rounded-[24px]'] { border-radius: 18px; }
+}
+
+.overflow-x-auto { -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+
+/* Chat surfaces follow the global theme in both standalone chat and Inbox. */
+.chat-composer {
+  background: var(--bg2) !important;
+  border-color: var(--border) !important;
+  color: var(--text);
+}
+.chat-composer input,
+.chat-composer textarea {
+  background: var(--bg3) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+.chat-composer input::placeholder,
+.chat-composer textarea::placeholder { color: var(--text3) !important; }
+:root[data-theme='light'] .chat-composer { box-shadow: 0 -8px 28px rgba(15,23,42,.04); }
+:root[data-theme='dark'] .chat-composer { box-shadow: 0 -8px 28px rgba(0,0,0,.16); }

@@ -12,7 +12,7 @@ import {
   BrainCircuit, User, Settings, LogOut, Search, Bell,
   Zap, Flame, X, ChevronRight, CheckCircle2, AlertCircle,
   FileText, Heart, Check, FolderOpen,
-  Crown,
+  Crown, Menu,
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -371,7 +371,7 @@ function NotifDropdown({
   return (
     <div
       id="notif-dropdown"
-      className="absolute right-0 top-full mt-2 w-80 rounded-2xl shadow-2xl z-50 overflow-hidden border"
+      className="fixed left-3 right-3 top-14 mt-1 rounded-2xl shadow-2xl z-50 overflow-hidden border sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80"
       style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
@@ -457,6 +457,7 @@ export default function UserLayout() {
 
   const [showSearch, setShowSearch] = useState(false)
   const [showNotif, setShowNotif] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   const { data: freshUser } = useQuery({
     queryKey: ['auth-user'],
@@ -575,8 +576,20 @@ export default function UserLayout() {
       <SideToolbar />
       <FloatingAgent /> 
 
+      {mobileNavOpen && (
+        <button
+          type="button"
+          aria-label="??ng menu"
+          onClick={() => setMobileNavOpen(false)}
+          className="fixed inset-0 z-40 bg-black/55 backdrop-blur-[1px] lg:hidden"
+        />
+      )}
+
       <aside
-        className="w-[210px] min-w-[210px] flex flex-col"
+        className={clsx(
+          'fixed inset-y-0 left-0 z-50 flex w-[min(86vw,280px)] flex-col transition-transform duration-200 lg:static lg:z-auto lg:w-[210px] lg:min-w-[210px] lg:translate-x-0',
+          mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
+        )}
         style={{ background: 'var(--bg2)', borderRight: '0.5px solid var(--border)' }}
       >
         <div
@@ -586,7 +599,7 @@ export default function UserLayout() {
           <BrandLogo />
         </div>
 
-        <nav className="flex-1 px-2 py-2 overflow-y-auto">
+        <nav className="flex-1 px-2 py-2 overflow-y-auto" onClick={() => setMobileNavOpen(false)}>
           <NavSection title="Tổng quan" />
           <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
 
@@ -652,12 +665,26 @@ export default function UserLayout() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <header
-          className="h-12 flex-shrink-0 flex items-center gap-3 px-5"
+          className="h-14 flex-shrink-0 flex items-center gap-2 px-3 sm:h-12 sm:gap-3 sm:px-5"
           style={{ background: 'var(--bg2)', borderBottom: '0.5px solid var(--border)' }}
-        >
+>
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg lg:hidden"
+            style={{ background: 'var(--bg3)', border: '0.5px solid var(--border)', color: 'var(--text2)' }}
+            aria-label="M? menu"
+          >
+            <Menu size={18} />
+          </button>
+
+          <div className="min-w-0 flex-1 lg:hidden">
+            <BrandLogo />
+          </div>
+
           <button
             onClick={() => setShowSearch(true)}
-            className="flex items-center gap-2 flex-1 max-w-xs h-8 px-3 rounded-lg text-[12px] transition-colors hover:bg-white/[.05]"
+            className="hidden h-8 max-w-xs flex-1 items-center gap-2 rounded-lg px-3 text-[12px] transition-colors hover:bg-white/[.05] sm:flex"
             style={{ background: 'var(--bg3)', border: '0.5px solid var(--border)', color: 'var(--text3)' }}
           >
             <Search size={13} />
@@ -670,9 +697,9 @@ export default function UserLayout() {
             </span>
           </button>
 
-          <div className="flex-1" />
+          <div className="hidden flex-1 sm:block" />
 
-          <div className="flex items-center gap-3">
+          <div className="hidden items-center gap-3 md:flex">
             <div
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
               style={{ background: 'rgba(99,102,241,.1)', border: '0.5px solid rgba(99,102,241,.2)' }}
@@ -726,7 +753,7 @@ export default function UserLayout() {
           </Link>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-5">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:p-5">
           <Outlet />
         </main>
       </div>

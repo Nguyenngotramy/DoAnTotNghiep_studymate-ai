@@ -163,7 +163,7 @@ export default function ProjectListPage() {
   }
 
   return (
-    <div className="min-h-screen p-6" style={{ background: 'var(--bg1)' }}>
+    <div className="min-h-screen p-3 sm:p-6" style={{ background: 'var(--bg1)' }}>
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
           <div className="flex items-center gap-3">

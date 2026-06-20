@@ -232,7 +232,7 @@ export default function AppLayout() {
             </>
           )}
 
-          <div className="text-[10px] font-medium text-[#5a5a6e] uppercase tracking-[.06em] px-2 py-2 mt-2">Phân tích AI</div>
+          <div className="text-[10px] font-medium text-[#5a5a6e] uppercase tracking-[.06em] px-2 py-2 mt-2">Định hướng học tập</div>
           <NavItem to="/predict" icon={BrainCircuit} label="Đề xuất ngành học" />
           <NavItem to="/dashboard" icon={TrendingUp} label="Thống kê cá nhân" />
 
@@ -272,7 +272,7 @@ export default function AppLayout() {
             <Search size={13} className="text-[#5a5a6e] flex-shrink-0" />
             <input
               placeholder="Tìm kiếm..."
-              className="bg-transparent border-none outline-none text-[12px] text-[#f0f0f5] placeholder-[#5a5a6e] font-['DM_Sans'] w-full"
+              className="bg-transparent border-none outline-none text-[12px] text-[#f0f0f5] placeholder-[#5a5a6e] font-sans w-full"
             />
           </div>
 

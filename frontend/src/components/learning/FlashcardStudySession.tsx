@@ -521,7 +521,7 @@ export default function FlashcardStudySession({ deck, mode, folder, sourceBadge,
         </div>
 
         {summary && (
-          <div className="grid grid-cols-3 gap-2 mt-4 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4 w-full">
             {[
               { label: 'Đến hạn', val: summary.dueCount, color: '#f59e0b' },
               { label: 'Thẻ mới', val: summary.newCount, color: '#818cf8' },

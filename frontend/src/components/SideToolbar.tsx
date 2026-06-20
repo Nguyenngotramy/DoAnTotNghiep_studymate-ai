@@ -46,10 +46,10 @@ const THEME = {
 }
 
 function getInitialDarkMode() {
-  if (typeof window === 'undefined') return true
+  if (typeof window === 'undefined') return false
 
   try {
-    const ui = JSON.parse(localStorage.getItem('studymate-ui') || '{}')
+    const ui = JSON.parse(localStorage.getItem('studymate-ui-v2') || '{}')
 
     if (typeof ui?.state?.darkMode === 'boolean') {
       return ui.state.darkMode

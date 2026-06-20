@@ -558,7 +558,7 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div className="grid min-w-[280px] grid-cols-2 gap-3">
+          <div className="grid min-w-0 grid-cols-2 sm:min-w-[280px] gap-3">
             <QuickAction
               to="/groups"
               icon={Users}
@@ -850,7 +850,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-[14px] font-semibold text-indigo-300">Đề xuất ngành học</p>
                 <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
-                  AI phân tích điểm số
+                  GPA, RIASEC và dữ liệu tuyển sinh
                 </p>
               </div>
             </div>

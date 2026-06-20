@@ -120,7 +120,7 @@ function Panel({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-2xl border p-5" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
+    <section className="rounded-2xl border p-4 sm:p-5" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
       <h2 className="mb-4 flex items-center gap-2 text-[15px] font-semibold" style={{ color: 'var(--text)' }}>
         <span className="text-indigo-400">{icon}</span>
         {title}
@@ -132,6 +132,7 @@ function Panel({
 
 export default function AdmissionRecommendationPage() {
   const user = useAuthStore(state => state.user)
+  const isUniversityStudent = user?.userType === 'STUDENT'
   const resultRef = useRef<HTMLElement>(null)
   const [rows, setRows] = useState<AdmissionRow[]>([])
   const [programs, setPrograms] = useState<AdmissionProgramRow[]>([])
@@ -291,27 +292,30 @@ export default function AdmissionRecommendationPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-5 px-1 pb-10">
+    <div className="mx-auto max-w-[1400px] space-y-4 px-0 pb-8 sm:space-y-5 sm:px-1 sm:pb-10">
       <header
-        className="relative overflow-hidden rounded-3xl border p-6"
+        className="relative overflow-hidden rounded-2xl border p-4 sm:rounded-3xl sm:p-6"
         style={{
           background: 'linear-gradient(135deg, color-mix(in srgb, var(--bg2) 86%, #6366f1 14%), var(--bg2))',
           borderColor: 'color-mix(in srgb, var(--border) 65%, #6366f1 35%)',
         }}
       >
-        <div className="relative flex flex-wrap items-start justify-between gap-4">
-          <div>
+        <div className="relative flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
+          <div className="min-w-0">
             <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-indigo-400">
               <Sparkles size={12} /> Đề xuất tham khảo
             </div>
-            <h1 className="flex items-center gap-3 text-[25px] font-bold" style={{ color: 'var(--text)' }}>
-              <GraduationCap className="text-indigo-400" size={28} /> Gợi ý ngành và trường phù hợp
+            <h1 className="flex items-start gap-2.5 text-[20px] font-bold leading-tight sm:items-center sm:gap-3 sm:text-[25px]" style={{ color: 'var(--text)' }}>
+              <GraduationCap className="mt-0.5 shrink-0 text-indigo-400 sm:mt-0" size={26} />
+              {isUniversityStudent ? 'Gợi ý ngành học thêm & hướng nghề' : 'Gợi ý ngành và trường phù hợp'}
             </h1>
             <p className="mt-2 text-[12px]" style={{ color: 'var(--text3)' }}>
-              Chọn ngành/trường bạn quan tâm trước, sau đó đối chiếu với điểm và sở thích.
+              {isUniversityStudent
+                ? 'Đối chiếu sở thích, năng lực đầu vào và khám phá ngành bổ trợ phù hợp với định hướng hiện tại.'
+                : 'Gợi ý ngành và trường phù hợp'}
             </p>
           </div>
-          <div className="rounded-xl border px-3 py-2" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+          <div className="self-start rounded-xl border px-3 py-2" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
             <span className="flex items-center gap-2 text-[11px] font-semibold" style={{ color: loadingData ? '#f59e0b' : dataError ? '#ef4444' : '#22c55e' }}>
               {loadingData ? <LoaderCircle className="animate-spin" size={14} /> : dataError ? <AlertCircle size={14} /> : <Database size={14} />}
               {loadingData
@@ -357,7 +361,7 @@ export default function AdmissionRecommendationPage() {
 
           <div className="mt-4">
             <p className="mb-2 text-[11px] font-medium" style={{ color: 'var(--text2)' }}>Chiến lược nguyện vọng</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {([
                 ['balanced', 'Cân bằng', 'Kết hợp điểm và sở thích'],
                 ['ambitious', 'Điểm chuẩn cao', 'Ưu tiên trường/ngành có chuẩn cao'],
@@ -400,12 +404,12 @@ export default function AdmissionRecommendationPage() {
         </Panel>
 
         <Panel title="2. Hồ sơ của bạn" icon={<Target size={17} />}>
-          <details open className="group">
+          <details open={!isUniversityStudent} className="group">
             <summary className="flex cursor-pointer list-none items-center justify-between text-[12px] font-medium" style={{ color: 'var(--text2)' }}>
               Điểm thi và ĐGNL
               <ChevronDown size={15} className="transition group-open:rotate-180" />
             </summary>
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {(Object.entries(SUBJECT_LABELS) as [SubjectKey, string][]).map(([key, label]) => (
                 <label key={key} className="space-y-1">
                   <span className="text-[10px]" style={{ color: 'var(--text3)' }}>{label}</span>
@@ -413,7 +417,7 @@ export default function AdmissionRecommendationPage() {
                 </label>
               ))}
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-2">
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
               <label className="space-y-1"><span className="text-[10px]" style={{ color: 'var(--text3)' }}>Ưu tiên</span><NumberInput value={priorityScore} max={3} onChange={setPriorityScore} /></label>
               <label className="space-y-1"><span className="text-[10px]" style={{ color: 'var(--text3)' }}>ĐGNL HCM</span><NumberInput value={dgnlHcm} max={1200} onChange={setDgnlHcm} /></label>
               <label className="space-y-1"><span className="text-[10px]" style={{ color: 'var(--text3)' }}>ĐGNL HN</span><NumberInput value={dgnlHn} max={150} onChange={setDgnlHn} /></label>
@@ -455,7 +459,7 @@ export default function AdmissionRecommendationPage() {
 
       {result && (
         <section ref={resultRef} className="scroll-mt-4 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <h2 className="flex items-center gap-2 text-[18px] font-semibold" style={{ color: 'var(--text)' }}>
                 <BarChart3 className="text-indigo-400" size={19} /> Kết quả đề xuất
@@ -464,7 +468,7 @@ export default function AdmissionRecommendationPage() {
                 {majorQuery ? `Ngành chứa “${majorQuery}”` : 'Tất cả ngành phù hợp'} · tối đa 10 kết quả
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
               {([
                 ['all', 'Tất cả', result.ket_qua.length],
                 ['an_toan', 'An toàn', categories.an_toan],
@@ -490,7 +494,7 @@ export default function AdmissionRecommendationPage() {
                 const meta = CATEGORY_META[item.phan_loai]
                 const difference = item.diem_cua_ban - item.diem_chuan_gan_nhat
                 return (
-                  <article key={`${item.ten_truong}-${item.ten_nganh}-${item.to_hop_su_dung}`} className="rounded-2xl border p-5" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
+                  <article key={`${item.ten_truong}-${item.ten_nganh}-${item.to_hop_su_dung}`} className="rounded-2xl border p-4 sm:p-5" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex gap-3">
                         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-[11px] font-bold text-indigo-400">{index + 1}</span>
@@ -505,7 +509,7 @@ export default function AdmissionRecommendationPage() {
                       </div>
                       <span className="rounded-lg px-2.5 py-1 text-[10px] font-semibold" style={{ color: meta.color, background: meta.bg }}>{meta.label}</span>
                     </div>
-                    <div className="mt-4 grid grid-cols-4 gap-2">
+                    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                       {[
                         ['Xét bằng', item.to_hop_su_dung],
                         ['Điểm bạn', item.diem_cua_ban.toFixed(2)],
@@ -538,6 +542,15 @@ export default function AdmissionRecommendationPage() {
                                 : item.hoc_phi_tham_khao}
                             </p>
                           )}
+                          {item.nguon_url && (
+                            <p>
+                              <b style={{ color: 'var(--text2)' }}>Nguồn dữ liệu:</b>{' '}
+                              <a href={item.nguon_url} target="_blank" rel="noreferrer" className="text-indigo-400 underline">
+                                Mở trang nguồn
+                              </a>
+                              {item.thu_thap_luc ? ` · Thu thập ${new Date(item.thu_thap_luc).toLocaleDateString('vi-VN')}` : ''}
+                            </p>
+                          )}
                         </div>
                       </details>
                     )}
@@ -561,8 +574,8 @@ export default function AdmissionRecommendationPage() {
       )}
 
       {showRiasec && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm">
-          <div className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/65 p-0 backdrop-blur-sm sm:items-center sm:p-3">
+          <div className="flex max-h-[94vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border sm:max-h-[92vh] sm:rounded-3xl" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
             <div className="flex items-center justify-between border-b p-4" style={{ borderColor: 'var(--border)' }}>
               <div>
                 <h2 className="flex items-center gap-2 text-[16px] font-semibold" style={{ color: 'var(--text)' }}><ClipboardCheck size={18} className="text-indigo-400" /> Trắc nghiệm RIASEC</h2>
@@ -574,7 +587,7 @@ export default function AdmissionRecommendationPage() {
               {RIASEC_QUESTIONS.map((question, index) => (
                 <div key={question.id} className="rounded-xl border p-3" style={{ borderColor: 'var(--border)', background: 'var(--bg3)' }}>
                   <p className="text-[11px] font-medium" style={{ color: 'var(--text)' }}>{index + 1}. {question.text}</p>
-                  <div className="mt-2 grid grid-cols-5 gap-1.5">
+                  <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-5">
                     {ANSWER_LABELS.map((label, answerIndex) => {
                       const value = answerIndex + 1
                       const selected = riasecAnswers[question.id] === value

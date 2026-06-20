@@ -7,13 +7,12 @@ import { authApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import {
-  Eye, EyeOff, Loader2, BookOpen, Brain, Users, Trophy, ArrowRight, Check
+  Eye, EyeOff, Loader2, BookOpen, Brain, Users, Trophy, ArrowRight
 } from 'lucide-react'
 
 const schema = z.object({
   email: z.string().email('Email không hợp lệ'),
   password: z.string().min(6, 'Mật khẩu tối thiểu 6 ký tự'),
-  agreeTerms: z.boolean().refine(v => v === true, 'Bạn phải đồng ý điều khoản để tiếp tục'),
 })
 type FormData = z.infer<typeof schema>
 
@@ -110,15 +109,10 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { agreeTerms: false },
   })
-
-  const agreed = watch('agreeTerms')
 
   const onSubmit = async (data: FormData) => {
     setLoading(true)
@@ -371,40 +365,6 @@ export default function LoginPage() {
                 </p>
               )}
             </div>
-
-            <div className="flex items-start gap-3">
-              <button
-                type="button"
-                onClick={() => setValue('agreeTerms', !agreed, { shouldValidate: true })}
-                className="w-5 h-5 rounded-md border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all"
-                style={{
-                  background: agreed ? '#6366f1' : 'transparent',
-                  borderColor: agreed ? '#6366f1' : 'var(--border)',
-                }}
-              >
-                {agreed && <Check size={11} className="text-white" strokeWidth={3} />}
-              </button>
-
-              <input type="checkbox" className="hidden" {...register('agreeTerms')} />
-
-              <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text2)' }}>
-                Tôi đồng ý với{' '}
-                <span className="cursor-pointer transition-colors" style={{ color: '#818cf8' }}>
-                  Điều khoản dịch vụ
-                </span>{' '}
-                và{' '}
-                <span className="cursor-pointer transition-colors" style={{ color: '#818cf8' }}>
-                  Chính sách bảo mật
-                </span>{' '}
-                của StudyMate AI
-              </p>
-            </div>
-
-            {errors.agreeTerms && (
-              <p className="text-[11px] -mt-2" style={{ color: '#f87171' }}>
-                {errors.agreeTerms.message}
-              </p>
-            )}
 
             <button
               type="submit"

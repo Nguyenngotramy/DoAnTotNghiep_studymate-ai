@@ -37,7 +37,7 @@ export default function AdminPage() {
       </h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {[
           { label: 'Tổng người dùng', value: stats?.totalUsers ?? '—', icon: Users,    color: '#6366f1' },
           { label: 'Nhóm hoạt động',  value: stats?.totalGroups ?? '—', icon: Activity, color: '#14b8a6' },
@@ -60,7 +60,7 @@ export default function AdminPage() {
             <Search size={13} className="text-[#5a5a6e] flex-shrink-0"/>
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(0) }}
               placeholder="Tìm kiếm người dùng..."
-              className="bg-transparent border-none outline-none text-[12px] text-[#f0f0f5] placeholder-[#5a5a6e] font-[DM_Sans] w-full"/>
+              className="bg-transparent border-none outline-none text-[12px] text-[#f0f0f5] placeholder-[#5a5a6e] font-sans w-full"/>
           </div>
         </div>
 

@@ -484,7 +484,7 @@ export default function StatisticsPage() {
           background: 'linear-gradient(160deg, color-mix(in srgb, var(--bg2) 92%, #6366f1 8%), var(--bg2))',
           border: '1px solid color-mix(in srgb, var(--border) 80%, #6366f1 20%)',
           borderRadius: 28,
-          padding: '28px 32px 24px',
+          padding: 'clamp(18px, 4vw, 28px) clamp(16px, 5vw, 32px) 24px',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -552,7 +552,7 @@ export default function StatisticsPage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
             gap: 12,
             marginTop: 22,
           }}
@@ -589,7 +589,7 @@ export default function StatisticsPage() {
       </div>
 
       {isLoading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
           {[1, 2, 3, 4].map(i => (
             <div
               key={i}
@@ -604,7 +604,7 @@ export default function StatisticsPage() {
         </div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 16 }}>
             <Card>
               <CardTitle icon={FolderKanban}>Tổng quan task của tôi</CardTitle>
               <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
@@ -686,7 +686,7 @@ export default function StatisticsPage() {
             </Card>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr 1fr', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
             <Card>
               <CardTitle icon={CalendarDays}>Task gần đây của tôi</CardTitle>
               {recentTasks.length === 0 ? (

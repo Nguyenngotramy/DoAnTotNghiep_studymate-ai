@@ -47,7 +47,7 @@ export default function ProgressView({ groupId, projectId, onClose }: ProgressVi
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-2xl rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg2)', borderColor: 'var(--border)', border: '1px solid var(--border)' }}>
+      <div className="w-full max-w-2xl rounded-2xl p-4 sm:p-6 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg2)', borderColor: 'var(--border)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-bold" style={{ color: 'var(--text)' }}>

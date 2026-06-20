@@ -22,7 +22,7 @@ export default function ProjectProgressPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-6 flex items-center justify-center" style={{ background: 'var(--bg1)' }}>
+      <div className="min-h-screen p-3 sm:p-6 flex items-center justify-center" style={{ background: 'var(--bg1)' }}>
         <div style={{ color: 'var(--text2)' }}>Đang tải...</div>
       </div>
     )
@@ -30,7 +30,7 @@ export default function ProjectProgressPage() {
 
   if (!progress?.data) {
     return (
-      <div className="min-h-screen p-6 flex items-center justify-center" style={{ background: 'var(--bg1)' }}>
+      <div className="min-h-screen p-3 sm:p-6 flex items-center justify-center" style={{ background: 'var(--bg1)' }}>
         <div style={{ color: 'var(--text2)' }}>Không tìm thấy dữ liệu tiến độ</div>
       </div>
     )
@@ -56,7 +56,7 @@ export default function ProjectProgressPage() {
   }
 
   return (
-    <div className="min-h-screen p-6" style={{ background: 'var(--bg1)' }}>
+    <div className="min-h-screen p-3 sm:p-6" style={{ background: 'var(--bg1)' }}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <ProjectProgressHeader

@@ -31,7 +31,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
-import { chatApi, groupApi, taskApi } from '@/api/services'
+import { chatApi, groupApi, taskApi, membershipApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import type { ChatAttachment, ChatMessage, ChatReplyPreview, GroupMember, Task, TaskStatus } from '@/types'
@@ -244,6 +244,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
+  const [showGroupAgentHelp, setShowGroupAgentHelp] = useState(true)
   const [showMentionBox, setShowMentionBox] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -694,6 +695,11 @@ export default function ChatPage() {
     inputRef.current?.focus()
   }
 
+  const { data: membershipSummary } = useQuery({
+    queryKey: ['membership-me'],
+    queryFn: () => membershipApi.getMy(),
+    staleTime: 30_000,
+  })
   const memberCount = useMemo(
     () => group?.memberCount ?? group?.members?.length ?? safeMembers.length ?? 0,
     [group, safeMembers]
@@ -715,12 +721,12 @@ export default function ChatPage() {
 
   return (
     <div
-      className="flex h-[calc(100vh-4rem)] -m-5 overflow-hidden"
+      className="-mx-3 -my-4 flex h-[calc(100dvh-56px)] overflow-hidden sm:-m-5 sm:h-[calc(100vh-4rem)]"
       style={{ background: 'var(--bg)' }}
     >
       <div className="flex flex-col flex-1 min-w-0">
         <div
-          className="px-5 h-16 flex items-center gap-3 border-b flex-shrink-0"
+          className="h-16 flex-shrink-0 flex items-center gap-2 border-b px-3 sm:gap-3 sm:px-5"
           style={{
             background: 'var(--bg2)',
             borderColor: 'var(--border)',
@@ -834,7 +840,7 @@ export default function ChatPage() {
         )}
 
         <div
-          className="flex-1 overflow-y-auto px-5 py-4"
+          className="flex-1 overflow-y-auto px-3 py-4 sm:px-5"
           style={{ background: 'var(--bg)' }}
         >
           {messages.length === 0 ? (
@@ -897,7 +903,7 @@ export default function ChatPage() {
 
                       <div
                         className={clsx(
-                          'max-w-[78%] flex flex-col relative',
+                          'max-w-[88%] sm:max-w-[78%] flex flex-col relative',
                           isMe ? 'items-end' : 'items-start'
                         )}
                       >
@@ -1068,7 +1074,7 @@ export default function ChatPage() {
 
                                 {msg.taskProposal && (
                                   <div
-                                    className="mt-3 rounded-2xl border p-3 min-w-[320px] max-w-[560px]"
+                                    className="mt-3 rounded-2xl border p-3 w-full min-w-0 max-w-[560px] sm:min-w-[320px]"
                                     style={{
                                       background: 'rgba(139,92,246,.08)',
                                       borderColor: 'rgba(139,92,246,.28)',
@@ -1215,7 +1221,7 @@ export default function ChatPage() {
         </div>
 
         <div
-          className="px-5 py-4 border-t flex-shrink-0"
+          className="chat-composer px-3 py-3 border-t flex-shrink-0 sm:px-5 sm:py-4"
           style={{
             background: 'var(--bg2)',
             borderColor: 'var(--border)',
@@ -1284,6 +1290,26 @@ export default function ChatPage() {
             </div>
           )}
 
+          {showGroupAgentHelp && (
+            <div className="mb-3 rounded-2xl border p-3" style={{ background: 'rgba(139,92,246,.07)', borderColor: 'rgba(139,92,246,.24)' }}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="flex items-center gap-2 text-[12px] font-semibold text-violet-500"><Bot size={14} /> AI Group / GroupAgent</p>
+                  <p className="mt-1 text-[11px] leading-5" style={{ color: 'var(--text2)' }}>
+                    AI đọc môn học, thành viên và task hiện có để đề xuất phân công. Trưởng nhóm kiểm tra rồi bấm “Duyệt & tạo trên Kanban”.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {['Chia kế hoạch ôn IELTS 2 tuần', 'Phân công làm bài thuyết trình Toán', 'Tạo task hoàn thành dự án trước thứ Sáu'].map(example => (
+                      <button key={example} type="button" onClick={() => { setInput(`@GroupAgent ${example}`); inputRef.current?.focus() }}
+                        className="rounded-lg border px-2 py-1 text-[10px]" style={{ background: 'var(--bg2)', borderColor: 'var(--border)', color: 'var(--text2)' }}>{example}</button>
+                    ))}
+                  </div>
+                </div>
+                <button type="button" onClick={() => setShowGroupAgentHelp(false)} style={{ color: 'var(--text3)' }}><X size={14} /></button>
+              </div>
+              <p className="mt-2 text-[10px] text-violet-500">Chi phí: {membershipSummary?.aiCosts?.groupAgent ?? 3} token/lần · Còn {membershipSummary?.aiWallet?.available ?? '—'} token</p>
+            </div>
+          )}
           <div className="flex gap-2 items-center mb-3 flex-wrap">
             <input
               ref={imageRef}
@@ -1343,7 +1369,7 @@ export default function ChatPage() {
 
               {showEmoji && (
                 <div
-                  className="absolute bottom-12 left-0 rounded-2xl border p-3 grid grid-cols-5 gap-2 z-20"
+                  className="absolute bottom-12 left-0 right-0 z-20 grid grid-cols-5 gap-1.5 rounded-2xl border p-2 sm:right-auto sm:gap-2 sm:p-3"
                   style={{
                     background: 'var(--bg2)',
                     borderColor: 'var(--border)',
@@ -1381,17 +1407,19 @@ export default function ChatPage() {
             <button
               onClick={() => {
                 setInput('@GroupAgent ')
+                setShowGroupAgentHelp(true)
                 inputRef.current?.focus()
               }}
               className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
-              style={{
-                background: 'rgba(139,92,246,.1)',
-                borderColor: 'rgba(139,92,246,.3)',
-                color: '#a78bfa',
-              }}
+              style={{ background: 'rgba(139,92,246,.1)', borderColor: 'rgba(139,92,246,.3)', color: '#8b5cf6' }}
+              title="Nhờ AI đề xuất và phân công task cho thành viên"
             >
               <Bot size={14} />
-              @GroupAgent
+              AI chia task
+            </button>
+            <button type="button" onClick={() => setShowGroupAgentHelp(v => !v)} className="h-10 px-3 rounded-xl border text-[12px]"
+              style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}>
+              Cách dùng
             </button>
           </div>
 
@@ -1466,7 +1494,7 @@ export default function ChatPage() {
 
       {showSidePanel && (
         <div
-          className="w-[320px] border-l flex-shrink-0"
+          className="hidden w-[320px] flex-shrink-0 border-l xl:block"
           style={{
             background: 'var(--bg2)',
             borderColor: 'var(--border)',

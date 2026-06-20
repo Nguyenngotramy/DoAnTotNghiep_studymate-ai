@@ -704,7 +704,7 @@ export default function EditProfilePage() {
                 Thời gian rảnh
               </label>
 
-              <div className="grid grid-cols-4 gap-2 mb-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                 <select
                   value={slotDay}
                   onChange={e => setSlotDay(e.target.value)}

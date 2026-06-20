@@ -399,7 +399,7 @@ export default function MyStudyDrivePage() {
 
           <div className="mt-5 flex items-center gap-3 flex-wrap">
             <div
-              className="flex items-center gap-2 px-3 h-11 rounded-2xl flex-1 min-w-[260px]"
+              className="flex items-center gap-2 px-3 h-11 rounded-2xl flex-1 min-w-0 w-full sm:min-w-[260px]"
               style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}
             >
               <Search size={16} style={{ color: 'var(--text3)' }} />

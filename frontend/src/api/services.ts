@@ -814,6 +814,14 @@ export const membershipApi = {
   getOrders: () => api.get('/membership/orders').then(r => d<any[]>(r)),
   createOrder: (payload: { tier: 'SILVER' | 'GOLD'; period: 'WEEK' | 'MONTH' | 'YEAR'; note?: string }) =>
     api.post('/membership/orders', payload).then(r => d<any>(r)),
+  checkAiCredits: (action: string, personalApiKey = false) =>
+    api.post('/membership/ai-credits/check', { action, personalApiKey }).then(r => d<any>(r)),
+  consumeAiCredits: (action: string, personalApiKey = false) =>
+    api.post('/membership/ai-credits/consume', { action, personalApiKey }).then(r => d<any>(r)),
+  getAiTokenPackages: () => api.get('/membership/ai-token-packages').then(r => d<any>(r)),
+  getAiTokenOrders: () => api.get('/membership/ai-token-orders').then(r => d<any[]>(r)),
+  createAiTokenOrder: (payload: { packageCode: string; note?: string }) =>
+    api.post('/membership/ai-token-orders', payload).then(r => d<any>(r)),
 }
 
 export const adminMembershipApi = {
@@ -824,7 +832,12 @@ export const adminMembershipApi = {
     api.post(`/admin/membership/orders/${id}/approve`, { adminNote }).then(r => d<any>(r)),
   reject: (id: string, adminNote?: string) =>
     api.post(`/admin/membership/orders/${id}/reject`, { adminNote }).then(r => d<any>(r)),
-}
+  getAiTokenOrders: (status?: string) =>
+    api.get('/admin/membership/ai-token-orders', { params: status ? { status } : {} }).then(r => d<any[]>(r)),
+  approveAiToken: (id: string, adminNote?: string) =>
+    api.post(`/admin/membership/ai-token-orders/${id}/approve`, { adminNote }).then(r => d<any>(r)),
+  rejectAiToken: (id: string, adminNote?: string) =>
+    api.post(`/admin/membership/ai-token-orders/${id}/reject`, { adminNote }).then(r => d<any>(r)),}
 
 export const adminApi = {
   getDashboard: () => api.get('/admin/dashboard').then(r => d(r)),

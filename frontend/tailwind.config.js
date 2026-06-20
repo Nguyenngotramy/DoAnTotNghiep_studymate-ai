@@ -5,7 +5,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['DM Sans', 'sans-serif'],
+        sans: ['Nunito', 'Inter', 'sans-serif'],
+        display: ['Plus Jakarta Sans', 'Nunito', 'sans-serif'],
+        serif: ['Playfair Display', 'Georgia', 'serif'],
         mono: ['DM Mono', 'monospace'],
       },
       colors: {

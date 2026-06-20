@@ -5,7 +5,7 @@ import { authApi } from '@/api/services'
 import toast from 'react-hot-toast'
 import {
   LayoutDashboard, Users, Users2, FileText, MessageCircle,
-  BrainCircuit, AlertTriangle, Bell, Settings, LogOut, Wallet, BarChart3, Moon, Sun
+  BrainCircuit, AlertTriangle, Bell, Settings, LogOut, Wallet, BarChart3, Moon, Sun, Menu, X
 } from 'lucide-react'
 import clsx from 'clsx'
 import { useState } from 'react'
@@ -30,6 +30,7 @@ export default function AdminLayout() {
   const { user, refreshToken, logout } = useAuthStore()
   const navigate = useNavigate()
   const [logoError, setLogoError] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const { darkMode, toggleDarkMode } = useUiStore()
 
   const handleLogout = async () => {
@@ -41,8 +42,13 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-theme flex h-screen overflow-hidden bg-[var(--bg)] text-[var(--text)]">
-      {/* Sidebar Admin - màu đỏ */}
-      <aside className="w-[228px] min-w-[228px] flex flex-col bg-[var(--bg2)] border-r border-[var(--border)]">
+      {mobileNavOpen && (
+        <button type="button" aria-label="??ng menu" onClick={() => setMobileNavOpen(false)} className="fixed inset-0 z-40 bg-black/55 lg:hidden" />
+      )}
+      <aside className={clsx(
+        'fixed inset-y-0 left-0 z-50 flex w-[min(88vw,290px)] flex-col border-r border-[var(--border)] bg-[var(--bg2)] transition-transform duration-200 lg:static lg:z-auto lg:w-[228px] lg:min-w-[228px] lg:translate-x-0',
+        mobileNavOpen ? 'translate-x-0' : '-translate-x-full',
+      )}>
         {/* Logo */}
         <Link
           to="/admin/dashboard"
@@ -96,7 +102,8 @@ export default function AdminLayout() {
           </span>
         </Link>
 
-        <nav className="flex-1 px-2 py-3 overflow-y-auto">
+        <button type="button" onClick={() => setMobileNavOpen(false)} className="absolute right-3 top-3 rounded-lg p-2 text-[var(--text2)] lg:hidden" aria-label="??ng menu"><X size={18} /></button>
+        <nav className="flex-1 px-2 py-3 overflow-y-auto" onClick={() => setMobileNavOpen(false)}>
           <div className="text-[10px] font-medium text-[#5a5a6e] uppercase tracking-[.06em] px-2 py-2">Tổng quan</div>
           <AdminNavItem to="/admin/dashboard" icon={LayoutDashboard} label="Dashboard Admin" />
           <AdminNavItem to="/admin/stats"     icon={LayoutDashboard} label="Thống kê hệ thống" />
@@ -140,7 +147,8 @@ export default function AdminLayout() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 min-h-14 flex items-center gap-3 px-5 bg-[var(--bg)] border-b border-[var(--border)]">
+        <header className="h-14 min-h-14 flex items-center gap-2 px-3 sm:gap-3 sm:px-5 bg-[var(--bg)] border-b border-[var(--border)]">
+          <button type="button" onClick={() => setMobileNavOpen(true)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg2)] text-[var(--text2)] lg:hidden" aria-label="M? menu"><Menu size={18} /></button>
           <span className="text-[13px] font-medium text-[var(--text)] flex-1">Bảng điều khiển quản trị</span>
           <button
             type="button"
@@ -151,11 +159,11 @@ export default function AdminLayout() {
           >
             {darkMode ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-          <span className="text-[10px] font-semibold px-3 py-1 rounded-md" style={{ background: 'rgba(220,38,38,.15)', color: '#f87171', border: '0.5px solid rgba(220,38,38,.3)' }}>
+          <span className="hidden text-[10px] font-semibold px-3 py-1 rounded-md sm:inline-flex" style={{ background: 'rgba(220,38,38,.15)', color: '#f87171', border: '0.5px solid rgba(220,38,38,.3)' }}>
             Chế độ Admin
           </span>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:p-6">
           <Outlet />
         </main>
       </div>

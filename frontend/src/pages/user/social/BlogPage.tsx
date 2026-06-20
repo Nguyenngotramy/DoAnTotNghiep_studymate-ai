@@ -1026,7 +1026,7 @@ function PostCard({
           <span>{cmts} bình luận</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button
             onClick={() => postId && onLike(postId)}
             className={clsx(

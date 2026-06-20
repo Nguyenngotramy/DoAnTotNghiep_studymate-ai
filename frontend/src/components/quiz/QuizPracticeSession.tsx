@@ -87,7 +87,7 @@ export default function QuizPracticeSession({
             {quizSet.title}
           </p>
 
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             {[
               { label: 'Đúng', val: score, color: '#22c55e', icon: '✅' },
               { label: 'Sai', val: total - score, color: '#ef4444', icon: '❌' },

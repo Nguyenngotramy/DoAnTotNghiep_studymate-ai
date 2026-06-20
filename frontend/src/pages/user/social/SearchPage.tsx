@@ -36,7 +36,7 @@ export default function SearchPage() {
         <Search size={16} className="text-[#5a5a6e] flex-shrink-0"/>
         <input value={query} onChange={e => setQuery(e.target.value)} autoFocus
           placeholder="Tìm nhóm, task, tài liệu, thành viên..."
-          className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#f0f0f5] placeholder-[#5a5a6e] font-[DM_Sans]"/>
+          className="flex-1 bg-transparent border-none outline-none text-[14px] text-[#f0f0f5] placeholder-[#5a5a6e] font-sans"/>
         {query && (
           <button onClick={() => setQuery('')} className="text-[#5a5a6e] hover:text-[#f0f0f5] text-[18px] leading-none">×</button>
         )}

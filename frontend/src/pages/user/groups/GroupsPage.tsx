@@ -18,7 +18,7 @@ const COLORS = ['#6366f1', '#14b8a6', '#f97316', '#22c55e', '#ec4899', '#f59e0b'
 
 const inp = (err?: boolean) =>
   clsx(
-    'w-full h-9 px-3 rounded-lg border text-[13px] outline-none transition-colors font-[DM_Sans]',
+    'w-full h-9 px-3 rounded-lg border text-[13px] outline-none transition-colors font-sans',
     err ? 'border-red-500/50' : 'focus:border-indigo-500/60',
   )
 
@@ -466,7 +466,7 @@ export default function GroupsPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => (
             <div
               key={i}

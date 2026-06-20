@@ -986,7 +986,7 @@ export default function FlashcardPage() {
               Luyện Quiz: {activeDeck?.title ?? 'Từ vựng'}
             </p>
 
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               {[
                 { label: 'Đúng', val: quizScore, color: '#22c55e', icon: '✅' },
                 { label: 'Sai', val: total - quizScore, color: '#ef4444', icon: '❌' },

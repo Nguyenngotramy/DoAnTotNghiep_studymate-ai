@@ -119,7 +119,7 @@ export default function PaymentPage() {
       <div className="rounded-xl border border-white/[.06] bg-[#12121a] p-5">
         <h2 className="text-[14px] font-semibold text-[#f0f0f5] mb-4">Chọn số tiền</h2>
         
-        <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
           {PRESET_AMOUNTS.map((amount) => (
             <button
               key={amount}

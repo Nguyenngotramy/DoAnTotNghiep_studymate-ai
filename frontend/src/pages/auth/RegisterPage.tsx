@@ -11,6 +11,8 @@ import {
   GraduationCap, BookOpen, School, Users2, Check
 } from 'lucide-react'
 import clsx from 'clsx'
+import AcademicSelect from '@/components/AcademicSelect'
+import { useAcademicCatalog } from '@/hooks/useAcademicCatalog'
 
 const step1Schema = z.object({
   fullName: z.string().min(2, 'Nhập họ tên đầy đủ'),
@@ -150,12 +152,12 @@ export default function RegisterPage() {
   const [customInterest, setCustomInterest] = useState('')
   const [goal, setGoal] = useState('')
   const [schoolOptions, setSchoolOptions] = useState<string[]>([])
-  const [majorOptions, setMajorOptions] = useState<string[]>([])
   const [fieldOptions, setFieldOptions] = useState<string[]>([])
   const [subjectOptions, setSubjectOptions] = useState<string[]>(SUBJECTS)
   const [goalOptions, setGoalOptions] = useState<string[]>(GOALS)
   const [timeSlots, setTimeSlots] = useState(DEFAULT_TIME_SLOTS)
   const [schedule, setSchedule] = useState<{ day: string; start: string; end: string }[]>([])
+  const academicCatalog = useAcademicCatalog(userType === 'STUDENT' ? school : '')
 
   const {
     register,
@@ -171,17 +173,21 @@ export default function RegisterPage() {
   const agreed = watch('agreeTerms')
 
   useEffect(() => {
-    userApi.onboardingOptions({ userType: userType || undefined, major: major || undefined, q: school || undefined })
+    userApi.onboardingOptions({ userType: userType || undefined, major: major || undefined })
       .then(data => {
         if (data.schools) setSchoolOptions(data.schools)
-        if (data.majors) setMajorOptions(data.majors)
         if (data.interestFields) setFieldOptions(data.interestFields)
         if (data.subjects?.length) setSubjectOptions(data.subjects)
         if (data.goals?.length) setGoalOptions(data.goals)
         if (data.timeSlots?.length) setTimeSlots(data.timeSlots)
       })
       .catch(() => {})
-  }, [userType, major, school])
+  }, [userType, major])
+
+  const selectSchool = (value: string) => {
+    if (value !== school) setMajor('')
+    setSchool(value)
+  }
 
   const toggleSubject = (sub: string, list: string[], setList: (v: string[]) => void) => {
     if (list.includes(sub)) setList(list.filter(s => s !== sub))
@@ -654,46 +660,33 @@ export default function RegisterPage() {
                 <label className="block text-[12px] font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
                   Trường học / Tổ chức <span style={{ color: 'var(--text3)', fontWeight: 400 }}>(tuỳ chọn)</span>
                 </label>
-                <input
+                <AcademicSelect
                   value={school}
-                  onChange={e => setSchool(e.target.value)}
-                  list="register-school-options"
-                  placeholder="VD: ĐH Bách Khoa HCM, THPT Nguyễn Huệ..."
-                  className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all"
-                  style={{
-                    background: 'var(--bg2)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text)',
-                  }}
+                  onChange={selectSchool}
+                  options={userType === 'STUDENT' ? academicCatalog.schools : schoolOptions}
+                  placeholder={userType === 'STUDENT' ? 'Chọn trường đại học' : 'Chọn trường học / tổ chức'}
+                  type="school"
+                  loading={userType === 'STUDENT' && academicCatalog.loading}
+                  helperText="Bấm để chọn từ danh sách, không cần nhập tên."
                 />
-                <datalist id="register-school-options">
-                  {schoolOptions.map(s => <option key={s} value={s} />)}
-                </datalist>
               </div>
 
               {userType === 'STUDENT' && (
                 <div className="mb-4">
                   <label className="block text-[12px] font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
-                    Chuyen nganh dang hoc
+                    Chuy?n ng?nh ?ang h?c
                   </label>
-                  <input
+                  <AcademicSelect
                     value={major}
-                    onChange={e => setMajor(e.target.value)}
-                    list="register-major-options"
-                    placeholder="VD: Cong nghe thong tin, Marketing, Y da khoa..."
-                    className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all"
-                    style={{
-                      background: 'var(--bg2)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text)',
-                    }}
+                    onChange={setMajor}
+                    options={academicCatalog.majors}
+                    placeholder={school ? 'Chọn ngành trường đang đào tạo' : 'Chọn ngành học hoặc hướng nghề'}
+                    type="major"
+                    loading={academicCatalog.loading}
+                    helperText={school
+                      ? `Danh sách được lọc theo ${school}.`
+                      : 'Có thể chọn ngành trước; danh mục bao phủ nhiều nhóm ngành và hướng nghề.'}
                   />
-                  <datalist id="register-major-options">
-                    {majorOptions.map(s => <option key={s} value={s} />)}
-                  </datalist>
-                  <p className="text-[11px] mt-1.5" style={{ color: 'var(--text3)' }}>
-                    Chuyen nganh dung de goi y mon hoc phu hop; ban van co the quan tam nganh khac o buoc sau.
-                  </p>
                 </div>
               )}
 

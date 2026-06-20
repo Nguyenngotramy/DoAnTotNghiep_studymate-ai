@@ -30,6 +30,10 @@ export default function AdminMembershipPage() {
     queryFn: () => adminMembershipApi.getOrders(filter || undefined),
   })
 
+  const { data: tokenOrders = [], refetch: refetchTokenOrders } = useQuery({
+    queryKey: ['admin-ai-token-orders', filter],
+    queryFn: () => adminMembershipApi.getAiTokenOrders(filter || undefined),
+  })
   useEffect(() => {
     adminApi.getAdminSettings().then(data => {
       if (data?.membershipBank) setBank(data.membershipBank as Record<string, string>)
@@ -59,6 +63,16 @@ export default function AdminMembershipPage() {
     onError: (e: any) => toast.error(e?.response?.data?.message || 'Lỗi'),
   })
 
+  const approveTokenMut = useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) => adminMembershipApi.approveAiToken(id, note),
+    onSuccess: () => { toast.success('Đã cộng token vào ví người dùng'); refetchTokenOrders() },
+    onError: (e: any) => toast.error(e?.response?.data?.message || 'Lỗi duyệt token'),
+  })
+  const rejectTokenMut = useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) => adminMembershipApi.rejectAiToken(id, note),
+    onSuccess: () => { toast.success('Đã từ chối đơn token'); refetchTokenOrders() },
+    onError: (e: any) => toast.error(e?.response?.data?.message || 'Lỗi từ chối token'),
+  })
   const saveConfig = async (bankOverride?: Record<string, string>) => {
     try {
       setSavingConfig(true)
@@ -278,6 +292,22 @@ export default function AdminMembershipPage() {
         ))}
       </div>
 
+      <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
+        <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+          <div><h2 className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>Đơn mua AI token</h2><p className="text-[10px]" style={{ color: 'var(--text3)' }}>Duyệt xong hệ thống tự cộng token vào ví.</p></div>
+          <span className="rounded-full bg-violet-500/10 px-2 py-1 text-[10px] text-violet-500">{tokenOrders.length} đơn</span>
+        </div>
+        <table className="w-full text-[12px]">
+          <thead style={{ background: 'var(--bg3)', color: 'var(--text3)' }}><tr><th className="px-4 py-3 text-left">Người dùng</th><th className="px-4 py-3 text-left">Token</th><th className="px-4 py-3 text-left">Số tiền</th><th className="px-4 py-3 text-left">Mã CK</th><th className="px-4 py-3 text-left">Trạng thái</th><th className="px-4 py-3 text-left">Thao tác</th></tr></thead>
+          <tbody>{tokenOrders.map((order: any) => <tr key={order.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
+            <td className="px-4 py-3"><p style={{ color: 'var(--text)' }}>{order.userFullName}</p><p className="text-[10px]" style={{ color: 'var(--text3)' }}>{order.userEmail}</p></td>
+            <td className="px-4 py-3 font-bold text-violet-500">{order.tokenAmount}</td><td className="px-4 py-3 text-emerald-500">{formatVnd(order.amountVnd)}</td><td className="px-4 py-3 font-mono" style={{ color: 'var(--text2)' }}>{order.transferCode}</td>
+            <td className="px-4 py-3"><span className="text-[10px]" style={{ color: order.status === 'APPROVED' ? '#22c55e' : order.status === 'PENDING' ? '#f59e0b' : '#ef4444' }}>{order.status}</span></td>
+            <td className="px-4 py-3">{order.status === 'PENDING' && <div className="flex gap-1"><button type="button" onClick={() => approveTokenMut.mutate({ id: order.id })} className="rounded-lg border border-green-500/30 p-1.5 text-green-500"><Check size={14} /></button><button type="button" onClick={() => rejectTokenMut.mutate({ id: order.id, note: window.prompt('Lý do từ chối') ?? '' })} className="rounded-lg border border-red-500/30 p-1.5 text-red-500"><X size={14} /></button></div>}</td>
+          </tr>)}</tbody>
+        </table>
+        {tokenOrders.length === 0 && <p className="py-8 text-center text-[11px]" style={{ color: 'var(--text3)' }}>Chưa có đơn mua token</p>}
+      </div>
       <div className="rounded-xl border border-white/[.06] overflow-hidden">
         <table className="w-full text-[12px]">
           <thead className="bg-[#0a0a0f] text-[#5a5a6e] text-left">

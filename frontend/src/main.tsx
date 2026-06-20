@@ -16,10 +16,17 @@ function ThemeSync() {
   const darkMode = useUiStore(s => s.darkMode)
 
   useEffect(() => {
-    document.documentElement.setAttribute(
-      'data-theme',
-      darkMode ? 'dark' : 'light'
-    )
+    const theme = darkMode ? 'dark' : 'light'
+    const root = document.documentElement
+
+    root.dataset.theme = theme
+    root.classList.toggle('dark', darkMode)
+    document.body.dataset.theme = theme
+    document.body.classList.toggle('dark', darkMode)
+    root.style.colorScheme = theme
+
+    const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    themeColor?.setAttribute('content', darkMode ? '#0f0f13' : '#f6f7fb')
   }, [darkMode])
 
   return null
@@ -37,7 +44,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           color: 'var(--text)',
           border: '1px solid var(--border)',
           fontSize: '13px',
-          fontFamily: 'DM Sans, sans-serif',
+          fontFamily: 'Nunito, Inter, sans-serif',
         },
       }}
     />

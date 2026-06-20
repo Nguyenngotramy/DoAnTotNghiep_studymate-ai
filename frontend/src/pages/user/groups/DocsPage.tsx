@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { documentApi, flashcardApi, quizApi, postApi, groupApi } from '@/api/services'
+import { documentApi, flashcardApi, quizApi, postApi, groupApi, membershipApi } from '@/api/services'
 import type { Document, Flashcard, QuizQuestion, FlashcardFolder, QuizFolder, Post } from '@/types'
 import {
   Upload,
@@ -23,7 +23,7 @@ import {
   Pencil,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { getAiRequestHeaders, withAiConfig } from '@/utils/aiConfig'
+import { getAiConfig, getAiRequestHeaders, withAiConfig } from '@/utils/aiConfig'
 import { addNote } from '@/utils/notesStorage'
 
 // ─────────────────────────────────────────
@@ -66,6 +66,20 @@ const resolveDocUrl = (fileUrl?: string) => {
 // Không còn dùng extractMarkdown() ở frontend nữa.
 // ─────────────────────────────────────────
 
+type AiCreditAction = 'summary' | 'flashcard' | 'quiz' | 'documentChat'
+
+function usesPersonalAiKey() {
+  const config = getAiConfig()
+  return Boolean(config.validated && config.api_key)
+}
+
+async function checkAiCredit(action: AiCreditAction) {
+  await membershipApi.checkAiCredits(action, usesPersonalAiKey())
+}
+
+async function consumeAiCredit(action: AiCreditAction) {
+  await membershipApi.consumeAiCredits(action, usesPersonalAiKey())
+}
 async function backendSummary(
   doc: Document,
   style: string,
@@ -74,6 +88,7 @@ async function backendSummary(
   docTopic?: string,
   blogContext?: string,
 ): Promise<string> {
+  await checkAiCredit('summary')
   const res = await fetch(`${BACKEND_URL}/summary`, {
     method: 'POST',
     headers: getAiRequestHeaders(true),
@@ -90,6 +105,7 @@ async function backendSummary(
   })
   if (!res.ok) throw new Error(await res.text())
   const data = await res.json()
+  await consumeAiCredit('summary')
   return data.summary as string
 }
 
@@ -116,6 +132,7 @@ async function backendFlashcard(
   subject?: string,
   docTopic?: string,
 ): Promise<Flashcard[]> {
+  await checkAiCredit('flashcard')
   const res = await fetch(`${BACKEND_URL}/flashcard`, {
     method: 'POST',
     headers: getAiRequestHeaders(true),
@@ -135,6 +152,7 @@ async function backendFlashcard(
   if (data.pipeline === 'vocabulary_json' && data.vocabulary?.vocabulary?.length) {
     toast.success(`Đã trích ${data.vocabulary.vocabulary.length} từ → tạo ${data.num_cards} flashcard`)
   }
+  await consumeAiCredit('flashcard')
   return (data.flashcards as { question: string; answer: string }[]).map((c, i) => ({
     id: String(i),
     question: c.question,
@@ -149,6 +167,7 @@ async function backendQuiz(
   subject?: string,
   docTopic?: string,
 ): Promise<QuizQuestion[]> {
+  await checkAiCredit('quiz')
   const res = await fetch(`${BACKEND_URL}/quiz`, {
     method: 'POST',
     headers: getAiRequestHeaders(true),
@@ -170,6 +189,7 @@ async function backendQuiz(
   if (Number(data.num_questions) < num_questions) {
     toast(`AI tạo được ${data.num_questions}/${num_questions} câu hợp lệ; câu trùng hoặc lỗi đã được loại bỏ.`)
   }
+  await consumeAiCredit('quiz')
   return (data.questions as Record<string, unknown>[]).map((q, i) => ({
     id: String(i),
     question: String(q.question ?? ''),
@@ -193,6 +213,7 @@ async function backendChat(
   docTopic?: string,
   sessionId?: string,
 ): Promise<ChatApiResult> {
+  await checkAiCredit('documentChat')
   const res = await fetch(`${BACKEND_URL}/chat`, {
     method: 'POST',
     headers: getAiRequestHeaders(true),
@@ -204,7 +225,9 @@ async function backendChat(
     })),
   })
   if (!res.ok) throw new Error(await res.text())
-  return res.json()
+  const data = await res.json()
+  await consumeAiCredit('documentChat')
+  return data
 }
 
 type DocChatMessage = {

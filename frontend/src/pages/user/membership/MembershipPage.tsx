@@ -17,14 +17,14 @@ const TIER_META: Record<TierKey, {
 }> = {
   SILVER: {
     label: 'Bạc', color: '#94a3b8',
-    desc: 'Nhiều nhóm, dung lượng lớn hơn, AI x30/tháng',
+    desc: '20 nhóm, 2 GB lưu trữ và 150 lượt AI mỗi tháng',
     gradient: 'linear-gradient(135deg, #475569 0%, #94a3b8 50%, #cbd5e1 100%)',
     icon: <Shield size={18} />,
     accentColor: '#94a3b8',
   },
   GOLD: {
     label: 'Vàng', color: '#f59e0b',
-    desc: 'Không giới hạn nhóm & AI, dung lượng tối đa',
+    desc: 'Không giới hạn nhóm, 10 GB lưu trữ và 500 lượt AI mỗi tháng',
     gradient: 'linear-gradient(135deg, #b45309 0%, #f59e0b 50%, #fde68a 100%)',
     icon: <Crown size={18} />,
     accentColor: '#f59e0b',
@@ -42,7 +42,23 @@ function formatVnd(n: number) {
 }
 
 function limitText(v: number) {
-  return v < 0 ? '∞' : String(v)
+  return v < 0 ? 'Không giới hạn' : String(v)
+}
+
+function formatStorage(mb: number) {
+  if (mb < 0) return 'Không giới hạn'
+  if (mb >= 1024) return `${Number((mb / 1024).toFixed(1))} GB`
+  return `${mb} MB`
+}
+
+function planBenefits(limit: any) {
+  return [
+    `${limitText(limit.maxGroups ?? 5)} nhóm học do bạn quản lý`,
+    `${formatStorage(limit.studyDriveMb ?? 500)} dung lượng Học tập cá nhân`,
+    `${limitText(limit.aiCreditsPerMonth ?? limit.aiTrendPerMonth ?? 20)} lượt AI mỗi tháng`,
+    'Kanban, chat nhóm, flashcard và quiz',
+    'Theo dõi tiến độ, thống kê và bảng xếp hạng',
+  ]
 }
 
 // ── Payment Modal ──
@@ -66,6 +82,9 @@ function PaymentModal({
   const [qrVisible, setQrVisible] = useState(false)
   const onCloseRef = useRef(onClose)
   const onApprovedRef = useRef(onApproved)
+  const isTokenOrder = Number(order.tokenAmount) > 0
+  const isGold = order.tier === 'GOLD'
+  const accentColor = isTokenOrder ? '#8b5cf6' : isGold ? '#f59e0b' : '#94a3b8'
   useEffect(() => { onCloseRef.current = onClose }, [onClose])
   useEffect(() => { onApprovedRef.current = onApproved }, [onApproved])
 
@@ -95,7 +114,7 @@ function PaymentModal({
   useEffect(() => {
     const poll = setInterval(async () => {
       try {
-        const orders = await membershipApi.getOrders()
+        const orders = isTokenOrder ? await membershipApi.getAiTokenOrders() : await membershipApi.getOrders()
         const thisOrder = orders.find((o: any) => o.id === order.id)
         if (thisOrder?.status === 'APPROVED') {
           clearInterval(poll)
@@ -112,7 +131,7 @@ function PaymentModal({
       } catch { /* ignore */ }
     }, 10_000) // poll mỗi 10 giây
     return () => clearInterval(poll)
-  }, [order.id])
+  }, [order.id, isTokenOrder])
 
   const handleClose = () => {
     setVisible(false)
@@ -131,8 +150,6 @@ function PaymentModal({
   const mins = Math.floor(timer / 60)
   const secs = (timer % 60).toString().padStart(2, '0')
 
-  const isGold = order.tier === 'GOLD'
-  const accentColor = isGold ? '#f59e0b' : '#94a3b8'
 
   return createPortal(
     <div
@@ -182,7 +199,7 @@ function PaymentModal({
             <div>
               <p className="text-[20px] font-black text-green-400">Đã được duyệt!</p>
               <p className="text-[12px] mt-1" style={{ color: 'var(--text3)' }}>
-                Gói {isGold ? 'Vàng' : 'Bạc'} của bạn đã được kích hoạt.
+                {isTokenOrder ? `${order.tokenAmount} AI token đã được cộng vào ví.` : `Gói ${isGold ? 'Vàng' : 'Bạc'} của bạn đã được kích hoạt.`}
               </p>
             </div>
           </div>
@@ -196,7 +213,7 @@ function PaymentModal({
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
                     style={{ background: `${accentColor}20`, border: `1px solid ${accentColor}40` }}>
-                    {isGold ? <Crown size={18} style={{ color: accentColor }} /> : <Shield size={18} style={{ color: accentColor }} />}
+                    {isTokenOrder ? <Sparkles size={18} style={{ color: accentColor }} /> : isGold ? <Crown size={18} style={{ color: accentColor }} /> : <Shield size={18} style={{ color: accentColor }} />}
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
@@ -204,7 +221,7 @@ function PaymentModal({
                       <span className="text-[11px] font-semibold text-green-400">Đơn đã được tạo</span>
                     </div>
                     <p className="text-[17px] font-black mt-0.5" style={{ color: 'var(--text)' }}>
-                      Gói {isGold ? 'Vàng' : 'Bạc'} · {formatVnd(order.amountVnd)}
+                      {isTokenOrder ? `${order.tokenAmount} AI token` : `Gói ${isGold ? 'Vàng' : 'Bạc'}`} · {formatVnd(order.amountVnd)}
                     </p>
                   </div>
                 </div>
@@ -237,7 +254,7 @@ function PaymentModal({
             </div>
 
             {/* 2-column body */}
-            <div className="grid grid-cols-5 gap-0 border-t" style={{ borderColor: 'var(--border)' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-0 border-t" style={{ borderColor: 'var(--border)' }}>
 
               {/* Left col — transfer info (3/5) */}
               <div className="col-span-3 px-6 py-4 space-y-2 border-r" style={{ borderColor: 'var(--border)' }}>
@@ -341,6 +358,7 @@ export default function MembershipPage() {
   const [period, setPeriod] = useState<PeriodKey>('MONTH')
   const [note, setNote] = useState('')
   const [activeOrder, setActiveOrder] = useState<any>(null)
+  const [tokenPackage, setTokenPackage] = useState('MEDIUM')
 
   const { data: summary, isLoading: loadingMe } = useQuery({
     queryKey: ['membership-me'],
@@ -354,6 +372,16 @@ export default function MembershipPage() {
     queryFn: () => membershipApi.getPlans(),
   })
 
+  const { data: tokenConfig } = useQuery({
+    queryKey: ['ai-token-packages'],
+    queryFn: () => membershipApi.getAiTokenPackages(),
+  })
+
+  const { data: tokenOrders = [] } = useQuery({
+    queryKey: ['ai-token-orders'],
+    queryFn: () => membershipApi.getAiTokenOrders(),
+    refetchInterval: 10000,
+  })
   const { data: orders = [] } = useQuery({
     queryKey: ['membership-orders'],
     queryFn: () => membershipApi.getOrders(),
@@ -386,9 +414,19 @@ export default function MembershipPage() {
     onError: (e: any) => toast.error(e?.response?.data?.message || 'Không tạo được đơn'),
   })
 
-  const bank = plans?.bank ?? {}
+  const buyTokenMut = useMutation({
+    mutationFn: () => membershipApi.createAiTokenOrder({ packageCode: tokenPackage }),
+    onSuccess: order => {
+      qc.invalidateQueries({ queryKey: ['ai-token-orders'] })
+      setActiveOrder(order)
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.message || 'Không tạo được đơn mua token'),
+  })
+  const bank = plans?.bank ?? tokenConfig?.bank ?? {}
   const limits = plans?.limits ?? {}
   const usage = summary?.usage ?? {}
+  const aiWallet = summary?.aiWallet ?? {}
+  const tokenPackages = tokenConfig?.packages ?? {}
 
   if (loadingMe) {
     return (
@@ -446,7 +484,7 @@ export default function MembershipPage() {
               Nâng cấp trải<br />nghiệm học tập
             </h1>
             <p className="text-[12px] mt-2 text-indigo-200/70 max-w-xs">
-              Tạo nhiều nhóm hơn, mở khóa AI không giới hạn và dùng dung lượng học tập cá nhân rộng mở.
+              Chọn gói phù hợp để tăng số nhóm, dung lượng lưu trữ và lượt sử dụng AI mỗi tháng.
             </p>
           </div>
 
@@ -467,12 +505,53 @@ export default function MembershipPage() {
         </div>
       </div>
 
+      <section className="rounded-3xl border p-5 sm:p-6" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-violet-500" />
+              <h2 className="text-[17px] font-bold" style={{ color: 'var(--text)' }}>Ví AI token</h2>
+            </div>
+            <p className="mt-1 text-[11px]" style={{ color: 'var(--text3)' }}>
+              Quota gói được làm mới mỗi tháng. Token mua thêm không hết hạn và chỉ bị trừ khi dùng AI hệ thống.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <WalletStat label="Còn trong gói" value={aiWallet.includedRemaining ?? 0} />
+            <WalletStat label="Mua thêm" value={aiWallet.purchased ?? 0} />
+            <WalletStat label="Tổng dùng được" value={aiWallet.available ?? 0} accent />
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          {Object.entries(tokenPackages).map(([code, pkg]: [string, any]) => (
+            <button key={code} type="button" onClick={() => setTokenPackage(code)}
+              className="rounded-2xl border p-4 text-left transition-all"
+              style={{
+                background: tokenPackage === code ? 'rgba(139,92,246,.10)' : 'var(--bg3)',
+                borderColor: tokenPackage === code ? 'rgba(139,92,246,.45)' : 'var(--border)',
+              }}>
+              <p className="text-[18px] font-black text-violet-500">{pkg.tokens} token</p>
+              <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--text)' }}>{formatVnd(pkg.priceVnd)}</p>
+              <p className="mt-1 text-[10px]" style={{ color: 'var(--text3)' }}>Không hết hạn</p>
+            </button>
+          ))}
+        </div>
+        <button type="button" onClick={() => buyTokenMut.mutate()} disabled={buyTokenMut.isPending || !tokenPackages[tokenPackage]}
+          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 text-[13px] font-semibold text-white hover:bg-violet-500 disabled:opacity-50">
+          {buyTokenMut.isPending ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
+          Nạp tiền mua {tokenPackages[tokenPackage]?.tokens ?? 0} AI token
+        </button>
+        {tokenOrders.some((order: any) => order.status === 'PENDING') && (
+          <p className="mt-2 text-center text-[10px] text-amber-500">Bạn đang có một đơn token chờ duyệt.</p>
+        )}
+      </section>
       {/* ── Tier compare cards ── */}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'var(--text3)' }}>
           So sánh gói
         </p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {(['MEMBER', 'SILVER', 'GOLD'] as const).map(key => {
             const lim = limits[key] ?? {}
             const isCurrent = summary?.tier === key
@@ -513,19 +592,15 @@ export default function MembershipPage() {
                     {key === 'MEMBER' ? 'Miễn phí' : key === 'SILVER' ? 'Bạc' : 'Vàng'}
                   </p>
                 </div>
-                <ul className="space-y-1.5">
-                  <li className="flex items-start gap-1.5 text-[11px]" style={{ color: 'var(--text2)' }}>
-                    <Check size={11} className="shrink-0 mt-0.5 text-green-400" />
-                    <span>{limitText(lim.maxGroups ?? 5)} nhóm</span>
-                  </li>
-                  <li className="flex items-start gap-1.5 text-[11px]" style={{ color: 'var(--text2)' }}>
-                    <Check size={11} className="shrink-0 mt-0.5 text-green-400" />
-                    <span>{limitText(lim.studyDriveMb ?? 500)} MB lưu trữ</span>
-                  </li>
-                  <li className="flex items-start gap-1.5 text-[11px]" style={{ color: 'var(--text2)' }}>
-                    <Zap size={11} className="shrink-0 mt-0.5 text-amber-400" />
-                    <span>{limitText(lim.aiTrendPerMonth ?? 3)} AI/tháng</span>
-                  </li>
+                <ul className="space-y-2">
+                  {planBenefits(lim).map((benefit, index) => (
+                    <li key={benefit} className="flex items-start gap-2 text-[11px] leading-relaxed" style={{ color: 'var(--text2)' }}>
+                      {index === 2
+                        ? <Zap size={12} className="shrink-0 mt-0.5 text-amber-400" />
+                        : <Check size={12} className="shrink-0 mt-0.5 text-green-400" />}
+                      <span>{benefit}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
             )
@@ -536,10 +611,17 @@ export default function MembershipPage() {
       {/* ── Order form (full width) ── */}
       <div className="rounded-2xl border p-6 space-y-5"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
-        <h2 className="text-[15px] font-bold" style={{ color: 'var(--text)' }}>Chọn gói nâng cấp</h2>
+        <div>
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-indigo-500">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500 text-white">1</span>
+            Chọn gói và chu kỳ
+          </div>
+          <h2 className="mt-2 text-[18px] font-bold" style={{ color: 'var(--text)' }}>Gói nào phù hợp với bạn?</h2>
+          <p className="mt-1 text-[11px]" style={{ color: 'var(--text3)' }}>Quyền lợi được áp dụng ngay sau khi đơn thanh toán được duyệt.</p>
+        </div>
 
         {/* Tier selector */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {(['SILVER', 'GOLD'] as TierKey[]).map(t => {
             const isActive = tier === t
             const meta = TIER_META[t]
@@ -569,11 +651,36 @@ export default function MembershipPage() {
           })}
         </div>
 
+        <div className="rounded-2xl border p-4" style={{ background: 'var(--bg3)', borderColor: `${tierMeta.accentColor}45` }}>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: tierMeta.accentColor }}>Bạn sẽ nhận được</p>
+              <p className="mt-1 text-[14px] font-bold" style={{ color: 'var(--text)' }}>Quyền lợi gói {tierMeta.label}</p>
+            </div>
+            <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold" style={{ background: `${tierMeta.accentColor}18`, color: tierMeta.accentColor }}>
+              {PERIOD_META[period].sublabel}
+            </span>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {planBenefits(limits[tier] ?? {}).map((benefit, index) => (
+              <div key={benefit} className="flex items-start gap-2 rounded-xl px-3 py-2.5" style={{ background: 'var(--bg2)' }}>
+                {index === 2
+                  ? <Zap size={14} className="mt-0.5 shrink-0 text-amber-400" />
+                  : <Check size={14} className="mt-0.5 shrink-0 text-green-500" />}
+                <span className="text-[11px] leading-relaxed" style={{ color: 'var(--text2)' }}>{benefit}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[10px] leading-relaxed" style={{ color: 'var(--text3)' }}>
+            Lượt AI trong gói được làm mới mỗi tháng. Token AI mua thêm được giữ riêng và không hết hạn.
+          </p>
+        </div>
+
         {/* Period + Price in a row */}
         <div className="grid md:grid-cols-2 gap-4 items-end">
           <div>
             <p className="text-[11px] mb-2 font-medium" style={{ color: 'var(--text3)' }}>Chu kỳ thanh toán</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {(['WEEK', 'MONTH', 'YEAR'] as PeriodKey[]).map(p => {
                 const isActive = period === p
                 const pmeta = PERIOD_META[p]
@@ -709,6 +816,14 @@ export default function MembershipPage() {
   )
 }
 
+function WalletStat({ label, value, accent = false }: { label: string; value: number; accent?: boolean }) {
+  return (
+    <div className="min-w-[92px] rounded-xl border px-3 py-2" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
+      <p className="text-[9px]" style={{ color: 'var(--text3)' }}>{label}</p>
+      <p className="text-[16px] font-black" style={{ color: accent ? '#8b5cf6' : 'var(--text)' }}>{value}</p>
+    </div>
+  )
+}
 function UsageBar({ label, used, max }: { label: string; used: number; max: number }) {
   const pct = max < 0 ? 100 : Math.min((used / max) * 100, 100)
   return (

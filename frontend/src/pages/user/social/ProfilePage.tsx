@@ -155,7 +155,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <div className="col-span-2 bg-[#16161d] border border-white/[.07] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <UserCircle size={16} className="text-indigo-400" />

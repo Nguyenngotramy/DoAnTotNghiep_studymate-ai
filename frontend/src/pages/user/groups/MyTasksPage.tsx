@@ -536,7 +536,7 @@ export default function MyTasksPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             {mode === 'GROUP' && (
-              <div className="relative min-w-[230px]">
+              <div className="relative min-w-0 w-full sm:min-w-[230px]">
                 <select
                   value={selectedGroupId}
                   onChange={e => setSelectedGroupId(e.target.value)}

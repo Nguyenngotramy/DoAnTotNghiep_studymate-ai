@@ -49,16 +49,13 @@ export default function AdminSettings() {
 
     maxFileUploadMb: 25,
     allowedFileTypes: 'PDF,DOC,DOCX,PPT,PPTX,TXT,PNG,JPG,JPEG,ZIP',
-    appearanceTheme: 'dark',
+    appearanceTheme: 'light',
   })
 
   useEffect(() => {
     adminApi.getAdminSettings()
       .then(data => {
         setSettings(prev => ({ ...prev, ...data }))
-        if (data.appearanceTheme === 'light' || data.appearanceTheme === 'dark') {
-          setDarkMode(data.appearanceTheme === 'dark')
-        }
       })
       .catch(() => toast.error('Không thể tải cài đặt hệ thống'))
       .finally(() => setLoading(false))

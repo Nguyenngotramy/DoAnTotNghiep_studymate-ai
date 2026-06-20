@@ -1124,10 +1124,10 @@ export default function InboxPage() {
 
   return (
     <div
-      className="flex h-[calc(100vh-80px)] rounded-2xl border overflow-hidden"
+      className="flex h-[calc(100dvh-72px)] overflow-hidden rounded-xl border sm:h-[calc(100vh-80px)] sm:rounded-2xl"
       style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}
     >
-      <div className="w-80 border-r flex flex-col flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
+      <div className={clsx('w-full border-r flex-col flex-shrink-0 md:flex md:w-80', (selectedThread || isSelectedDm) ? 'hidden' : 'flex')} style={{ borderColor: 'var(--border)' }}>
         <div className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[14px] font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
@@ -1430,7 +1430,7 @@ export default function InboxPage() {
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto px-5 py-4" style={{ background: 'var(--bg)' }}>
+            <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-5" style={{ background: 'var(--bg)' }}>
               {groupLoading ? (
                 <div className="flex justify-center py-8">
                   <Loader2 size={20} className="animate-spin text-indigo-400" />
@@ -1490,7 +1490,7 @@ export default function InboxPage() {
                             <Avatar name={(msg as any).senderName || 'TV'} avatar={(msg as any).senderAvatar} size={36} />
                           </div>
 
-                          <div className={clsx('max-w-[78%] flex flex-col relative', isMe ? 'items-end' : 'items-start')}>
+                          <div className={clsx('max-w-[88%] sm:max-w-[78%] flex flex-col relative', isMe ? 'items-end' : 'items-start')}>
                             {!isMe && showMeta && (
                               <span className="text-[11px] mb-1 px-1" style={{ color: 'var(--text3)' }}>
                                 {(msg as any).senderName}
@@ -1692,7 +1692,7 @@ export default function InboxPage() {
               <div ref={groupBottomRef} />
             </div>
 
-            <div className="p-4 border-t flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
+            <div className="chat-composer p-3 border-t flex-shrink-0 sm:p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
               {groupReplyTo && (
                 <div
                   className="mb-3 rounded-2xl border px-3 py-3 flex items-start justify-between gap-3"
@@ -1815,7 +1815,7 @@ export default function InboxPage() {
 
                   {groupShowEmoji && (
                     <div
-                      className="absolute bottom-12 left-0 rounded-2xl border p-3 grid grid-cols-5 gap-2 z-20"
+                      className="absolute bottom-12 left-0 right-0 z-20 grid grid-cols-5 gap-1.5 rounded-2xl border p-2 sm:right-auto sm:gap-2 sm:p-3"
                       style={{
                         background: 'var(--bg2)',
                         borderColor: 'var(--border)',
@@ -1874,7 +1874,7 @@ export default function InboxPage() {
 
           {groupSideOpen && (
             <div
-              className="w-[320px] border-l flex-shrink-0"
+              className="hidden w-[320px] flex-shrink-0 border-l xl:block"
               style={{
                 background: 'var(--bg2)',
                 borderColor: 'var(--border)',
@@ -2163,7 +2163,7 @@ export default function InboxPage() {
                     >
                       {!mine && <Avatar name={sname} avatar={activeAvatar} size={28} bg={activeColor} />}
 
-                      <div className={clsx('max-w-[68%] flex flex-col', mine ? 'items-end' : 'items-start')}>
+                      <div className={clsx('max-w-[86%] sm:max-w-[68%] flex flex-col', mine ? 'items-end' : 'items-start')}>
                         {!mine && (
                           <p className="text-[10px] mb-0.5 px-1" style={{ color: 'var(--text3)' }}>
                             {sname}
@@ -2366,7 +2366,7 @@ export default function InboxPage() {
               <div ref={bottomRef} />
             </div>
 
-            <div className="p-4 border-t flex-shrink-0" style={{ borderColor: 'var(--border)' }}>
+            <div className="chat-composer p-3 border-t flex-shrink-0 sm:p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
               {replyTo && (
                 <div
                   className="mb-3 rounded-2xl border px-3 py-3 flex items-start justify-between gap-3"
@@ -2489,7 +2489,7 @@ export default function InboxPage() {
 
                   {showEmoji && (
                     <div
-                      className="absolute bottom-12 left-0 rounded-2xl border p-3 grid grid-cols-5 gap-2 z-20"
+                      className="absolute bottom-12 left-0 right-0 z-20 grid grid-cols-5 gap-1.5 rounded-2xl border p-2 sm:right-auto sm:gap-2 sm:p-3"
                       style={{
                         background: 'var(--bg2)',
                         borderColor: 'var(--border)',
@@ -2544,7 +2544,7 @@ export default function InboxPage() {
 
           {dmSideOpen && (
             <div
-              className="w-[320px] border-l flex-shrink-0"
+              className="hidden w-[320px] flex-shrink-0 border-l xl:block"
               style={{
                 background: 'var(--bg2)',
                 borderColor: 'var(--border)',

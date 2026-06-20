@@ -5,6 +5,8 @@ import api from '@/api/axios'
 import toast from 'react-hot-toast'
 import { ArrowRight, ArrowLeft, GraduationCap, BookOpen, School, Users2, Check, Loader2, type LucideIcon } from 'lucide-react'
 import clsx from 'clsx'
+import AcademicSelect from '@/components/AcademicSelect'
+import { useAcademicCatalog } from '@/hooks/useAcademicCatalog'
 
 type UserTypeId = 'STUDENT' | 'HIGHSCHOOL' | 'TEACHER' | 'OTHER'
 type SchedulePreset = 'EVENING' | 'WEEKEND' | 'MORNING'
@@ -103,25 +105,29 @@ export default function GoogleOnboardingPage() {
   const [goal,     setGoal]    = useState('')
   const [schedule, setSchedule]= useState<{day:string,start:string,end:string}[]>([])
   const [schoolOptions, setSchoolOptions] = useState<string[]>([])
-  const [majorOptions, setMajorOptions] = useState<string[]>([])
   const [fieldOptions, setFieldOptions] = useState<string[]>([])
   const [subjectOptions, setSubjectOptions] = useState<string[]>(SUBJECTS)
   const [goalOptions, setGoalOptions] = useState<string[]>(GOALS)
   const [timeSlots, setTimeSlots] = useState(TIME_SLOTS)
+  const academicCatalog = useAcademicCatalog(userType === 'STUDENT' ? school : '')
 
   useEffect(() => {
-    api.get('/users/onboarding-options', { params: { userType: userType || undefined, major: major || undefined, q: school || undefined } })
+    api.get('/users/onboarding-options', { params: { userType: userType || undefined, major: major || undefined } })
       .then(res => {
         const data = res.data?.data
         if (data?.schools) setSchoolOptions(data.schools)
-        if (data?.majors) setMajorOptions(data.majors)
         if (data?.interestFields) setFieldOptions(data.interestFields)
         if (data?.subjects?.length) setSubjectOptions(data.subjects)
         if (data?.goals?.length) setGoalOptions(data.goals)
         if (data?.timeSlots?.length) setTimeSlots(data.timeSlots)
       })
       .catch(() => {})
-  }, [userType, major, school])
+  }, [userType, major])
+
+  const selectSchool = (value: string) => {
+    if (value !== school) setMajor('')
+    setSchool(value)
+  }
 
   const toggleSlot = (day: string, start: string, end: string) => {
     const exists = schedule.find(s => s.day === day && s.start === start)
@@ -248,7 +254,7 @@ export default function GoogleOnboardingPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl p-6 max-h-[calc(100vh-190px)] overflow-y-auto overscroll-contain pr-5" style={{ background: '#14141c', border: '0.5px solid rgba(255,255,255,.08)' }}>
+        <div className="rounded-2xl p-4 sm:p-6 max-h-[calc(100vh-190px)] overflow-y-auto overscroll-contain pr-5" style={{ background: '#14141c', border: '0.5px solid rgba(255,255,255,.08)' }}>
 
           {/* ── STEP 1: User type ── */}
           {step === 1 && (
@@ -277,24 +283,32 @@ export default function GoogleOnboardingPage() {
                 <label className="block text-[12px] font-medium text-[#8b8b9e] mb-1.5">
                   Trường học <span className="text-[#5a5a6e]">(tuỳ chọn)</span>
                 </label>
-                <input value={school} onChange={e => setSchool(e.target.value)} list="google-school-options"
-                  placeholder="VD: ĐH Bách Khoa HCM..."
-                  className="w-full h-11 px-4 rounded-xl text-[13px] text-[#f0f0f5] placeholder-[#5a5a6e] outline-none bg-[#1e1e2e] border border-white/[.08] focus:border-indigo-500/60 transition-all"/>
-                <datalist id="google-school-options">
-                  {schoolOptions.map(s => <option key={s} value={s} />)}
-                </datalist>
+                <AcademicSelect
+                  value={school}
+                  onChange={selectSchool}
+                  options={userType === 'STUDENT' ? academicCatalog.schools : schoolOptions}
+                  placeholder={userType === 'STUDENT' ? 'Chọn trường đại học' : 'Chọn trường học / tổ chức'}
+                  type="school"
+                  loading={userType === 'STUDENT' && academicCatalog.loading}
+                  helperText="Bấm để chọn từ danh sách, không cần nhập tên."
+                />
               </div>
               {userType === 'STUDENT' && (
                 <div className="mb-4">
                   <label className="block text-[12px] font-medium text-[#8b8b9e] mb-1.5">
                     Chuyên ngành đang học
                   </label>
-                  <input value={major} onChange={e => setMajor(e.target.value)} list="google-major-options"
-                    placeholder="VD: Công nghệ thông tin, Marketing..."
-                    className="w-full h-11 px-4 rounded-xl text-[13px] text-[#f0f0f5] placeholder-[#5a5a6e] outline-none bg-[#1e1e2e] border border-white/[.08] focus:border-indigo-500/60 transition-all"/>
-                  <datalist id="google-major-options">
-                    {majorOptions.map(s => <option key={s} value={s} />)}
-                  </datalist>
+                  <AcademicSelect
+                    value={major}
+                    onChange={setMajor}
+                    options={academicCatalog.majors}
+                    placeholder={school ? 'Chọn ngành trường đang đào tạo' : 'Chọn ngành học hoặc hướng nghề'}
+                    type="major"
+                    loading={academicCatalog.loading}
+                    helperText={school
+                      ? `Danh sách được lọc theo ${school}.`
+                      : 'Có thể chọn ngành trước; danh mục bao phủ nhiều nhóm ngành và hướng nghề.'}
+                  />
                 </div>
               )}
               <button onClick={() => userType ? setStep(2) : toast('Hãy chọn loại người dùng!')}

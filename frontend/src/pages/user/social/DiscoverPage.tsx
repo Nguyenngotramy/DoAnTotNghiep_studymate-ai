@@ -391,7 +391,7 @@ export default function DiscoverPage() {
       </div>
 
       {tab === 'trending' && (
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>
@@ -661,7 +661,7 @@ export default function DiscoverPage() {
       )}
 
       {tab === 'leaderboard' && (
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="col-span-2">
             <h2 className="text-[14px] font-semibold mb-4" style={{ color: 'var(--text)' }}>
               🏆 Bảng xếp hạng tuần này

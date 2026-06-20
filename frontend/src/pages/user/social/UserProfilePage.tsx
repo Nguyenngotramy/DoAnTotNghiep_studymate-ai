@@ -676,7 +676,7 @@ export default function UserProfilePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div className="space-y-4">
             <div
               className="border rounded-xl p-4"
@@ -818,7 +818,7 @@ export default function UserProfilePage() {
               >
                 <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--text)' }}>🏅 Huy hiệu</p>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {achievements.map((a, i) => (
                     <button
                       key={i}
@@ -870,7 +870,7 @@ export default function UserProfilePage() {
           </div>
 
           <div className="col-span-2 space-y-4">
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatCard icon={BookOpen} label="Bài viết" value={posts.length} color="#6366f1" />
               <StatCard
                 icon={Heart}

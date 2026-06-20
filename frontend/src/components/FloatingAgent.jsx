@@ -11,6 +11,7 @@ import {
   withAiConfig,
 } from "@/utils/aiConfig";
 import { useAuthStore } from "@/store/authStore";
+import { useUiStore } from "@/store/uiStore";
 
 const API_URL = "/ai-agent";
 const SESSION_KEY = "studymind_chat_session";
@@ -67,14 +68,14 @@ function AIIcon({ size = 22, color = "#0f0f0f" }) {
 function ThinkingBubble() {
   return (
     <div style={{ alignSelf: "flex-start", maxWidth: "80%" }}>
-      <div style={{ fontSize: 10, fontFamily: "'IBM Plex Mono', monospace", color: "#444", marginBottom: 5 }}>
+      <div style={{ fontSize: 12, fontFamily: "'Nunito', 'Inter', sans-serif", color: "var(--sm-faint)", marginBottom: 5 }}>
         StudyMind · {timeNow()}
       </div>
       <div style={{
         display: "flex", alignItems: "center", gap: 10,
-        padding: "10px 14px", background: "#141414",
-        border: "1px solid #2a2a2a", borderRadius: "2px 10px 10px 10px",
-        color: "#555", fontSize: 12, fontFamily: "'IBM Plex Mono', monospace"
+        padding: "10px 14px", background: "var(--sm-surface)",
+        border: "1px solid var(--sm-border)", borderRadius: "2px 10px 10px 10px",
+        color: "var(--sm-muted)", fontSize: 12, fontFamily: "'Nunito', 'Inter', sans-serif"
       }}>
         <div style={{ display: "flex", gap: 4 }}>
           {[0, 0.2, 0.4].map((delay, i) => (
@@ -102,16 +103,23 @@ async function readAiResponse(res) {
   if (res.ok) return data;
 
   const detail = data?.detail || data?.message;
+  const detailMessage = typeof detail === "object" ? detail?.message : detail;
+  const error = new Error(detailMessage || `AI service trả về lỗi HTTP ${res.status}.`);
+  error.code = (typeof detail === "object" ? detail?.code : null) || data?.code || `HTTP_${res.status}`;
+  error.retryable = typeof detail === "object" ? detail?.retryable : undefined;
+
   if (res.status === 429) {
-    throw new Error(detail || "Hạn mức AI đã hết hoặc provider đang giới hạn tốc độ. Vui lòng thử lại sau.");
+    error.message = detailMessage || "Hạn mức AI đã hết hoặc provider đang giới hạn tốc độ. Vui lòng thử lại sau.";
+  } else if (res.status === 402) {
+    error.message = detailMessage || "Tài khoản AI đã hết credit hoặc không đủ tiền dùng model.";
+  } else if (res.status === 413) {
+    error.message = detailMessage || "Nội dung vượt giới hạn token. Hãy chia nhỏ yêu cầu.";
+  } else if (res.status === 502 || res.status === 503 || res.status === 504) {
+    error.message = detailMessage || "AI service chưa sẵn sàng hoặc provider phản hồi quá chậm.";
+  } else if (res.status === 401 || res.status === 403) {
+    error.message = detailMessage || "AI service chưa được cấu hình đúng khóa truy cập.";
   }
-  if (res.status === 502 || res.status === 503 || res.status === 504) {
-    throw new Error(detail || "AI service chưa sẵn sàng hoặc provider phản hồi quá chậm.");
-  }
-  if (res.status === 401 || res.status === 403) {
-    throw new Error(detail || "AI service chưa được cấu hình đúng khóa truy cập.");
-  }
-  throw new Error(detail || `AI service trả về lỗi HTTP ${res.status}.`);
+  throw error;
 }
 
 function StructuredPreview({ structured }) {
@@ -124,17 +132,17 @@ function StructuredPreview({ structured }) {
           <div key={`${item.front || item.question}-${index}`} style={{
             padding: "9px 10px",
             borderRadius: 8,
-            background: "#101010",
-            border: "1px solid #2a2a2a",
+            background: "var(--sm-surface)",
+            border: "1px solid var(--sm-border)",
           }}>
             <div style={{ color: "#a78bfa", fontWeight: 600, marginBottom: 3 }}>
               {index + 1}. {item.front || item.question}
             </div>
-            <div style={{ color: "#ddd", whiteSpace: "pre-line" }}>
+            <div style={{ color: "var(--sm-text)", whiteSpace: "pre-line" }}>
               {item.back || item.answer}
             </div>
             {item.hint && (
-              <div style={{ color: "#666", fontSize: 11, marginTop: 3 }}>
+              <div style={{ color: "var(--sm-muted)", fontSize: 11, marginTop: 3 }}>
                 Gợi ý: {item.hint}
               </div>
             )}
@@ -151,13 +159,13 @@ function StructuredPreview({ structured }) {
           <div key={`${item.question}-${index}`} style={{
             padding: "9px 10px",
             borderRadius: 8,
-            background: "#101010",
-            border: "1px solid #2a2a2a",
+            background: "var(--sm-surface)",
+            border: "1px solid var(--sm-border)",
           }}>
             <div style={{ color: "#a78bfa", fontWeight: 600 }}>
               {index + 1}. {item.question}
             </div>
-            <div style={{ color: "#aaa", fontSize: 11, marginTop: 3 }}>
+            <div style={{ color: "var(--sm-muted)", fontSize: 11, marginTop: 3 }}>
               {(item.options || []).join(" · ")}
             </div>
           </div>
@@ -178,19 +186,19 @@ function Message({ msg, onSaveStructured }) {
       animation: "smFadeUp 0.2s ease",
     }}>
       <div style={{
-        fontSize: 10, fontFamily: "'IBM Plex Mono', monospace",
-        color: "#444", marginBottom: 5,
+        fontSize: 12, fontFamily: "'Nunito', 'Inter', sans-serif",
+        color: "var(--sm-faint)", marginBottom: 5,
         textAlign: isUser ? "right" : "left"
       }}>
         {isUser ? "Bạn" : "StudyMind"} · {msg.time}
       </div>
       {msg.badge && (
         <div style={{
-          display: "inline-block", fontSize: 10, padding: "2px 7px",
+          display: "inline-block", fontSize: 11, padding: "2px 7px",
           borderRadius: 4, marginBottom: 6,
           background: "rgba(124,58,237,0.15)", color: "#a78bfa",
           border: "1px solid rgba(124,58,237,0.3)",
-          fontFamily: "'IBM Plex Mono', monospace",
+          fontFamily: "'Nunito', 'Inter', sans-serif",
         }}>
           {msg.badge}
         </div>
@@ -198,9 +206,9 @@ function Message({ msg, onSaveStructured }) {
       <div style={{
         padding: "10px 14px", fontSize: 13, lineHeight: 1.7,
         borderRadius: isUser ? "10px 10px 2px 10px" : "2px 10px 10px 10px",
-        background: isUser ? "#1a1525" : "#141414",
+        background: isUser ? "rgba(124,58,237,.12)" : "var(--sm-surface)",
         border: isUser ? "1px solid #2d1f4e" : "1px solid #2a2a2a",
-        color: "#e8e0d0",
+        color: "var(--sm-text)",
         wordBreak: "break-word",
       }}>
         {msg.structured ? (
@@ -218,7 +226,7 @@ function Message({ msg, onSaveStructured }) {
         <button
           onClick={() => onSaveStructured(msg)}
           style={{
-            marginTop: 6, fontSize: 11, padding: "4px 10px", borderRadius: 6,
+            marginTop: 6, fontSize: 12, padding: "4px 10px", borderRadius: 6,
             background: "rgba(124,58,237,0.15)", color: "#a78bfa",
             border: "1px solid rgba(124,58,237,0.3)", cursor: "pointer",
           }}
@@ -230,7 +238,7 @@ function Message({ msg, onSaveStructured }) {
         <button
           onClick={() => { window.location.href = "/quiz"; }}
           style={{
-            marginTop: 6, marginLeft: 6, fontSize: 11, padding: "4px 10px", borderRadius: 6,
+            marginTop: 6, marginLeft: 6, fontSize: 12, padding: "4px 10px", borderRadius: 6,
             background: "rgba(34,197,94,0.12)", color: "#4ade80",
             border: "1px solid rgba(34,197,94,0.3)", cursor: "pointer",
           }}
@@ -293,6 +301,18 @@ async function persistStructured(structured, sourceText = "", showSuccess = true
 
 export default function FloatingAgent() {
   const user = useAuthStore((state) => state.user);
+  const darkMode = useUiStore((state) => state.darkMode);
+  const theme = darkMode
+    ? {
+        panel: '#16161d', header: '#1b1b24', surface: '#1e1e28', input: '#252532',
+        border: 'rgba(255,255,255,.09)', text: '#f0f0f5', muted: '#9a9aad', faint: '#66667a',
+        shadow: '0 24px 70px rgba(0,0,0,.48)',
+      }
+    : {
+        panel: '#ffffff', header: '#f8f9fc', surface: '#f4f5f9', input: '#f7f7fb',
+        border: 'rgba(15,23,42,.11)', text: '#172033', muted: '#667085', faint: '#98a2b3',
+        shadow: '0 24px 70px rgba(15,23,42,.18)',
+      };
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -351,6 +371,12 @@ export default function FloatingAgent() {
         })),
       });
       const data = await readAiResponse(res);
+      if (data.error) {
+        const error = new Error(data.error.message || "AI không thể xử lý yêu cầu.");
+        error.code = data.error.code;
+        error.retryable = data.error.retryable;
+        throw error;
+      }
       if (data.session_id) {
         setSessionId(data.session_id);
         localStorage.setItem(SESSION_KEY, data.session_id);
@@ -387,7 +413,7 @@ export default function FloatingAgent() {
         {
           id: Date.now() + 1,
           role: "ai",
-          text: `❌ ${error instanceof Error
+          text: `❌ ${error?.code ? `[${error.code}] ` : ""}${error instanceof Error
             ? error.message
             : "Không thể kết nối AI service tại cổng 8001. Kiểm tra FastAPI đang chạy chưa."}`,
           time: timeNow(),
@@ -480,7 +506,6 @@ export default function FloatingAgent() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Lora:wght@400;600&display=swap');
         @keyframes smFadeUp {
           from { opacity:0; transform:translateY(8px); }
           to   { opacity:1; transform:translateY(0); }
@@ -511,25 +536,38 @@ export default function FloatingAgent() {
           animation: smRotate 3s linear infinite;
         }
         .sm-textarea:focus { outline: none; }
+        .sm-panel, .sm-panel button, .sm-panel input, .sm-panel select, .sm-panel textarea {
+          font-family: 'Nunito', 'Inter', sans-serif !important;
+        }
+        @media (max-width: 640px) {
+          .sm-fab { right: 16px !important; bottom: 84px !important; }
+          .sm-panel {
+            right: 16px !important;
+            bottom: 154px !important;
+            width: calc(100vw - 32px) !important;
+            max-height: calc(100dvh - 174px) !important;
+          }
+        }
         .sm-quick-btn:hover {
           background: rgba(124,58,237,0.12) !important;
           border-color: rgba(124,58,237,0.4) !important;
           color: #a78bfa !important;
         }
         .sm-send:hover:not(:disabled) { background: #6d28d9 !important; transform: scale(1.06); }
-        .sm-send:disabled { background: #2a2a2a !important; cursor: not-allowed; }
+        .sm-send:disabled { background: var(--sm-border) !important; cursor: not-allowed; }
         .sm-messages::-webkit-scrollbar { width: 3px; }
-        .sm-messages::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+        .sm-messages::-webkit-scrollbar-thumb { background: var(--sm-border); border-radius: 3px; }
       `}</style>
 
       {/* ── FAB Button ── */}
       <button
+        className="sm-fab"
         onClick={() => setOpen((v) => !v)}
         style={{
-          position: "fixed", bottom: 28, right: 28, zIndex: 9999,
+          position: "fixed", bottom: 72, right: 28, zIndex: 9999,
           width: 54, height: 54, borderRadius: "50%",
-          background: open ? "#1a1025" : "#7c3aed",
-          border: open ? "1px solid #7c3aed" : "none",
+          background: open ? theme.surface : "#7c3aed",
+          border: open ? `1px solid ${theme.border}` : "none",
           cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
           transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)",
@@ -572,9 +610,9 @@ export default function FloatingAgent() {
             position: "absolute", top: -4, right: -4,
             width: 18, height: 18, borderRadius: "50%",
             background: "#e74c3c", color: "white",
-            fontSize: 10, fontWeight: 600,
+            fontSize: 11, fontWeight: 600,
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "'Nunito', 'Inter', sans-serif",
             animation: "smFadeUp 0.2s ease",
           }}>
             {unread}
@@ -584,44 +622,54 @@ export default function FloatingAgent() {
 
       {/* ── Chat Panel ── */}
       {open && (
-        <div style={{
-          position: "fixed", bottom: 96, right: 28, zIndex: 9998,
-          width: 380, maxHeight: 580,
-          background: "#0f0f0f",
-          border: "1px solid #2a2a2a",
+        <div className="sm-panel" style={{
+          position: "fixed", bottom: 140, right: 28, zIndex: 9998,
+          width: 410, maxHeight: "calc(100dvh - 168px)",
+          background: theme.panel,
+          border: `1px solid ${theme.border}`,
           borderRadius: 16,
           display: "flex", flexDirection: "column",
           overflow: "hidden",
           animation: "smPop 0.28s cubic-bezier(0.34,1.56,0.64,1)",
-          fontFamily: "'Lora', Georgia, serif",
+          fontFamily: "'Nunito', 'Inter', sans-serif",
+          boxShadow: theme.shadow,
+          color: theme.text,
+          '--sm-panel': theme.panel,
+          '--sm-header': theme.header,
+          '--sm-surface': theme.surface,
+          '--sm-input': theme.input,
+          '--sm-border': theme.border,
+          '--sm-text': theme.text,
+          '--sm-muted': theme.muted,
+          '--sm-faint': theme.faint,
         }}>
 
           {/* Header */}
           <div style={{
-            padding: "12px 16px",
-            borderBottom: "1px solid #1e1e1e",
-            background: "#111",
+            padding: "14px 18px",
+            borderBottom: "1px solid var(--sm-border)",
+            background: "var(--sm-header)",
             display: "flex", alignItems: "center", gap: 10,
             flexShrink: 0,
           }}>
             <div style={{
-              width: 32, height: 32, borderRadius: 8,
+              width: 40, height: 40, borderRadius: 11,
               background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
               display: "flex", alignItems: "center", justifyContent: "center",
               flexShrink: 0,
             }}>
-              <AIIcon size={18} color="#fff" />
+              <AIIcon size={21} color="#fff" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 13, fontWeight: 600, color: "#a78bfa",
+                fontFamily: "'Nunito', 'Inter', sans-serif",
+                fontSize: 15, fontWeight: 700, color: "#8b5cf6",
               }}>
                 StudyMind
               </div>
               <div style={{
-                fontFamily: "'IBM Plex Mono', monospace",
-                fontSize: 10, color: "#444", marginTop: 1,
+                fontFamily: "'Nunito', 'Inter', sans-serif",
+                fontSize: 12, color: "var(--sm-muted)", marginTop: 2,
               }}>
                 multi-agent · nhãn môn học
               </div>
@@ -647,7 +695,7 @@ export default function FloatingAgent() {
                 color: aiConfig.validated ? "#22c55e" : aiConfig.api_key ? "#f59e0b" : "#444",
                 padding: 4, borderRadius: 6,
                 transition: "color 0.15s", display: "flex", alignItems: "center",
-                fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
+                fontFamily: "'Nunito', 'Inter', sans-serif", fontSize: 11,
               }}
             >
               KEY
@@ -658,7 +706,7 @@ export default function FloatingAgent() {
               title="Xóa lịch sử"
               style={{
                 background: "none", border: "none", cursor: "pointer",
-                color: "#444", padding: 4, borderRadius: 6,
+                color: "var(--sm-faint)", padding: 4, borderRadius: 6,
                 transition: "color 0.15s", display: "flex", alignItems: "center",
               }}
               onMouseEnter={(e) => e.currentTarget.style.color = "#c0392b"}
@@ -673,8 +721,8 @@ export default function FloatingAgent() {
           {showApiKey && (
             <div style={{
               padding: "10px 14px",
-              borderBottom: "1px solid #1e1e1e",
-              background: "#101010",
+              borderBottom: "1px solid var(--sm-border)",
+              background: "var(--sm-surface)",
               display: "grid",
               gap: 8,
             }}>
@@ -690,7 +738,7 @@ export default function FloatingAgent() {
                       validated: false,
                     }));
                   }}
-                  style={{ flex: 1, background: "#0b0b0b", color: "#ddd", border: "1px solid #2a2a2a", borderRadius: 8, padding: 8 }}
+                  style={{ flex: 1, background: "var(--sm-input)", color: "var(--sm-text)", border: "1px solid var(--sm-border)", borderRadius: 8, padding: 8 }}
                 >
                   {providers.map((provider) => (
                     <option key={provider.id} value={provider.id}>{provider.name}</option>
@@ -699,7 +747,7 @@ export default function FloatingAgent() {
                 <select
                   value={aiConfig.model}
                   onChange={(e) => setAiConfig((current) => ({ ...current, model: e.target.value, validated: false }))}
-                  style={{ flex: 1.4, background: "#0b0b0b", color: "#ddd", border: "1px solid #2a2a2a", borderRadius: 8, padding: 8 }}
+                  style={{ flex: 1.4, background: "var(--sm-input)", color: "var(--sm-text)", border: "1px solid var(--sm-border)", borderRadius: 8, padding: 8 }}
                 >
                   {(selectedProvider?.models || []).map((model) => (
                     <option key={model.id} value={model.id}>
@@ -716,13 +764,13 @@ export default function FloatingAgent() {
                   placeholder={aiConfig.provider === "anthropic" ? "Anthropic key (sk-ant-...)" : "OpenRouter key (sk-or-...)"}
                   style={{
                     flex: 1,
-                    background: "#0b0b0b",
-                    border: "1px solid #2a2a2a",
+                    background: "var(--sm-input)",
+                    border: "1px solid var(--sm-border)",
                     borderRadius: 8,
-                    color: "#ddd",
+                    color: "var(--sm-text)",
                     padding: "8px 10px",
                     fontSize: 11,
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "'Nunito', 'Inter', sans-serif",
                   }}
                 />
                 <button
@@ -736,13 +784,13 @@ export default function FloatingAgent() {
                     padding: "8px 10px",
                     fontSize: 11,
                     cursor: validatingKey ? "wait" : "pointer",
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "'Nunito', 'Inter', sans-serif",
                   }}
                 >
                   {validatingKey ? "Kiểm tra..." : "Lưu"}
                 </button>
               </div>
-              <div style={{ color: aiConfig.validated ? "#22c55e" : "#666", fontSize: 10 }}>
+              <div style={{ color: aiConfig.validated ? "#22c55e" : "var(--sm-muted)", fontSize: 11 }}>
                 {aiConfig.validated
                   ? "Đã xác thực. Key này được dùng cho chat, tài liệu, quiz, flashcard và từ vựng."
                   : "Để trống key để dùng hạn mức free của hệ thống."}
@@ -763,8 +811,8 @@ export default function FloatingAgent() {
               <div style={{
                 display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center",
-                height: "100%", gap: 10, color: "#555",
-                fontFamily: "'IBM Plex Mono', monospace", textAlign: "center", padding: 20,
+                height: "100%", gap: 10, color: "var(--sm-muted)",
+                fontFamily: "'Nunito', 'Inter', sans-serif", textAlign: "center", padding: 20,
               }}>
                 <div style={{
                   width: 52, height: 52, borderRadius: 14,
@@ -774,10 +822,10 @@ export default function FloatingAgent() {
                 }}>
                   <AIIcon size={26} color="#7c3aed" />
                 </div>
-                <div style={{ fontFamily: "'Lora', serif", fontSize: 15, color: "#e8e0d0" }}>
+                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 20, fontWeight: 700, color: "var(--sm-text)" }}>
                   Chào mừng đến StudyMind
                 </div>
-                <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: "var(--sm-muted)", marginTop: 3 }}>
                   Tutor · KT · Quiz · Summary · Flashcard
                 </div>
               </div>
@@ -792,7 +840,7 @@ export default function FloatingAgent() {
           {showQuick && isEmpty && (
             <div style={{
               padding: "8px 12px",
-              borderTop: "1px solid #1a1a1a",
+              borderTop: "1px solid var(--sm-border)",
               display: "flex", flexWrap: "wrap", gap: 5,
               flexShrink: 0,
             }}>
@@ -803,12 +851,12 @@ export default function FloatingAgent() {
                   onClick={() => sendMessage(q.text)}
                   style={{
                     background: "none",
-                    border: "1px solid #2a2a2a",
-                    color: "#666",
-                    padding: "4px 9px",
+                    border: "1px solid var(--sm-border)",
+                    color: "var(--sm-muted)",
+                    padding: "6px 11px",
                     borderRadius: 20,
-                    fontFamily: "'IBM Plex Mono', monospace",
-                    fontSize: 11, cursor: "pointer",
+                    fontFamily: "'Nunito', 'Inter', sans-serif",
+                    fontSize: 12, cursor: "pointer",
                     transition: "all 0.15s",
                     whiteSpace: "nowrap",
                   }}
@@ -821,21 +869,21 @@ export default function FloatingAgent() {
 
           {/* Input */}
           <div style={{
-            padding: "10px 12px 12px",
-            borderTop: "1px solid #1a1a1a",
-            background: "#0f0f0f",
+            padding: "12px 14px 14px",
+            borderTop: "1px solid var(--sm-border)",
+            background: "var(--sm-panel)",
             flexShrink: 0,
           }}>
             <div
               style={{
                 display: "flex", gap: 8, alignItems: "flex-end",
-                background: "#181818",
-                border: "1px solid #2a2a2a",
-                borderRadius: 10, padding: "8px 10px",
+                background: "var(--sm-input)",
+                border: "1px solid var(--sm-border)",
+                borderRadius: 12, padding: "10px 12px",
                 transition: "border-color 0.2s",
               }}
               onFocusCapture={(e) => e.currentTarget.style.borderColor = "rgba(124,58,237,0.4)"}
-              onBlurCapture={(e) => e.currentTarget.style.borderColor = "#2a2a2a"}
+              onBlurCapture={(e) => e.currentTarget.style.borderColor = theme.border}
             >
               <textarea
                 ref={textareaRef}
@@ -851,9 +899,9 @@ export default function FloatingAgent() {
                 rows={1}
                 style={{
                   flex: 1, background: "none", border: "none", outline: "none",
-                  color: "#e8e0d0", fontFamily: "'Lora', serif",
-                  fontSize: 13, resize: "none", lineHeight: 1.6,
-                  minHeight: 22, maxHeight: 100, overflow: "auto",
+                  color: "var(--sm-text)", fontFamily: "'Nunito', 'Inter', sans-serif",
+                  fontSize: 15, resize: "none", lineHeight: 1.5,
+                  minHeight: 28, maxHeight: 110, overflow: "auto",
                 }}
               />
               <button
@@ -861,7 +909,7 @@ export default function FloatingAgent() {
                 onClick={() => sendMessage()}
                 disabled={loading || !input.trim()}
                 style={{
-                  width: 32, height: 32, borderRadius: 8,
+                  width: 40, height: 40, borderRadius: 11,
                   background: "#7c3aed", border: "none",
                   color: "#fff", cursor: "pointer", flexShrink: 0,
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -874,8 +922,8 @@ export default function FloatingAgent() {
               </button>
             </div>
             <div style={{
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 10, color: "#333",
+              fontFamily: "'Nunito', 'Inter', sans-serif",
+              fontSize: 12, color: "var(--sm-muted)",
               textAlign: "center", marginTop: 6,
             }}>
               Enter để gửi · Shift+Enter xuống dòng

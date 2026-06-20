@@ -537,7 +537,7 @@ export default function ProjectKanbanPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 border-t" style={{ borderColor: 'var(--border)' }}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 border-t" style={{ borderColor: 'var(--border)' }}>
           <SummaryItem label="Tổng task" value={counts.total} icon={LayoutDashboard} color="#6366f1" />
           <SummaryItem label="Chờ làm" value={counts.todo} icon={Circle} color="#64748b" />
           <SummaryItem label="Đang làm" value={counts.progress} icon={Clock3} color="#f59e0b" />
@@ -707,7 +707,7 @@ function EditProjectTimelineModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-lg rounded-[24px] p-6 border shadow-2xl"
+        className="w-full max-w-lg rounded-[24px] p-4 sm:p-6 border shadow-2xl"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >
@@ -865,7 +865,7 @@ function AddTaskModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-[24px] p-6 border shadow-2xl"
+        className="w-full max-w-md rounded-[24px] p-4 sm:p-6 border shadow-2xl"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >
@@ -997,7 +997,7 @@ function ProgressView({ groupId, projectId, onClose }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-2xl rounded-2xl p-6 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg2)', borderColor: 'var(--border)', border: '1px solid var(--border)' }}>
+      <div className="w-full max-w-2xl rounded-2xl p-4 sm:p-6 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg2)', borderColor: 'var(--border)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-bold" style={{ color: 'var(--text)' }}>

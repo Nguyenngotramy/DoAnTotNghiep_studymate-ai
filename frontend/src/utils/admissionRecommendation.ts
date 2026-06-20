@@ -28,6 +28,9 @@ export type AdmissionRow = {
   nganh_ra_lam_gi: string
   khu_vuc_truong: string
   loai_truong: string
+  nguon_url: string
+  thu_thap_luc: string
+  source_sha256: string
 }
 
 export type AdmissionProgramRow = {
@@ -38,12 +41,18 @@ export type AdmissionProgramRow = {
   chi_tieu: string
   phuong_thuc_xet_tuyen: string
   to_hop_mon: string
+  nguon_url: string
+  thu_thap_luc: string
+  source_sha256: string
 }
 
 export type TuitionRow = {
   ma_truong: string
   ten_truong: string
   hoc_phi_raw: string
+  nguon_url: string
+  thu_thap_luc: string
+  source_sha256: string
 }
 
 export type RecommendationCategory = 'an_toan' | 'vua_suc' | 'thu_thach'
@@ -66,6 +75,8 @@ export type AdmissionRecommendation = {
   phuong_thuc_xet_tuyen: string | null
   hoc_phi_tham_khao: string | null
   co_du_lieu_nganh_hien_tai: boolean
+  nguon_url: string | null
+  thu_thap_luc: string | null
 }
 
 export type RecommendationOutput = {
@@ -169,6 +180,9 @@ const CSV_HEADERS: (keyof AdmissionRow)[] = [
   'nganh_ra_lam_gi',
   'khu_vuc_truong',
   'loai_truong',
+  'nguon_url',
+  'thu_thap_luc',
+  'source_sha256',
 ]
 
 const PROGRAM_CSV_HEADERS: (keyof AdmissionProgramRow)[] = [
@@ -179,12 +193,18 @@ const PROGRAM_CSV_HEADERS: (keyof AdmissionProgramRow)[] = [
   'chi_tieu',
   'phuong_thuc_xet_tuyen',
   'to_hop_mon',
+  'nguon_url',
+  'thu_thap_luc',
+  'source_sha256',
 ]
 
 const TUITION_CSV_HEADERS: (keyof TuitionRow)[] = [
   'ma_truong',
   'ten_truong',
   'hoc_phi_raw',
+  'nguon_url',
+  'thu_thap_luc',
+  'source_sha256',
 ]
 
 const round2 = (value: number) => Math.round(value * 100) / 100
@@ -267,16 +287,31 @@ function parseTypedCsv<T extends Record<string, string>>(
   })
 }
 
+const hasVerifiedSource = (value: string) => /^https?:\/\/[^\s]+$/i.test(value.trim())
+
 export function parseAdmissionCsv(text: string): AdmissionRow[] {
-  return parseTypedCsv<AdmissionRow>(text, CSV_HEADERS)
+  return parseTypedCsv<AdmissionRow>(text, CSV_HEADERS).filter(row => {
+    const score = Number.parseFloat(row.diem_chuan.replace(',', '.'))
+    return Boolean(
+      row.ten_truong
+      && row.ten_nganh
+      && row.phuong_thuc
+      && Number.isFinite(score)
+      && score > 0
+      && score <= 1200
+      && hasVerifiedSource(row.nguon_url)
+    )
+  })
 }
 
 export function parseAdmissionProgramCsv(text: string): AdmissionProgramRow[] {
   return parseTypedCsv<AdmissionProgramRow>(text, PROGRAM_CSV_HEADERS)
+    .filter(row => Boolean(row.ten_truong && row.ten_nganh && hasVerifiedSource(row.nguon_url)))
 }
 
 export function parseTuitionCsv(text: string): TuitionRow[] {
   return parseTypedCsv<TuitionRow>(text, TUITION_CSV_HEADERS)
+    .filter(row => Boolean(row.ten_truong && row.hoc_phi_raw && hasVerifiedSource(row.nguon_url)))
 }
 
 export function calculateCombinationScores(
@@ -515,6 +550,8 @@ export function recommendAdmissions(
         phuong_thuc_xet_tuyen: program?.phuong_thuc_xet_tuyen || null,
         hoc_phi_tham_khao: tuition?.hoc_phi_raw || null,
         co_du_lieu_nganh_hien_tai: Boolean(program),
+        nguon_url: program?.nguon_url || row.nguon_url || tuition?.nguon_url || null,
+        thu_thap_luc: program?.thu_thap_luc || row.thu_thap_luc || tuition?.thu_thap_luc || null,
       }]
     })
 

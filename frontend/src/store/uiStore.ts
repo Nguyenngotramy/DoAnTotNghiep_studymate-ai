@@ -12,12 +12,12 @@ interface UiState {
 export const useUiStore = create<UiState>()(
   persist(
     (set) => ({
-      darkMode: true,
+      darkMode: false,
       sidebarOpen: true,
       toggleDarkMode: () => set((s) => ({ darkMode: !s.darkMode })),
       setDarkMode: (darkMode) => set({ darkMode }),
       setSidebar: (open) => set({ sidebarOpen: open }),
     }),
-    { name: 'studymate-ui' }
+    { name: 'studymate-ui-v2' }
   )
 )
