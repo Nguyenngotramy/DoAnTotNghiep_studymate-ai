@@ -5,7 +5,12 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV OPENAI_BASE_URL=https://openrouter.ai/api/v1
-ENV AI_AGENT_MODEL=anthropic/claude-haiku-4-5
+ENV AI_AGENT_MODEL=meta-llama/llama-3.2-3b-instruct:free
+ENV AI_CHAT_MODEL=meta-llama/llama-3.2-3b-instruct:free
+ENV AI_SUMMARY_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
+ENV AI_STRUCTURED_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
+ENV AI_REASONING_MODEL=qwen/qwen3-next-80b-a3b-instruct:free
+ENV AI_PAID_FALLBACK_MODEL=anthropic/claude-haiku-4.5
 ENV STUDYMIND_DB_PATH=/data/studymind_db
 ENV KB_COLLECTION_NAME=knowledge_v2
 ENV CHAT_DB_PATH=/data/chat_history.sqlite3

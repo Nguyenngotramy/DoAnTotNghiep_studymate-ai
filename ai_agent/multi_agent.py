@@ -168,23 +168,23 @@ def _trim_messages_for_budget(messages: list[dict]) -> list[dict]:
 
 # === FALLBACK CHUNG ===
 SYSTEM_MODEL = os.getenv("AI_AGENT_MODEL", "openrouter/free").strip() or "openrouter/free"
+CHAT_MODEL = os.getenv("AI_CHAT_MODEL", SYSTEM_MODEL).strip() or SYSTEM_MODEL
+SUMMARY_MODEL = os.getenv("AI_SUMMARY_MODEL", CHAT_MODEL).strip() or CHAT_MODEL
+STRUCTURED_MODEL = os.getenv("AI_STRUCTURED_MODEL", "openrouter/free").strip() or "openrouter/free"
+REASONING_MODEL = os.getenv("AI_REASONING_MODEL", STRUCTURED_MODEL).strip() or STRUCTURED_MODEL
+PAID_FALLBACK_MODEL = os.getenv("AI_PAID_FALLBACK_MODEL", "").strip()
 
-FALLBACK_MODELS = list(dict.fromkeys([SYSTEM_MODEL, "openrouter/free"]))
 
-# === TUTOR AGENT (Socratic reasoning — cần CoT tốt) ===
-TUTOR_MODELS = FALLBACK_MODELS
+def _model_chain(*models: str) -> list[str]:
+    return list(dict.fromkeys(model.strip() for model in models if model and model.strip()))
 
-# === QUIZ AGENT (JSON output nghiêm ngặt — cần tool-calling ổn định) ===
-QUIZ_MODELS = FALLBACK_MODELS
 
-# === SUMMARY AGENT (nhanh, nhẹ, throughput cao) ===
-SUMMARY_MODELS = FALLBACK_MODELS
-
-# === FLASHCARD AGENT (JSON có cấu trúc) ===
-FLASHCARD_MODELS = FALLBACK_MODELS
-
-# === KEPNER-TREGOE AGENT (phân tích logic phức tạp — cần reasoning nặng) ===
-KEPNER_TREGOE_MODELS = FALLBACK_MODELS
+FALLBACK_MODELS = _model_chain(SYSTEM_MODEL, "openrouter/free", PAID_FALLBACK_MODEL)
+TUTOR_MODELS = _model_chain(CHAT_MODEL, "openrouter/free", PAID_FALLBACK_MODEL)
+SUMMARY_MODELS = _model_chain(SUMMARY_MODEL, CHAT_MODEL, "openrouter/free", PAID_FALLBACK_MODEL)
+QUIZ_MODELS = _model_chain(STRUCTURED_MODEL, "openrouter/free", PAID_FALLBACK_MODEL)
+FLASHCARD_MODELS = _model_chain(STRUCTURED_MODEL, "openrouter/free", PAID_FALLBACK_MODEL)
+KEPNER_TREGOE_MODELS = _model_chain(REASONING_MODEL, "openrouter/free", PAID_FALLBACK_MODEL)
 
 
 def _is_credit_error(e: Exception) -> bool:

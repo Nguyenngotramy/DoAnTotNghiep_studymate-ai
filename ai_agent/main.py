@@ -1282,7 +1282,13 @@ async def chat(msg: ChatMessage):
             "model": (
                 validate_model(msg.provider, msg.model)
                 if msg.api_key and msg.api_key.strip()
-                else os.getenv("AI_AGENT_MODEL", "openrouter/free")
+                else (
+                    os.getenv("AI_STRUCTURED_MODEL", "openrouter/free")
+                    if route in {"quiz", "flashcard"}
+                    else os.getenv("AI_SUMMARY_MODEL", os.getenv("AI_AGENT_MODEL", "openrouter/free"))
+                    if route == "summary"
+                    else os.getenv("AI_CHAT_MODEL", os.getenv("AI_AGENT_MODEL", "openrouter/free"))
+                )
             ),
         },
     }
