@@ -392,7 +392,7 @@ export default function DiscoverPage() {
 
       {tab === 'trending' && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="col-span-2 space-y-4">
+          <div className="space-y-4 sm:col-span-2">
             <div className="flex items-center justify-between">
               <h2 className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>
                 🔥 Blog học tập đang thịnh hành
@@ -662,7 +662,7 @@ export default function DiscoverPage() {
 
       {tab === 'leaderboard' && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <h2 className="text-[14px] font-semibold mb-4" style={{ color: 'var(--text)' }}>
               🏆 Bảng xếp hạng tuần này
             </h2>
@@ -825,14 +825,14 @@ export default function DiscoverPage() {
             👥 Nhóm học công khai — Có hiện mã để tham gia
           </h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {publicGroups.map((g: any) => {
               const alreadyJoined = joined.has(g.inviteCode) || isAlreadyInGroup(g)
 
               return (
                 <div
                   key={g.id}
-                  className="border rounded-xl p-5 transition-all hover:-translate-y-0.5"
+                  className="rounded-2xl border p-4 transition-all hover:-translate-y-0.5 sm:p-5"
                   style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
                 >
                   <div className="flex items-start gap-3 mb-3">
@@ -846,8 +846,8 @@ export default function DiscoverPage() {
                       <Users size={18} style={{ color: g.coverColor ?? '#6366f1' }} />
                     </div>
 
-                    <div className="flex-1">
-                      <h3 className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-[14px] font-semibold leading-snug" style={{ color: 'var(--text)' }}>
                         {g.name}
                       </h3>
                       <p className="text-[11px]" style={{ color: (g.coverColor ?? '#6366f1') + 'cc' }}>
@@ -868,7 +868,7 @@ export default function DiscoverPage() {
                     </span>
                   </div>
 
-                  <p className="text-[12px] mb-4 leading-relaxed" style={{ color: 'var(--text2)' }}>
+                  <p className="mb-4 line-clamp-3 text-[12px] leading-relaxed" style={{ color: 'var(--text2)' }}>
                     {g.description}
                   </p>
 
@@ -921,7 +921,7 @@ export default function DiscoverPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {people.map((u: any) => {
               const skill = getMainSkill(u)
               const skillColor = SKILL_COLORS[skill] ?? '#818cf8'
