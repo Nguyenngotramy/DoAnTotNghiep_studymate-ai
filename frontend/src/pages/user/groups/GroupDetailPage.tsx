@@ -646,7 +646,7 @@ export default function GroupDetailPage() {
     return (
       <div className="page-enter max-w-4xl mx-auto py-16 text-center">
         <div className="text-[18px] font-semibold text-white">Không tìm thấy nhóm</div>
-        <button
+        <button type="button"
           onClick={() => navigate('/groups')}
           className="mt-4 px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm"
         >
@@ -663,23 +663,23 @@ export default function GroupDetailPage() {
   const reportedCount = (reportedPosts as any[]).length
 
   return (
-    <div className="page-enter max-w-7xl mx-auto space-y-5">
+    <div className="page-enter mx-auto max-w-7xl space-y-4 overflow-x-hidden pb-24 lg:space-y-5 lg:pb-6">
       <section
         className="rounded-[28px] overflow-hidden border"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
       >
         <div
-          className="h-40 relative"
+          className="relative min-h-[240px] sm:min-h-[176px]"
           style={{
             background: `linear-gradient(135deg, ${group.coverColor || '#6366f1'}55, #111827 85%)`,
           }}
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,.12),transparent_35%)]" />
 
-          <div className="absolute bottom-5 left-6 right-6 flex items-end justify-between gap-4">
-            <div className="flex items-end gap-4 min-w-0">
+          <div className="relative z-10 flex min-h-[240px] flex-col justify-end gap-4 p-4 sm:min-h-[176px] sm:flex-row sm:items-end sm:justify-between sm:p-6">
+            <div className="flex min-w-0 items-end gap-3 sm:gap-4">
               <div
-                className="w-20 h-20 rounded-3xl flex items-center justify-center border"
+                className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border sm:h-20 sm:w-20 sm:rounded-3xl"
                 style={{
                   background: `${group.coverColor || '#6366f1'}22`,
                   borderColor: `${group.coverColor || '#6366f1'}55`,
@@ -690,7 +690,7 @@ export default function GroupDetailPage() {
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-[28px] font-bold text-white truncate">{group.name}</h1>
+                  <h1 className="line-clamp-2 text-xl font-bold leading-tight text-white sm:text-[28px]">{group.name}</h1>
 
                   <span
                     className="px-2.5 py-1 rounded-full text-[11px] font-medium"
@@ -747,15 +747,15 @@ export default function GroupDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap justify-end">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
               {!isLeader && (
-                <button
+                <button type="button"
                   onClick={() => {
                     if (window.confirm('Bạn có chắc muốn rời nhóm không?')) {
                       leaveGroupMut.mutate()
                     }
                   }}
-                  className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium border"
+                  className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-[12px] font-medium sm:px-4 sm:text-sm"
                   style={{ borderColor: 'rgba(255,255,255,.16)', color: '#fff', background: 'rgba(239,68,68,.18)' }}
                 >
                   <LogOut size={15} />
@@ -765,7 +765,7 @@ export default function GroupDetailPage() {
 
               <Link
                 to={`/groups/${groupId}/chat`}
-                className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium border"
+                className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-[12px] font-medium sm:px-4 sm:text-sm"
                 style={{ borderColor: 'rgba(255,255,255,.16)', color: '#fff', background: 'rgba(255,255,255,.06)' }}
               >
                 <MessageSquare size={15} />
@@ -774,7 +774,7 @@ export default function GroupDetailPage() {
 
               <Link
                 to={`/groups/${groupId}/projects`}
-                className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium border"
+                className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-[12px] font-medium sm:px-4 sm:text-sm"
                 style={{ borderColor: 'rgba(255,255,255,.16)', color: '#fff', background: 'rgba(255,255,255,.06)' }}
               >
                 <KanbanSquare size={15} />
@@ -783,7 +783,7 @@ export default function GroupDetailPage() {
 
               <Link
                 to={`/groups/${groupId}/docs`}
-                className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium border"
+                className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-[12px] font-medium sm:px-4 sm:text-sm"
                 style={{ borderColor: 'rgba(255,255,255,.16)', color: '#fff', background: 'rgba(255,255,255,.06)' }}
               >
                 <FileText size={15} />
@@ -792,7 +792,7 @@ export default function GroupDetailPage() {
 
               <Link
                 to="/study-drive"
-                className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium border"
+                className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-[12px] font-medium sm:px-4 sm:text-sm"
                 style={{ borderColor: 'rgba(255,255,255,.16)', color: '#fff', background: 'rgba(99,102,241,.20)' }}
               >
                 <FolderOpen size={15} />
@@ -803,10 +803,10 @@ export default function GroupDetailPage() {
         </div>
 
         <div
-          className="px-5 py-4 border-t"
+          className="border-t px-4 py-3 sm:px-5 sm:py-4"
           style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
         >
-          <p className="text-[14px] leading-relaxed" style={{ color: 'var(--text2)' }}>
+          <p className="line-clamp-3 text-sm leading-6" style={{ color: 'var(--text2)' }}>
             {group.description}
           </p>
         </div>
@@ -815,7 +815,7 @@ export default function GroupDetailPage() {
       <section className="grid grid-cols-12 gap-5">
         <div className="col-span-12 lg:col-span-8 space-y-5">
           <div
-            className="rounded-2xl p-2 border flex items-center gap-2 flex-wrap"
+            className="flex gap-2 overflow-x-auto rounded-2xl border p-2"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             {[
@@ -837,11 +837,11 @@ export default function GroupDetailPage() {
                     : 0
 
               return (
-                <button
+                <button type="button"
                   key={t.key}
                   onClick={() => setTab(t.key)}
                   className={clsx(
-                    'h-10 px-4 rounded-xl text-sm font-medium inline-flex items-center gap-2 transition-all relative',
+                    'relative inline-flex h-9 flex-shrink-0 items-center gap-2 rounded-full px-3 text-[12px] font-medium transition-all',
                     tab === t.key ? 'text-white' : ''
                   )}
                   style={
@@ -874,22 +874,22 @@ export default function GroupDetailPage() {
           {tab === 'posts' && (
             <>
               <div
-                className="rounded-3xl border p-4"
+                className="rounded-3xl border p-3 sm:p-4"
                 style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2.5 sm:gap-3">
                   <Avatar name={user?.fullName} avatar={user?.avatar} size={42} />
 
                   <div className="flex-1 relative">
                     <textarea
-                      value={postText}
+                      id="group-post-input" name="groupPost" value={postText}
                       onChange={(e) => {
                         setPostText(e.target.value)
                         setShowMentionBox(e.target.value.includes('@'))
                       }}
-                      rows={4}
-                      placeholder={`Chia sẻ điều gì đó với nhóm ${group.name}...`}
-                      className="w-full rounded-2xl px-4 py-3 resize-none outline-none text-[14px]"
+                      rows={3}
+                      placeholder={`Chia sẻ với ${group.name}...`}
+                      className="w-full resize-none rounded-2xl px-3 py-2.5 text-[13px] outline-none sm:px-4 sm:py-3 sm:text-[14px]"
                       style={{
                         background: 'var(--bg3)',
                         border: '1px solid var(--border)',
@@ -906,7 +906,7 @@ export default function GroupDetailPage() {
                           Gợi ý nhắc thành viên
                         </div>
                         {memberSuggestions.slice(0, 6).map((m: any) => (
-                          <button
+                          <button type="button"
                             key={m.id}
                             onClick={() => handleMention(m.name)}
                             className="w-full text-left px-3 py-2 hover:bg-white/[.04] text-sm"
@@ -929,7 +929,7 @@ export default function GroupDetailPage() {
                                   alt="preview"
                                   className="w-full h-40 object-cover"
                                 />
-                                <button
+                                <button type="button"
                                   onClick={() => setSelectedImages(prev => prev.filter((_, i) => i !== idx))}
                                   className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center"
                                 >
@@ -947,7 +947,7 @@ export default function GroupDetailPage() {
                               controls
                               className="w-full max-h-[320px] bg-black"
                             />
-                            <button
+                            <button type="button"
                               onClick={() => setSelectedVideo(null)}
                               className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center"
                             >
@@ -970,7 +970,7 @@ export default function GroupDetailPage() {
                                     {file.name}
                                   </span>
                                 </div>
-                                <button
+                                <button type="button"
                                   onClick={() => setSelectedDocs(prev => prev.filter((_, i) => i !== idx))}
                                   className="w-7 h-7 rounded-full flex items-center justify-center"
                                   style={{ background: 'rgba(239,68,68,.12)', color: '#ef4444' }}
@@ -985,7 +985,7 @@ export default function GroupDetailPage() {
                     )}
 
                     <input
-                      ref={imageInputRef}
+                      id="group-post-images" name="groupPostImages" ref={imageInputRef}
                       type="file"
                       accept="image/*"
                       multiple
@@ -994,7 +994,7 @@ export default function GroupDetailPage() {
                     />
 
                     <input
-                      ref={videoInputRef}
+                      id="group-post-video" name="groupPostVideo" ref={videoInputRef}
                       type="file"
                       accept="video/*"
                       hidden
@@ -1002,7 +1002,7 @@ export default function GroupDetailPage() {
                     />
 
                     <input
-                      ref={docInputRef}
+                      id="group-post-documents" name="groupPostDocuments" ref={docInputRef}
                       type="file"
                       accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
                       multiple
@@ -1011,7 +1011,7 @@ export default function GroupDetailPage() {
                     />
 
                     <input
-                      ref={folderInputRef}
+                      id="group-post-folder" name="groupPostFolder" ref={folderInputRef}
                       type="file"
                       multiple
                       hidden
@@ -1036,7 +1036,7 @@ export default function GroupDetailPage() {
                             className="absolute left-0 top-12 w-52 rounded-2xl border shadow-xl z-20 overflow-hidden"
                             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
                           >
-                            <button
+                            <button type="button"
                               onClick={() => {
                                 imageInputRef.current?.click()
                                 setShowAttachMenu(false)
@@ -1046,7 +1046,7 @@ export default function GroupDetailPage() {
                             >
                               Ảnh
                             </button>
-                            <button
+                            <button type="button"
                               onClick={() => {
                                 videoInputRef.current?.click()
                                 setShowAttachMenu(false)
@@ -1056,7 +1056,7 @@ export default function GroupDetailPage() {
                             >
                               Video
                             </button>
-                            <button
+                            <button type="button"
                               onClick={() => {
                                 docInputRef.current?.click()
                                 setShowAttachMenu(false)
@@ -1066,7 +1066,7 @@ export default function GroupDetailPage() {
                             >
                               Tài liệu
                             </button>
-                            <button
+                            <button type="button"
                               onClick={() => {
                                 folderInputRef.current?.click()
                                 setShowAttachMenu(false)
@@ -1091,7 +1091,7 @@ export default function GroupDetailPage() {
                           @ Nhắc
                         </button>
 
-                        <button
+                        <button type="button"
                           onClick={handleCreatePost}
                           disabled={createPostMut.isPending}
                           className="h-10 px-5 rounded-xl inline-flex items-center gap-2 text-sm font-medium text-white disabled:opacity-60"
@@ -1142,7 +1142,7 @@ export default function GroupDetailPage() {
                         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
                       >
                         <div className="p-4">
-                          <div className="flex items-start gap-3">
+                          <div className="flex items-start gap-2.5 sm:gap-3">
                             <Avatar name={post.authorName} avatar={post.authorAvatar} size={42} />
 
                             <div className="flex-1 min-w-0">
@@ -1162,7 +1162,7 @@ export default function GroupDetailPage() {
                                 </div>
 
                                 <div className="relative">
-                                  <button
+                                  <button type="button"
                                     onClick={() => setPostMenuOpen(menuOpen ? null : post.id)}
                                     className="w-9 h-9 rounded-xl flex items-center justify-center"
                                     style={{ background: 'var(--bg3)', color: 'var(--text3)' }}
@@ -1176,7 +1176,7 @@ export default function GroupDetailPage() {
                                       className="absolute right-0 top-11 w-56 rounded-2xl border shadow-xl z-20 overflow-hidden"
                                       style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
                                     >
-                                      <button
+                                      <button type="button"
                                         onClick={() => handleHidePost(post.id)}
                                         className="w-full px-3 py-3 text-left text-sm inline-flex items-center gap-2 hover:bg-white/[.04]"
                                         style={{ color: 'var(--text)' }}
@@ -1185,7 +1185,7 @@ export default function GroupDetailPage() {
                                         Ẩn bài viết
                                       </button>
 
-                                      <button
+                                      <button type="button"
                                         onClick={() => handleSavePost(post)}
                                         className="w-full px-3 py-3 text-left text-sm inline-flex items-center gap-2 hover:bg-white/[.04]"
                                         style={{ color: 'var(--text)' }}
@@ -1194,7 +1194,7 @@ export default function GroupDetailPage() {
                                         Lưu vào học tập cá nhân
                                       </button>
 
-                                      <button
+                                      <button type="button"
                                         onClick={() => handleSharePost(post)}
                                         className="w-full px-3 py-3 text-left text-sm inline-flex items-center gap-2 hover:bg-white/[.04]"
                                         style={{ color: 'var(--text)' }}
@@ -1203,7 +1203,7 @@ export default function GroupDetailPage() {
                                         Chia sẻ qua tin nhắn
                                       </button>
 
-                                      <button
+                                      <button type="button"
                                         onClick={() => handleReportPost(post.id)}
                                         className="w-full px-3 py-3 text-left text-sm inline-flex items-center gap-2 hover:bg-white/[.04]"
                                         style={{ color: 'var(--text)' }}
@@ -1213,7 +1213,7 @@ export default function GroupDetailPage() {
                                       </button>
 
                                       {canDelete && (
-                                        <button
+                                        <button type="button"
                                           onClick={() => deletePostMut.mutate(post.id)}
                                           className="w-full px-3 py-3 text-left text-sm inline-flex items-center gap-2 hover:bg-white/[.04]"
                                           style={{ color: '#ef4444' }}
@@ -1303,7 +1303,7 @@ export default function GroupDetailPage() {
                           className="px-3 py-2 border-t flex items-center gap-2"
                           style={{ borderColor: 'var(--border)' }}
                         >
-                          <button
+                          <button type="button"
                             onClick={() => likePostMut.mutate(post.id)}
                             className="flex-1 h-11 rounded-2xl inline-flex items-center justify-center gap-2 text-sm font-medium"
                             style={{
@@ -1315,7 +1315,7 @@ export default function GroupDetailPage() {
                             Thích
                           </button>
 
-                          <button
+                          <button type="button"
                             className="flex-1 h-11 rounded-2xl inline-flex items-center justify-center gap-2 text-sm font-medium"
                             style={{ color: 'var(--text2)' }}
                           >
@@ -1323,7 +1323,7 @@ export default function GroupDetailPage() {
                             Bình luận
                           </button>
 
-                          <button
+                          <button type="button"
                             onClick={() => handleSharePost(post)}
                             className="h-11 px-4 rounded-2xl inline-flex items-center justify-center gap-2 text-sm font-medium"
                             style={{ color: 'var(--text2)' }}
@@ -1332,7 +1332,7 @@ export default function GroupDetailPage() {
                             <Share2 size={16} />
                           </button>
 
-                          <button
+                          <button type="button"
                             onClick={() => handleReportPost(post.id)}
                             className="h-11 px-4 rounded-2xl inline-flex items-center justify-center gap-2 text-sm font-medium"
                             style={{ color: 'var(--text2)' }}
@@ -1345,7 +1345,7 @@ export default function GroupDetailPage() {
 
                         <div className="px-4 pb-4 space-y-3">
                           {(post.comments ?? []).map(comment => (
-                            <div key={comment.id} className="flex items-start gap-3">
+                            <div key={comment.id} className="flex items-start gap-2.5 sm:gap-3">
                               <Avatar name={comment.authorName} avatar={comment.authorAvatar} size={34} />
                               <div className="flex-1 space-y-2">
                                 <div
@@ -1364,7 +1364,7 @@ export default function GroupDetailPage() {
                                     {comment.content}
                                   </p>
 
-                                  <button
+                                  <button type="button"
                                     onClick={() => openReplyForComment(comment.id)}
                                     className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium"
                                     style={{ color: '#818cf8' }}
@@ -1393,7 +1393,7 @@ export default function GroupDetailPage() {
                                         {reply.content}
                                       </p>
 
-                                      <button
+                                      <button type="button"
                                         onClick={() => openReplyForComment(comment.id, reply.authorName)}
                                         className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium"
                                         style={{ color: '#818cf8' }}
@@ -1408,7 +1408,7 @@ export default function GroupDetailPage() {
                                 {openReplyBox[comment.id] && (
                                   <div className="flex items-center gap-2 ml-4">
                                     <input
-                                      value={replyDrafts[comment.id] ?? ''}
+                                      id={`group-reply-${comment.id}`} name={`groupReply${comment.id}`} autoComplete="off" value={replyDrafts[comment.id] ?? ''}
                                       onChange={(e) =>
                                         setReplyDrafts(prev => ({ ...prev, [comment.id]: e.target.value }))
                                       }
@@ -1426,7 +1426,7 @@ export default function GroupDetailPage() {
                                         color: 'var(--text)',
                                       }}
                                     />
-                                    <button
+                                    <button type="button"
                                       onClick={() => handleReplyComment(post.id, comment.id)}
                                       className="w-10 h-10 rounded-2xl flex items-center justify-center text-white"
                                       style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
@@ -1443,7 +1443,7 @@ export default function GroupDetailPage() {
                             <Avatar name={user?.fullName} avatar={user?.avatar} size={34} />
                             <div className="flex-1 flex items-center gap-2">
                               <input
-                                value={commentDrafts[post.id] ?? ''}
+                                id={`group-comment-${post.id}`} name={`groupComment${post.id}`} autoComplete="off" value={commentDrafts[post.id] ?? ''}
                                 onChange={(e) =>
                                   setCommentDrafts(prev => ({ ...prev, [post.id]: e.target.value }))
                                 }
@@ -1461,7 +1461,7 @@ export default function GroupDetailPage() {
                                   color: 'var(--text)',
                                 }}
                               />
-                              <button
+                              <button type="button"
                                 onClick={() => handleAddComment(post.id)}
                                 disabled={addCommentMut.isPending}
                                 className="w-11 h-11 rounded-2xl flex items-center justify-center text-white disabled:opacity-60"
@@ -1510,7 +1510,7 @@ export default function GroupDetailPage() {
                       className="rounded-2xl border p-4"
                       style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2.5 sm:gap-3">
                         <Avatar name={post.authorName} avatar={post.authorAvatar} size={42} />
                         <div className="flex-1 min-w-0">
                           <div className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>
@@ -1579,7 +1579,7 @@ export default function GroupDetailPage() {
                           )}
 
                           <div className="mt-4 flex items-center gap-2">
-                            <button
+                            <button type="button"
                               onClick={() => approvePostMut.mutate(post.id)}
                               className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium"
                               style={{ background: 'rgba(34,197,94,.15)', color: '#22c55e' }}
@@ -1588,7 +1588,7 @@ export default function GroupDetailPage() {
                               Duyệt bài
                             </button>
 
-                            <button
+                            <button type="button"
                               onClick={() => {
                                 const reason = window.prompt('Lý do từ chối bài viết:', 'Nội dung chưa phù hợp') || ''
                                 rejectPostMut.mutate({ postId: post.id, reason })
@@ -1639,7 +1639,7 @@ export default function GroupDetailPage() {
                       className="rounded-2xl border p-4"
                       style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2.5 sm:gap-3">
                         <Avatar name={post.authorName} avatar={post.authorAvatar} size={42} />
                         <div className="flex-1 min-w-0">
                           <div className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>
@@ -1671,7 +1671,7 @@ export default function GroupDetailPage() {
                           )}
 
                           <div className="mt-4 flex items-center gap-2">
-                            <button
+                            <button type="button"
                               onClick={() => deletePostMut.mutate(post.id)}
                               className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium"
                               style={{ background: 'rgba(239,68,68,.12)', color: '#ef4444' }}
@@ -1680,7 +1680,7 @@ export default function GroupDetailPage() {
                               Xóa bài
                             </button>
 
-                            <button
+                            <button type="button"
                               onClick={() => toast.success('Đã giữ bài viết này')}
                               className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium"
                               style={{ background: 'rgba(99,102,241,.12)', color: '#a5b4fc' }}
@@ -1738,7 +1738,7 @@ export default function GroupDetailPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
                           <Link
                             to={`/u/${m.userId}`}
                             className="px-3 h-9 rounded-xl text-[12px] font-medium inline-flex items-center justify-center"
@@ -1748,7 +1748,7 @@ export default function GroupDetailPage() {
                           </Link>
 
                           {isLeader && (
-                            <button
+                            <button type="button"
                               onClick={() => toast.success(`Xem hoạt động của ${m.fullName} sẽ làm tiếp`)}
                               className="px-3 h-9 rounded-xl text-[12px] font-medium inline-flex items-center justify-center gap-1"
                               style={{ background: 'rgba(34,197,94,.12)', color: '#22c55e' }}
@@ -1759,7 +1759,7 @@ export default function GroupDetailPage() {
                           )}
 
                           {canKick && (
-                            <button
+                            <button type="button"
                               onClick={() => {
                                 if (window.confirm(`Đuổi ${m.fullName} khỏi nhóm?`)) {
                                   removeMemberMut.mutate(m.userId)
@@ -1792,7 +1792,7 @@ export default function GroupDetailPage() {
                 </h2>
 
                 {isLeader && (
-                  <button
+                  <button type="button"
                     onClick={() => setShowEditGroup(true)}
                     className="px-4 h-10 rounded-xl text-sm font-medium inline-flex items-center gap-2"
                     style={{ background: 'rgba(99,102,241,.14)', color: '#a5b4fc' }}
@@ -1870,7 +1870,7 @@ export default function GroupDetailPage() {
 
         <aside className="col-span-12 lg:col-span-4 space-y-5">
           <div
-            className="rounded-3xl border p-4"
+            className="rounded-3xl border p-3 sm:p-4"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <h3 className="text-[16px] font-semibold mb-3" style={{ color: 'var(--text)' }}>
@@ -1895,7 +1895,7 @@ export default function GroupDetailPage() {
           </div>
 
           <div
-            className="rounded-3xl border p-4"
+            className="rounded-3xl border p-3 sm:p-4"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <h3 className="text-[16px] font-semibold mb-3" style={{ color: 'var(--text)' }}>
@@ -1942,7 +1942,7 @@ export default function GroupDetailPage() {
           </div>
 
           <div
-            className="rounded-3xl border p-4"
+            className="rounded-3xl border p-3 sm:p-4"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <h3 className="text-[16px] font-semibold mb-3" style={{ color: 'var(--text)' }}>
@@ -1994,7 +1994,7 @@ export default function GroupDetailPage() {
                   Chọn người nhận để gửi bài viết này vào inbox
                 </p>
               </div>
-              <button
+              <button type="button"
                 onClick={() => setSharePost(null)}
                 className="w-10 h-10 rounded-2xl flex items-center justify-center"
                 style={{ background: 'var(--bg3)', color: 'var(--text3)' }}
@@ -2022,7 +2022,7 @@ export default function GroupDetailPage() {
                 </div>
               ) : (
                 (conversations as any[]).map((conv: any) => (
-                  <button
+                  <button type="button"
                     key={conv.userId}
                     onClick={() => shareMut.mutate({ userId: conv.userId, post: sharePost })}
                     className="w-full rounded-2xl border px-3 py-3 flex items-center justify-between text-left hover:bg-white/[.03]"
@@ -2070,7 +2070,7 @@ export default function GroupDetailPage() {
                   Cập nhật thông tin và chế độ hoạt động của nhóm
                 </p>
               </div>
-              <button
+              <button type="button"
                 onClick={() => setShowEditGroup(false)}
                 className="w-10 h-10 rounded-2xl flex items-center justify-center"
                 style={{ background: 'var(--bg3)', color: 'var(--text3)' }}
@@ -2085,7 +2085,7 @@ export default function GroupDetailPage() {
                   Tên nhóm
                 </label>
                 <input
-                  value={editName}
+                  id="group-edit-name" name="groupEditName" autoComplete="off" value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   className="mt-2 w-full h-12 px-4 rounded-2xl outline-none text-[14px]"
                   style={{
@@ -2101,9 +2101,9 @@ export default function GroupDetailPage() {
                   Mô tả
                 </label>
                 <textarea
-                  value={editDescription}
+                  id="group-edit-description" name="groupEditDescription" value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  rows={4}
+                  rows={3}
                   className="mt-2 w-full px-4 py-3 rounded-2xl outline-none text-[14px] resize-none"
                   style={{
                     background: 'var(--bg3)',
@@ -2118,7 +2118,7 @@ export default function GroupDetailPage() {
                   Môn học
                 </label>
                 <input
-                  value={editSubject}
+                  id="group-edit-subject" name="groupEditSubject" autoComplete="off" value={editSubject}
                   onChange={(e) => setEditSubject(e.target.value)}
                   className="mt-2 w-full h-12 px-4 rounded-2xl outline-none text-[14px]"
                   style={{
@@ -2141,7 +2141,7 @@ export default function GroupDetailPage() {
                   }}
                 >
                   <input
-                    type="color"
+                    id="group-edit-color" name="groupEditColor" type="color"
                     value={editCoverColor}
                     onChange={(e) => setEditCoverColor(e.target.value)}
                     className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer"
@@ -2167,7 +2167,7 @@ export default function GroupDetailPage() {
                   </div>
                 </div>
                 <input
-                  type="checkbox"
+                  id="group-public-visible" name="groupPublicVisible" type="checkbox"
                   checked={editPublicVisible}
                   onChange={(e) => setEditPublicVisible(e.target.checked)}
                 />
@@ -2186,7 +2186,7 @@ export default function GroupDetailPage() {
                   </div>
                 </div>
                 <input
-                  type="checkbox"
+                  id="group-require-approval" name="groupRequireApproval" type="checkbox"
                   checked={editRequireApproval}
                   onChange={(e) => setEditRequireApproval(e.target.checked)}
                 />
@@ -2205,7 +2205,7 @@ export default function GroupDetailPage() {
                   </div>
                 </div>
                 <input
-                  type="checkbox"
+                  id="group-post-approval" name="groupPostApproval" type="checkbox"
                   checked={editRequirePostApproval}
                   onChange={(e) => setEditRequirePostApproval(e.target.checked)}
                 />
@@ -2213,7 +2213,7 @@ export default function GroupDetailPage() {
             </div>
 
             <div className="mt-6 flex items-center justify-end gap-2">
-              <button
+              <button type="button"
                 onClick={() => setShowEditGroup(false)}
                 className="h-10 px-4 rounded-xl text-sm font-medium"
                 style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
@@ -2221,7 +2221,7 @@ export default function GroupDetailPage() {
                 Hủy
               </button>
 
-              <button
+              <button type="button"
                 onClick={() => updateGroupMut.mutate()}
                 disabled={updateGroupMut.isPending}
                 className="h-10 px-5 rounded-xl text-sm font-medium text-white inline-flex items-center gap-2 disabled:opacity-60"

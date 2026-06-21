@@ -29,9 +29,9 @@ export default function ProjectProgressCharts({ timeSeries, summary, members }: 
   }))
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
       {/* Pie Chart */}
-      <div className="p-5 rounded-2xl border" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
+      <div className="overflow-x-auto rounded-3xl border p-4 sm:p-5" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
         <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text)' }}>
           Phân bố task
         </h3>
@@ -63,7 +63,7 @@ export default function ProjectProgressCharts({ timeSeries, summary, members }: 
       </div>
 
       {/* Bar Chart */}
-      <div className="p-5 rounded-2xl border" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
+      <div className="overflow-x-auto rounded-3xl border p-4 sm:p-5" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
         <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text)' }}>
           Task hoàn thành theo thành viên
         </h3>
@@ -87,7 +87,7 @@ export default function ProjectProgressCharts({ timeSeries, summary, members }: 
       </div>
 
       {/* Line Chart */}
-      <div className="p-5 rounded-2xl border lg:col-span-2" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
+      <div className="overflow-x-auto rounded-3xl border p-4 sm:p-5 lg:col-span-2" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
         <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text)' }}>
           Tiến độ theo thời gian
         </h3>

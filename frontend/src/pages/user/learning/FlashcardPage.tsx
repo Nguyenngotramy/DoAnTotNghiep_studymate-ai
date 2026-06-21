@@ -61,8 +61,8 @@ function CreateFolderModal({
           <h3 className="text-[18px] font-semibold" style={{ color: 'var(--text)' }}>
             Tạo folder
           </h3>
-          <button
-            onClick={onClose}
+          <button type="button"
+            aria-label="Đóng hộp thoại" onClick={onClose}
             className="w-10 h-10 rounded-2xl flex items-center justify-center"
             style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)' }}
           >
@@ -72,7 +72,7 @@ function CreateFolderModal({
 
         <div className="space-y-3">
           <input
-            value={name}
+            id="flashcard-folder-name" name="flashcardFolderName" autoComplete="off" value={name}
             onChange={e => setName(e.target.value)}
             placeholder="Ví dụ: Tiếng Anh, Java, AI..."
             className="w-full h-12 rounded-2xl px-4 outline-none"
@@ -88,7 +88,7 @@ function CreateFolderModal({
               style={{ background: color, borderColor: 'rgba(255,255,255,.18)' }}
             />
             <input
-              type="color"
+              id="flashcard-folder-color" name="flashcardFolderColor" type="color"
               value={color}
               onChange={e => setColor(e.target.value)}
               className="w-full h-10 rounded-xl px-1"
@@ -97,7 +97,7 @@ function CreateFolderModal({
           </div>
         </div>
 
-        <button
+        <button type="button"
           onClick={() => onSubmit({ name, color })}
           disabled={loading || !name.trim()}
           className="w-full h-12 rounded-2xl mt-4 text-[13px] font-medium disabled:opacity-60"
@@ -158,8 +158,8 @@ function CreateDeckModal({
           <h3 className="text-[18px] font-semibold" style={{ color: 'var(--text)' }}>
             {initialData ? 'Chỉnh sửa bộ flashcard' : 'Tạo bộ flashcard cá nhân'}
           </h3>
-          <button
-            onClick={onClose}
+          <button type="button"
+            aria-label="Đóng hộp thoại" onClick={onClose}
             className="w-10 h-10 rounded-2xl flex items-center justify-center"
             style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text2)' }}
           >
@@ -169,14 +169,14 @@ function CreateDeckModal({
 
         <div className="grid gap-3 mb-4">
           <input
-            value={title}
+            id="flashcard-deck-title" name="flashcardDeckTitle" autoComplete="off" value={title}
             onChange={e => setTitle(e.target.value)}
             placeholder="Tên bộ thẻ"
             className="w-full h-12 rounded-2xl px-4 outline-none"
             style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
           />
           <input
-            value={description}
+            id="flashcard-deck-description" name="flashcardDeckDescription" autoComplete="off" value={description}
             onChange={e => setDescription(e.target.value)}
             placeholder="Mô tả ngắn (không bắt buộc)"
             className="w-full h-12 rounded-2xl px-4 outline-none"
@@ -208,21 +208,21 @@ function CreateDeckModal({
                 <p className="text-[13px] font-medium" style={{ color: 'var(--text)' }}>
                   Thẻ {index + 1}
                 </p>
-                <button onClick={() => removeCard(index)} className="text-[12px]" style={{ color: '#ef4444' }}>
+                <button type="button" onClick={() => removeCard(index)} className="text-[12px]" style={{ color: '#ef4444' }}>
                   Xoá
                 </button>
               </div>
 
               <div className="grid gap-3">
                 <textarea
-                  value={card.question}
+                  id={`flashcard-question-${index}`} name={`flashcardQuestion${index}`} value={card.question}
                   onChange={e => updateCard(index, 'question', e.target.value)}
                   placeholder="Câu hỏi"
                   className="w-full min-h-[90px] rounded-2xl px-4 py-3 outline-none resize-none"
                   style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)' }}
                 />
                 <textarea
-                  value={card.answer}
+                  id={`flashcard-answer-${index}`} name={`flashcardAnswer${index}`} value={card.answer}
                   onChange={e => updateCard(index, 'answer', e.target.value)}
                   placeholder="Đáp án"
                   className="w-full min-h-[90px] rounded-2xl px-4 py-3 outline-none resize-none"
@@ -234,14 +234,14 @@ function CreateDeckModal({
         </div>
 
         <div className="flex gap-3 mt-4">
-          <button
+          <button type="button"
             onClick={addCard}
             className="px-4 h-12 rounded-2xl text-[13px] font-medium border"
             style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
           >
             + Thêm thẻ
           </button>
-          <button
+          <button type="button"
             onClick={() =>
               onSubmit({
                 title: title.trim(),
@@ -461,16 +461,16 @@ export default function FlashcardPage() {
 
   if (!activeDeck) {
     return (
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="mx-auto max-w-7xl space-y-5 overflow-x-hidden pb-24 lg:pb-6">
         <div
-          className="rounded-[32px] border p-6"
+          className="rounded-3xl border p-5 sm:p-6"
           style={{
             background:
               'linear-gradient(180deg, color-mix(in srgb, var(--bg2) 94%, #6366f1 6%), var(--bg2))',
             borderColor: 'color-mix(in srgb, var(--border) 84%, #6366f1 16%)',
           }}
         >
-          <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded-full border"
                 style={{
@@ -482,39 +482,39 @@ export default function FlashcardPage() {
                 Flashcard Workspace
               </div>
 
-              <h1 className="text-[28px] font-semibold leading-tight" style={{ color: 'var(--text)' }}>
+              <h1 className="text-2xl font-bold leading-tight sm:text-[28px] sm:font-semibold" style={{ color: 'var(--text)' }}>
                 Học thông minh bằng flashcard
               </h1>
-              <p className="text-[13px] mt-2 max-w-2xl leading-6" style={{ color: 'var(--text3)' }}>
+              <p className="mt-2 max-w-2xl text-sm leading-6" style={{ color: 'var(--text3)' }}>
                 Tạo bộ thẻ cá nhân, lưu flashcard từ tài liệu nhóm và kéo thả bộ thẻ vào folder để quản lý gọn hơn.
               </p>
             </div>
 
-            <div className="flex gap-2">
-              <button
+            <div className="grid w-full grid-cols-2 gap-3 lg:w-auto lg:grid-cols-3">
+              <button type="button"
                 onClick={() => setShowFolderModal(true)}
-                className="h-11 px-4 rounded-2xl border text-[13px] font-medium flex items-center gap-2"
+                className="flex h-11 min-w-0 items-center justify-center gap-2 rounded-2xl border px-3 text-[12px] font-medium sm:px-4 sm:text-[13px]"
                 style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
               >
                 <FolderPlus size={15} />
                 Tạo folder
               </button>
 
-              <button
+              <button type="button"
                 onClick={() => setShowVocabToolkit(true)}
-                className="h-11 px-4 rounded-2xl border text-[13px] font-medium flex items-center gap-2"
+                className="flex h-11 min-w-0 items-center justify-center gap-2 rounded-2xl border px-3 text-[12px] font-medium sm:px-4 sm:text-[13px]"
                 style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }}
               >
                 <BookMarked size={15} />
                 Dán từ vựng
               </button>
 
-              <button
+              <button type="button"
                 onClick={() => {
                 setEditingDeck(null)
                 setShowDeckModal(true)
               }}
-                className="h-11 px-5 rounded-2xl text-[13px] font-medium flex items-center gap-2 shadow-sm"
+                className="col-span-2 flex h-11 items-center justify-center gap-2 rounded-2xl px-5 text-[13px] font-medium shadow-sm lg:col-span-1"
                 style={{ background: '#6366f1', color: '#fff' }}
               >
                 <Plus size={15} />
@@ -523,7 +523,7 @@ export default function FlashcardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
             {[
               { label: 'Tổng bộ thẻ', value: decks.length, color: '#818cf8' },
               { label: 'Tổng số thẻ', value: totalCards, color: '#10b981' },
@@ -531,13 +531,13 @@ export default function FlashcardPage() {
             ].map(item => (
               <div
                 key={item.label}
-                className="rounded-2xl border p-4"
+                className="min-h-[110px] rounded-3xl border p-4"
                 style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
               >
                 <div className="text-[12px]" style={{ color: 'var(--text3)' }}>
                   {item.label}
                 </div>
-                <div className="text-[28px] font-semibold mt-1" style={{ color: item.color }}>
+                <div className="mt-1 text-2xl font-bold sm:text-[28px] sm:font-semibold" style={{ color: item.color }}>
                   {item.value}
                 </div>
               </div>
@@ -551,7 +551,7 @@ export default function FlashcardPage() {
             >
               <Search size={16} style={{ color: 'var(--text3)' }} />
               <input
-                value={search}
+                id="flashcard-search" name="flashcardSearch" autoComplete="off" value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Tìm theo tên bộ thẻ, tài liệu hoặc nhóm..."
                 className="bg-transparent outline-none w-full text-[13px]"
@@ -565,7 +565,7 @@ export default function FlashcardPage() {
                 { key: 'PERSONAL', label: 'Cá nhân ' },
                 { key: 'DOCUMENT_AI', label: 'AI từ tài liệu' },
               ].map(type => (
-                <button
+                <button type="button"
                   key={type.key}
                   onClick={() => setSourceType(type.key as any)}
                   className="px-4 h-11 rounded-2xl text-[12px] font-medium border"
@@ -590,7 +590,7 @@ export default function FlashcardPage() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <button
+              <button type="button"
                 onClick={() => setFolderId('ALL')}
                 className="px-4 h-10 rounded-2xl text-[12px] font-medium border"
                 style={{
@@ -616,7 +616,7 @@ export default function FlashcardPage() {
               </button>
 
               {folders.map(folder => (
-                <button
+                <button type="button"
                   key={folder.id}
                   onClick={() => setFolderId(folder.id)}
                   className="px-4 h-10 rounded-2xl text-[12px] font-medium border flex items-center gap-1.5 transition-all"
@@ -727,7 +727,7 @@ export default function FlashcardPage() {
                     </div>
 
                     <div className="relative">
-                      <button
+                      <button type="button"
                         onClick={e => {
                           e.stopPropagation()
                           setOpenMenuId(prev => (prev === deck.id ? null : deck.id))
@@ -740,13 +740,13 @@ export default function FlashcardPage() {
 
                       {openMenuId === deck.id && (
                         <>
-                          <button className="fixed inset-0 z-10 cursor-default" onClick={() => setOpenMenuId(null)} />
+                          <button type="button" className="fixed inset-0 z-10 cursor-default" onClick={() => setOpenMenuId(null)} />
                           <div
                             className="absolute right-0 top-11 z-20 w-40 rounded-2xl border p-1.5 shadow-xl"
                             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
                             onClick={e => e.stopPropagation()}
                           >
-                            <button
+                            <button type="button"
                               onClick={() => {
                                 setEditingDeck(deck)
                                 setShowDeckModal(true)
@@ -759,7 +759,7 @@ export default function FlashcardPage() {
                               Sửa
                             </button>
 
-                            <button
+                            <button type="button"
                               onClick={() => {
                                 setOpenMenuId(null)
                                 if (window.confirm(`Xoá bộ thẻ "${deck.title}"?`)) {
@@ -824,7 +824,7 @@ export default function FlashcardPage() {
                   </div>
 
                   <div className="flex flex-col gap-2 mt-4">
-                    <button
+                    <button type="button"
                       onClick={() => startDeck(deck, 'DUE')}
                       className="w-full h-11 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5"
                       style={{ background: '#6366f1', color: '#fff' }}
@@ -833,7 +833,7 @@ export default function FlashcardPage() {
                       Ôn thẻ đến hạn (SM-2)
                     </button>
                     <div className="flex gap-2">
-                      <button
+                      <button type="button"
                         onClick={() => startDeck(deck, 'ALL')}
                         className="flex-1 h-11 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5 border"
                         style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
@@ -841,7 +841,7 @@ export default function FlashcardPage() {
                         {deck.aiGenerated ? <Sparkles size={13} /> : <Layers size={13} />}
                         Học tất cả
                       </button>
-                      <button
+                      <button type="button"
                         onClick={() => startQuizFromFlashcards(deck)}
                         className="flex-1 h-11 rounded-2xl text-[12px] font-semibold flex items-center justify-center gap-1.5 border"
                         style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
@@ -1009,7 +1009,7 @@ export default function FlashcardPage() {
             </div>
 
             <div className="flex gap-3">
-              <button
+              <button type="button"
                 onClick={handleQuizRestart}
                 className="flex-1 py-3.5 rounded-2xl text-[13px] font-semibold text-white flex items-center justify-center gap-2"
                 style={{ background: '#6366f1' }}
@@ -1017,7 +1017,7 @@ export default function FlashcardPage() {
                 <RotateCcw size={14} />
                 Làm lại Quiz
               </button>
-              <button
+              <button type="button"
                 onClick={() => {
                   setQuizMode(false)
                   startDeck(activeDeck)
@@ -1028,7 +1028,7 @@ export default function FlashcardPage() {
                 <Layers size={14} />
                 Học thẻ flashcard
               </button>
-              <button
+              <button type="button"
                 onClick={() => {
                   setQuizMode(false)
                   setActiveDeck(null)
@@ -1059,7 +1059,7 @@ export default function FlashcardPage() {
         >
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <button
+              <button type="button"
                 onClick={() => {
                   setQuizMode(false)
                   setActiveDeck(null)
@@ -1071,7 +1071,7 @@ export default function FlashcardPage() {
                 Quay lại danh sách
               </button>
 
-              <h2 className="text-[28px] font-semibold leading-tight" style={{ color: 'var(--text)' }}>
+              <h2 className="text-2xl font-bold leading-tight sm:text-[28px] sm:font-semibold" style={{ color: 'var(--text)' }}>
                 Luyện Quiz: {activeDeck?.title ?? 'Từ vựng'}
               </h2>
 
@@ -1155,7 +1155,7 @@ export default function FlashcardPage() {
               }
 
               return (
-                <button
+                <button type="button"
                   key={i}
                   onClick={() => handleQuizChoose(i)}
                   disabled={answeredQuiz}
@@ -1212,7 +1212,7 @@ export default function FlashcardPage() {
         )}
 
         {answeredQuiz && (
-          <button
+          <button type="button"
             onClick={handleQuizNext}
             className="w-full py-3.5 rounded-2xl text-[13px] font-semibold text-white transition-all flex items-center justify-center gap-2"
             style={{ background: '#6366f1' }}

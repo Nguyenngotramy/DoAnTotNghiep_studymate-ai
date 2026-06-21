@@ -53,12 +53,12 @@ export default function MemberProgressTable({ members }: MemberProgressTableProp
   }
 
   return (
-    <div className="p-5 rounded-2xl border" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
+    <div className="rounded-3xl border p-4 sm:p-5" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
       <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text)' }}>
         Chi tiết công việc theo thành viên
       </h3>
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      <div className="overflow-x-auto overscroll-x-contain">
+        <table className="min-w-[760px] w-full">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               <th className="text-left py-3 px-4 text-xs font-medium cursor-pointer" style={{ color: 'var(--text2)' }} onClick={() => handleSort('fullName')}>

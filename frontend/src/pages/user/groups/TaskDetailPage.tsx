@@ -480,7 +480,7 @@ export default function TaskDetailPage() {
               ) : (
                 <div className="mt-3">
                   <textarea
-                    rows={3}
+                    id={`task-comment-edit-${comment.id}`} name={`taskCommentEdit${comment.id}`} rows={3}
                     value={editInputMap[comment.id] ?? comment.content}
                     onChange={e =>
                       setEditInputMap(prev => ({
@@ -488,7 +488,7 @@ export default function TaskDetailPage() {
                         [comment.id]: e.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl px-4 py-3 resize-none outline-none text-[14px]"
+                    className="min-h-[120px] w-full resize-none rounded-2xl px-4 py-3 text-[14px] outline-none"
                     style={{
                       background: 'var(--bg2)',
                       border: '1px solid var(--border)',
@@ -496,14 +496,14 @@ export default function TaskDetailPage() {
                     }}
                   />
                   <div className="flex gap-2 mt-3">
-                    <button
+                    <button type="button"
                       onClick={() => handleUpdateComment(comment.id)}
                       className="px-3 h-9 rounded-xl text-[12px] font-medium"
                       style={{ background: '#6366f1', color: '#fff' }}
                     >
                       Lưu sửa
                     </button>
-                    <button
+                    <button type="button"
                       onClick={() => setEditOpenMap(prev => ({ ...prev, [comment.id]: false }))}
                       className="px-3 h-9 rounded-xl text-[12px] font-medium"
                       style={{ background: 'var(--bg2)', color: 'var(--text2)', border: '1px solid var(--border)' }}
@@ -516,7 +516,7 @@ export default function TaskDetailPage() {
             </div>
 
             <div className="flex items-center gap-3 flex-wrap mt-2 ml-1">
-              <button
+              <button type="button"
                 onClick={() =>
                   setReplyOpenMap(prev => ({
                     ...prev,
@@ -532,7 +532,7 @@ export default function TaskDetailPage() {
 
               {canModifyComment(comment) && (
                 <>
-                  <button
+                  <button type="button"
                     onClick={() => {
                       setEditOpenMap(prev => ({ ...prev, [comment.id]: true }))
                       setEditInputMap(prev => ({ ...prev, [comment.id]: comment.content }))
@@ -544,7 +544,7 @@ export default function TaskDetailPage() {
                     Sửa
                   </button>
 
-                  <button
+                  <button type="button"
                     onClick={() => {
                       if (window.confirm('Bạn có chắc muốn xoá comment/reply này không?')) {
                         deleteCommentMut.mutate(comment.id)
@@ -572,7 +572,7 @@ export default function TaskDetailPage() {
 
                   <div className="flex-1">
                     <textarea
-                      rows={3}
+                      id={`task-comment-reply-${comment.id}`} name={`taskCommentReply${comment.id}`} rows={3}
                       value={replyInputMap[comment.id] || ''}
                       onChange={e =>
                         setReplyInputMap(prev => ({
@@ -581,7 +581,7 @@ export default function TaskDetailPage() {
                         }))
                       }
                       placeholder={`Reply cho ${comment.authorName}... có thể tag @ten`}
-                      className="w-full rounded-2xl px-4 py-3 resize-none outline-none text-[14px]"
+                      className="min-h-[120px] w-full resize-none rounded-2xl px-4 py-3 text-[14px] outline-none"
                       style={{
                         background: 'var(--bg2)',
                         border: '1px solid var(--border)',
@@ -589,7 +589,7 @@ export default function TaskDetailPage() {
                       }}
                     />
                     <div className="flex justify-end gap-2 mt-3">
-                      <button
+                      <button type="button"
                         onClick={() =>
                           setReplyOpenMap(prev => ({
                             ...prev,
@@ -601,7 +601,7 @@ export default function TaskDetailPage() {
                       >
                         Huỷ
                       </button>
-                      <button
+                      <button type="button"
                         onClick={() => handleReply(comment.id)}
                         className="px-3 h-9 rounded-xl text-[12px] font-medium"
                         style={{ background: '#6366f1', color: '#fff' }}
@@ -645,7 +645,7 @@ export default function TaskDetailPage() {
         <div className="text-[18px] font-semibold" style={{ color: 'var(--text)' }}>
           Không tìm thấy task
         </div>
-        <button
+        <button type="button"
           onClick={() => navigate(boardPath)}
           className="mt-4 px-4 py-2 rounded-xl text-sm"
           style={{ background: '#6366f1', color: '#fff' }}
@@ -668,25 +668,25 @@ export default function TaskDetailPage() {
   const submitted = !!task.submission?.submitted
 
   return (
-    <div className="page-enter max-w-7xl mx-auto space-y-5">
+    <div className="page-enter mx-auto max-w-7xl space-y-4 overflow-x-hidden pb-24 lg:space-y-5 lg:pb-6">
       <div
-        className="rounded-2xl border px-5 py-4 flex items-center justify-between gap-3"
+        className="flex flex-col gap-4 rounded-3xl border p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
       >
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[12px] mb-1 flex-wrap" style={{ color: 'var(--text3)' }}>
+          <div className="mb-2 flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-[11px] sm:text-[12px]" style={{ color: 'var(--text3)' }}>
             <Link to="/groups" style={{ color: 'inherit' }}>Nhóm</Link>
             <span>/</span>
             <Link to={`/groups/${groupId}`} style={{ color: 'inherit' }}>{group.name}</Link>
             <span>/</span>
-            <Link to={boardPath} style={{ color: 'inherit' }}>Board</Link>
+            <Link aria-label="Quay lại bảng công việc" to={boardPath} style={{ color: 'inherit' }}>Board</Link>
             <span>/</span>
             <span>Task detail</span>
           </div>
 
           <div className="flex items-center gap-3 min-w-0">
             <Link
-              to={boardPath}
+              aria-label="Quay lại bảng công việc" to={boardPath}
               className="w-9 h-9 rounded-xl border flex items-center justify-center"
               style={{ borderColor: 'var(--border)', color: 'var(--text2)', background: 'var(--bg3)' }}
             >
@@ -694,21 +694,21 @@ export default function TaskDetailPage() {
             </Link>
 
             <div className="min-w-0">
-              <h1 className="text-[22px] font-semibold truncate" style={{ color: 'var(--text)' }}>
+              <h1 className="line-clamp-2 text-2xl font-bold leading-tight" style={{ color: 'var(--text)' }}>
                 {task.title}
               </h1>
               <p className="text-[12px]" style={{ color: 'var(--text3)' }}>
-                Task ID: {task.id} · Nhóm: {group.name}
+                Task ID: {task.id.slice(0, 8)}…{task.id.slice(-6)} · Nhóm: {group.name}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="grid w-full grid-cols-2 gap-3 lg:flex lg:w-auto lg:flex-wrap lg:justify-end">
           {canEdit && !editing && (
-            <button
+            <button type="button"
               onClick={() => setEditing(true)}
-              className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium"
               style={{ background: 'rgba(99,102,241,.16)', color: '#818cf8' }}
             >
               <Pencil size={15} />
@@ -717,10 +717,10 @@ export default function TaskDetailPage() {
           )}
 
           {canEdit && editing && (
-            <button
+            <button type="button"
               onClick={handleSave}
               disabled={updateMut.isPending}
-              className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium disabled:opacity-60"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium disabled:opacity-60"
               style={{ background: '#6366f1', color: '#fff' }}
             >
               <Save size={15} />
@@ -729,14 +729,14 @@ export default function TaskDetailPage() {
           )}
 
           {canEdit && (
-            <button
+            <button type="button"
               onClick={() => {
                 if (window.confirm('Bạn có chắc muốn xoá task này không?')) {
                   deleteMut.mutate()
                 }
               }}
               disabled={deleteMut.isPending}
-              className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium"
               style={{ background: 'rgba(239,68,68,.15)', color: '#ef4444' }}
             >
               <Trash2 size={15} />
@@ -749,7 +749,7 @@ export default function TaskDetailPage() {
       <div className="grid grid-cols-12 gap-5">
         <div className="col-span-12 lg:col-span-8 space-y-5">
           <section
-            className="rounded-3xl border p-5"
+            className="rounded-3xl border p-4 sm:p-5"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <div className="flex items-center gap-2 mb-4">
@@ -765,7 +765,7 @@ export default function TaskDetailPage() {
                   Tiêu đề
                 </label>
                 <input
-                  value={title}
+                  id="task-title" name="taskTitle" autoComplete="off" value={title}
                   onChange={e => setTitle(e.target.value)}
                   disabled={!editing}
                   className="w-full h-12 rounded-2xl px-4 outline-none text-[15px]"
@@ -782,12 +782,12 @@ export default function TaskDetailPage() {
                   Mô tả
                 </label>
                 <textarea
-                  rows={8}
+                  id="task-description" name="taskDescription" rows={5}
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   disabled={!editing}
                   placeholder="Mô tả chi tiết công việc..."
-                  className="w-full rounded-2xl px-4 py-3 resize-none outline-none text-[14px]"
+                  className="min-h-[120px] w-full resize-none rounded-2xl px-4 py-3 text-[14px] outline-none"
                   style={{
                     background: 'var(--bg3)',
                     border: '1px solid var(--border)',
@@ -799,7 +799,7 @@ export default function TaskDetailPage() {
           </section>
 
           <section
-            className="rounded-3xl border p-5"
+            className="rounded-3xl border p-4 sm:p-5"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <div className="flex items-center gap-2 mb-4">
@@ -814,7 +814,7 @@ export default function TaskDetailPage() {
                 const Icon = item.icon
                 const active = currentStatus === item.value
                 return (
-                  <button
+                  <button type="button"
                     key={item.value}
                     onClick={() => canEdit && updateStatusMut.mutate(item.value)}
                     disabled={!canEdit || updateStatusMut.isPending}
@@ -841,7 +841,7 @@ export default function TaskDetailPage() {
           </section>
 
           <section
-            className="rounded-3xl border p-5"
+            className="rounded-3xl border p-4 sm:p-5"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <div className="flex items-center gap-2 mb-4">
@@ -879,12 +879,12 @@ export default function TaskDetailPage() {
                   Câu trả lời / đáp án
                 </label>
                 <textarea
-                  rows={6}
+                  id="task-answer" name="taskAnswer" rows={5}
                   value={answerText}
                   onChange={e => setAnswerText(e.target.value)}
                   disabled={!canSubmit}
                   placeholder="Nhập đáp án, mô tả cách làm, hoặc nội dung bài nộp..."
-                  className="w-full rounded-2xl px-4 py-3 resize-none outline-none text-[14px]"
+                  className="min-h-[120px] w-full resize-none rounded-2xl px-4 py-3 text-[14px] outline-none"
                   style={{
                     background: 'var(--bg3)',
                     border: '1px solid var(--border)',
@@ -957,7 +957,7 @@ export default function TaskDetailPage() {
                         Upload file bài làm
                       </div>
                       <input
-                        type="file"
+                        id="task-file-upload" name="taskFileUpload" type="file"
                         multiple
                         hidden
                         onChange={e => {
@@ -976,7 +976,7 @@ export default function TaskDetailPage() {
                         Upload ảnh bài làm
                       </div>
                       <input
-                        type="file"
+                        id="task-image-upload" name="taskImageUpload" type="file"
                         accept="image/*"
                         multiple
                         hidden
@@ -1008,7 +1008,7 @@ export default function TaskDetailPage() {
                                 {(file.size / 1024).toFixed(0)} KB
                               </div>
                             </div>
-                            <button
+                            <button type="button"
                               onClick={() => removePickedFile(idx)}
                               className="w-8 h-8 rounded-full flex items-center justify-center"
                               style={{ color: 'var(--text3)' }}
@@ -1042,7 +1042,7 @@ export default function TaskDetailPage() {
                               <div className="text-[11px] truncate" style={{ color: 'var(--text)' }}>
                                 {file.name}
                               </div>
-                              <button
+                              <button type="button"
                                 onClick={() => removePickedImage(idx)}
                                 className="w-7 h-7 rounded-full flex items-center justify-center"
                                 style={{ color: 'var(--text3)' }}
@@ -1057,13 +1057,13 @@ export default function TaskDetailPage() {
                   )}
 
                   <div className="flex flex-wrap gap-2">
-                    <button
+                    <button type="button"
                       onClick={() => submitMut.mutate()}
                       disabled={
                         submitMut.isPending ||
                         (!answerText.trim() && pickedFiles.length === 0 && pickedImages.length === 0)
                       }
-                      className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium disabled:opacity-60"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium disabled:opacity-60"
                       style={{ background: '#6366f1', color: '#fff' }}
                     >
                       <Upload size={15} />
@@ -1071,14 +1071,14 @@ export default function TaskDetailPage() {
                     </button>
 
                     {submitted && (
-                      <button
+                      <button type="button"
                         onClick={() => {
                           if (window.confirm('Bạn có chắc muốn xoá bài nộp không?')) {
                             clearSubmissionMut.mutate()
                           }
                         }}
                         disabled={clearSubmissionMut.isPending}
-                        className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium disabled:opacity-60"
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium disabled:opacity-60"
                         style={{ background: 'rgba(239,68,68,.15)', color: '#ef4444' }}
                       >
                         <Trash2 size={15} />
@@ -1092,7 +1092,7 @@ export default function TaskDetailPage() {
           </section>
 
           <section
-            className="rounded-3xl border p-5"
+            className="rounded-3xl border p-4 sm:p-5"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <div className="flex items-center gap-2 mb-4">
@@ -1108,7 +1108,7 @@ export default function TaskDetailPage() {
                 style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
               >
                 <textarea
-                  rows={3}
+                  id="task-comment" name="taskComment" rows={3}
                   value={commentInput}
                   onChange={e => setCommentInput(e.target.value)}
                   placeholder="Viết bình luận hoặc cập nhật tiến độ... có thể tag @tên"
@@ -1117,10 +1117,10 @@ export default function TaskDetailPage() {
                 />
 
                 <div className="flex justify-end mt-3">
-                  <button
+                  <button type="button"
                     onClick={handleAddComment}
                     disabled={addCommentMut.isPending || !commentInput.trim()}
-                    className="px-4 h-10 rounded-xl inline-flex items-center gap-2 text-sm font-medium disabled:opacity-60"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium disabled:opacity-60"
                     style={{ background: '#6366f1', color: '#fff' }}
                   >
                     <Send size={14} />
@@ -1147,7 +1147,7 @@ export default function TaskDetailPage() {
 
         <div className="col-span-12 lg:col-span-4 space-y-5">
           <section
-            className="rounded-3xl border p-5"
+            className="rounded-3xl border p-4 sm:p-5"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <h3 className="text-[16px] font-semibold mb-4" style={{ color: 'var(--text)' }}>
@@ -1245,7 +1245,7 @@ export default function TaskDetailPage() {
                 </div>
                 {editing ? (
                   <input
-                    type="date"
+                    id="task-deadline" name="taskDeadline" type="date"
                     value={deadline}
                     onChange={e => setDeadline(e.target.value)}
                     className="w-full h-11 rounded-xl px-3 outline-none text-[13px]"
@@ -1283,7 +1283,7 @@ export default function TaskDetailPage() {
           </section>
 
           <section
-            className="rounded-3xl border p-5"
+            className="rounded-3xl border p-4 sm:p-5"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <h3 className="text-[16px] font-semibold mb-4" style={{ color: 'var(--text)' }}>
@@ -1327,7 +1327,7 @@ export default function TaskDetailPage() {
           </section>
 
           <section
-            className="rounded-3xl border p-5"
+            className="rounded-3xl border p-4 sm:p-5"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <h3 className="text-[16px] font-semibold mb-4" style={{ color: 'var(--text)' }}>
@@ -1343,7 +1343,7 @@ export default function TaskDetailPage() {
                 Về trang nhóm
               </Link>
               <Link
-                to={boardPath}
+                aria-label="Quay lại bảng công việc" to={boardPath}
                 className="h-11 rounded-xl border inline-flex items-center px-3 text-[13px]"
                 style={{ background: 'rgba(99,102,241,.12)', borderColor: 'rgba(99,102,241,.20)', color: '#818cf8' }}
               >

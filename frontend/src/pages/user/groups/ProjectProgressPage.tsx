@@ -56,7 +56,7 @@ export default function ProjectProgressPage() {
   }
 
   return (
-    <div className="min-h-screen p-3 sm:p-6" style={{ background: 'var(--bg1)' }}>
+    <div className="min-h-screen p-3 pb-24 sm:p-6 lg:pb-6" style={{ background: 'var(--bg1)' }}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <ProjectProgressHeader

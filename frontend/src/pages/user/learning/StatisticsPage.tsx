@@ -7,7 +7,6 @@ import {
   BookOpen,
   AlertTriangle,
   CalendarDays,
-  TrendingUp,
   FolderKanban,
   Zap,
   UserCheck,
@@ -68,104 +67,6 @@ function AnimatedRing({
       />
     </svg>
   )
-}
-
-function GpaSparkline({ data, target }: { data: number[]; target: number }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const dpr = window.devicePixelRatio || 1
-    const w = canvas.offsetWidth
-    const h = canvas.offsetHeight
-    canvas.width = w * dpr
-    canvas.height = h * dpr
-    ctx.scale(dpr, dpr)
-
-    const accentColor =
-      getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#6366f1'
-
-    ctx.clearRect(0, 0, w, h)
-
-    if (!data.length) return
-
-    const min = Math.min(...data, target) - 0.5
-    const max = Math.max(...data, target) + 0.3
-    const safeRange = Math.max(max - min, 0.5)
-
-    const toX = (i: number) => (i / Math.max(data.length - 1, 1)) * (w - 24) + 12
-    const toY = (v: number) => h - 16 - ((v - min) / safeRange) * (h - 28)
-
-    ctx.setLineDash([5, 4])
-    ctx.strokeStyle = 'rgba(99,102,241,0.35)'
-    ctx.lineWidth = 1.5
-    ctx.beginPath()
-    ctx.moveTo(0, toY(target))
-    ctx.lineTo(w, toY(target))
-    ctx.stroke()
-    ctx.setLineDash([])
-
-    const grad = ctx.createLinearGradient(0, 0, 0, h)
-    grad.addColorStop(0, accentColor + '3a')
-    grad.addColorStop(1, accentColor + '00')
-
-    ctx.beginPath()
-    data.forEach((v, i) => {
-      if (i === 0) ctx.moveTo(toX(i), toY(v))
-      else {
-        const px = toX(i - 1)
-        const py = toY(data[i - 1])
-        const cx = toX(i)
-        const cy = toY(v)
-        ctx.bezierCurveTo((px + cx) / 2, py, (px + cx) / 2, cy, cx, cy)
-      }
-    })
-    ctx.lineTo(toX(data.length - 1), h)
-    ctx.lineTo(toX(0), h)
-    ctx.closePath()
-    ctx.fillStyle = grad
-    ctx.fill()
-
-    ctx.beginPath()
-    data.forEach((v, i) => {
-      if (i === 0) ctx.moveTo(toX(i), toY(v))
-      else {
-        const px = toX(i - 1)
-        const py = toY(data[i - 1])
-        const cx = toX(i)
-        const cy = toY(v)
-        ctx.bezierCurveTo((px + cx) / 2, py, (px + cx) / 2, cy, cx, cy)
-      }
-    })
-    ctx.strokeStyle = accentColor
-    ctx.lineWidth = 2
-    ctx.stroke()
-
-    data.forEach((v, i) => {
-      ctx.beginPath()
-      ctx.arc(toX(i), toY(v), 4, 0, Math.PI * 2)
-      ctx.fillStyle = accentColor
-      ctx.fill()
-      ctx.strokeStyle = '#fff'
-      ctx.lineWidth = 2
-      ctx.stroke()
-    })
-
-    const labels = ['HK1', 'HK2', 'HK3', 'HK4', 'HK5', 'HK6']
-    ctx.fillStyle =
-      getComputedStyle(document.documentElement).getPropertyValue('--text3').trim() || '#888'
-    ctx.font = '10px monospace'
-    ctx.textAlign = 'center'
-    data.forEach((_, i) => {
-      if (i < labels.length) ctx.fillText(labels[i], toX(i), h - 2)
-    })
-  }, [data, target])
-
-  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
 }
 
 function KpiCard({
@@ -444,14 +345,6 @@ export default function StatisticsPage() {
     }
   }, [terms])
 
-  const gpaHistory = useMemo(
-    () =>
-      terms
-        .map((t: any) => round2(t.averageScore ?? 0))
-        .reverse()
-        .filter((n: number) => n > 0),
-    [terms],
-  )
 
   if (!user) {
     return (
@@ -656,33 +549,6 @@ export default function StatisticsPage() {
                   />
                 </div>
               </div>
-            </Card>
-
-            <Card>
-              <CardTitle icon={TrendingUp}>GPA theo học kỳ</CardTitle>
-              {gpaHistory.length >= 2 ? (
-                <>
-                  <div style={{ height: 180, position: 'relative' }}>
-                    <GpaSparkline data={gpaHistory} target={7.5} />
-                  </div>
-                  <div style={{ display: 'flex', gap: 20, marginTop: 10, fontSize: 11, color: 'var(--text3)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 20, height: 2, background: 'var(--accent)', borderRadius: 2, display: 'block' }} />
-                      GPA
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 20, height: 0, borderTop: '2px dashed rgba(99,102,241,.4)', display: 'block' }} />
-                      Mục tiêu 7.5
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div style={{ height: 180, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <p style={{ fontSize: 13, color: 'var(--text3)' }}>
-                    Chưa có đủ dữ liệu học tập thật để vẽ biểu đồ.
-                  </p>
-                </div>
-              )}
             </Card>
           </div>
 

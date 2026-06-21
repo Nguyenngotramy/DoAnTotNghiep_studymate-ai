@@ -340,34 +340,34 @@ export default function MyStudyDrivePage() {
   }
 
   return (
-    <div className="page-enter max-w-7xl mx-auto space-y-5">
+    <div className="page-enter mx-auto max-w-7xl space-y-4 overflow-x-hidden pb-24 lg:space-y-5 lg:pb-6">
       <section
         className="rounded-[28px] border overflow-hidden"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
       >
-        <div className="px-6 pt-6 pb-5">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-4">
+        <div className="px-4 pb-5 pt-5 sm:px-6 sm:pt-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <div
-                className="w-16 h-16 rounded-3xl flex items-center justify-center"
+                className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl sm:h-16 sm:w-16 sm:rounded-3xl"
                 style={{ background: 'linear-gradient(135deg, rgba(99,102,241,.18), rgba(139,92,246,.18))' }}
               >
                 <FolderOpen size={28} style={{ color: '#a5b4fc' }} />
               </div>
 
               <div>
-                <h1 className="text-[22px] font-bold" style={{ color: 'var(--text)' }}>
+                <h1 className="text-2xl font-bold leading-tight" style={{ color: 'var(--text)' }}>
                   Học tập cá nhân
                 </h1>
-                <p className="text-[13px] mt-1" style={{ color: 'var(--text3)' }}>
+                <p className="mt-1 text-sm leading-6" style={{ color: 'var(--text3)' }}>
                   Lưu trữ bài viết, tài liệu và tài nguyên học tập của bạn
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                className="h-10 px-4 rounded-xl inline-flex items-center gap-2 text-sm font-medium"
+            <div className="grid w-full grid-cols-2 gap-3 lg:w-auto">
+              <button type="button"
+                className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-2xl px-3 text-[12px] font-medium sm:px-4 sm:text-sm"
                 style={{ background: 'rgba(99,102,241,.16)', color: '#a5b4fc' }}
                 onClick={() => setShowCreateFolder(true)}
               >
@@ -376,7 +376,7 @@ export default function MyStudyDrivePage() {
               </button>
 
               <input
-                ref={uploadInputRef}
+                id="study-drive-upload" name="studyDriveUpload" ref={uploadInputRef}
                 type="file"
                 hidden
                 onChange={(e) => {
@@ -386,8 +386,8 @@ export default function MyStudyDrivePage() {
                 }}
               />
 
-              <button
-                className="h-10 px-4 rounded-xl inline-flex items-center gap-2 text-sm font-medium"
+              <button type="button"
+                className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-2xl px-3 text-[12px] font-medium sm:px-4 sm:text-sm"
                 style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
                 onClick={() => uploadInputRef.current?.click()}
               >
@@ -397,14 +397,14 @@ export default function MyStudyDrivePage() {
             </div>
           </div>
 
-          <div className="mt-5 flex items-center gap-3 flex-wrap">
+          <div className="mt-5 flex min-w-0 items-center gap-2 sm:gap-3">
             <div
               className="flex items-center gap-2 px-3 h-11 rounded-2xl flex-1 min-w-0 w-full sm:min-w-[260px]"
               style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}
             >
               <Search size={16} style={{ color: 'var(--text3)' }} />
               <input
-                value={search}
+                id="study-drive-search" name="studyDriveSearch" autoComplete="off" value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Tìm trong học tập cá nhân..."
                 className="flex-1 bg-transparent outline-none text-[14px]"
@@ -413,11 +413,11 @@ export default function MyStudyDrivePage() {
             </div>
 
             <div
-              className="h-11 px-2 rounded-2xl flex items-center gap-1"
+              className="flex h-11 flex-shrink-0 items-center gap-1 rounded-2xl px-1.5 sm:px-2"
               style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}
             >
-              <button
-                onClick={() => setView('grid')}
+              <button type="button"
+                aria-label="Hiển thị dạng lưới" onClick={() => setView('grid')}
                 className={clsx(
                   'w-10 h-9 rounded-xl flex items-center justify-center transition-all',
                   view === 'grid' && 'bg-indigo-500/15'
@@ -427,8 +427,8 @@ export default function MyStudyDrivePage() {
                 <Grid3X3 size={16} />
               </button>
 
-              <button
-                onClick={() => setView('list')}
+              <button type="button"
+                aria-label="Hiển thị dạng danh sách" onClick={() => setView('list')}
                 className={clsx(
                   'w-10 h-9 rounded-xl flex items-center justify-center transition-all',
                   view === 'list' && 'bg-indigo-500/15'
@@ -440,9 +440,9 @@ export default function MyStudyDrivePage() {
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
             <div
-              className="rounded-2xl p-4"
+              className="min-h-[96px] rounded-3xl p-4"
               style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}
             >
               <div className="flex items-center gap-2">
@@ -457,7 +457,7 @@ export default function MyStudyDrivePage() {
             </div>
 
             <div
-              className="rounded-2xl p-4"
+              className="min-h-[96px] rounded-3xl p-4"
               style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}
             >
               <div className="flex items-center gap-2">
@@ -472,7 +472,7 @@ export default function MyStudyDrivePage() {
             </div>
 
             <div
-              className="rounded-2xl p-4"
+              className="min-h-[96px] rounded-3xl p-4"
               style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}
             >
               <div className="flex items-center gap-2">
@@ -498,8 +498,8 @@ export default function MyStudyDrivePage() {
           style={{ borderBottom: '1px solid var(--border)' }}
         >
           <div className="flex items-center gap-2 text-[13px] flex-wrap" style={{ color: 'var(--text2)' }}>
-            <button
-              onClick={goBack}
+            <button type="button"
+              aria-label="Quay lại thư mục trước" onClick={goBack}
               disabled={folderPath.length <= 1}
               className="w-8 h-8 rounded-xl flex items-center justify-center disabled:opacity-40"
               style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
@@ -510,7 +510,7 @@ export default function MyStudyDrivePage() {
             {folderPath.map((node, idx) => (
               <div key={`${node.id ?? 'root'}-${idx}`} className="flex items-center gap-2">
                 {idx > 0 && <ChevronRight size={14} style={{ color: 'var(--text3)' }} />}
-                <button
+                <button type="button"
                   onClick={() => goToPath(idx)}
                   className="hover:underline"
                   style={{ color: idx === folderPath.length - 1 ? 'var(--text)' : 'var(--text2)' }}
@@ -551,7 +551,7 @@ export default function MyStudyDrivePage() {
                       onDrop={(e) => onDropToFolder(e, folder.id)}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <button
+                        <button type="button"
                           onClick={() => openFolder(folder)}
                           className="flex items-center gap-3 min-w-0 text-left flex-1"
                         >
@@ -573,7 +573,7 @@ export default function MyStudyDrivePage() {
                         </button>
 
                         <div className="relative">
-                          <button
+                          <button type="button"
                             onClick={() => setFolderMenuOpen(folderMenuOpen === folder.id ? null : folder.id)}
                             className="w-9 h-9 rounded-xl flex items-center justify-center"
                             style={{ background: 'var(--bg2)', color: 'var(--text3)' }}
@@ -586,7 +586,7 @@ export default function MyStudyDrivePage() {
                               className="absolute right-0 top-11 w-44 rounded-2xl border shadow-xl z-20 overflow-hidden"
                               style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
                             >
-                              <button
+                              <button type="button"
                                 onClick={() => {
                                   setRenameFolderId(folder.id)
                                   setRenameFolderName(folder.name)
@@ -599,7 +599,7 @@ export default function MyStudyDrivePage() {
                                 Đổi tên
                               </button>
 
-                              <button
+                              <button type="button"
                                 onClick={() => {
                                   openFolder(folder)
                                   setFolderMenuOpen(null)
@@ -610,7 +610,7 @@ export default function MyStudyDrivePage() {
                                 Mở folder
                               </button>
 
-                              <button
+                              <button type="button"
                                 onClick={() => {
                                   if (window.confirm(`Xóa folder "${folder.name}"?`)) {
                                     deleteFolderMut.mutate(folder.id)
@@ -666,7 +666,7 @@ export default function MyStudyDrivePage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <button
+                          <button type="button"
                             onClick={() => setPreviewFile(item)}
                             className="w-11 h-11 rounded-2xl flex items-center justify-center"
                             style={{ background: 'rgba(34,197,94,.12)', color: '#22c55e' }}
@@ -676,7 +676,7 @@ export default function MyStudyDrivePage() {
                           </button>
 
                           <div className="relative">
-                            <button
+                            <button type="button"
                               onClick={() => setItemMenuOpen(itemMenuOpen === item.id ? null : item.id)}
                               className="w-11 h-11 rounded-2xl flex items-center justify-center"
                               style={{ background: 'var(--bg2)', color: 'var(--text3)' }}
@@ -690,7 +690,7 @@ export default function MyStudyDrivePage() {
                                 className="absolute right-0 top-12 w-48 rounded-2xl border shadow-xl z-20 overflow-hidden"
                                 style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
                               >
-                                <button
+                                <button type="button"
                                   onClick={() => {
                                     setMoveItem(item)
                                     setItemMenuOpen(null)
@@ -701,7 +701,7 @@ export default function MyStudyDrivePage() {
                                   Chuyển vào folder
                                 </button>
 
-                                <button
+                                <button type="button"
                                   onClick={() => {
                                     setPreviewFile(item)
                                     setItemMenuOpen(null)
@@ -724,7 +724,7 @@ export default function MyStudyDrivePage() {
                                   </a>
                                 )}
 
-                                <button
+                                <button type="button"
                                   onClick={() => {
                                     deleteItemMut.mutate(item.id)
                                     setItemMenuOpen(null)
@@ -874,14 +874,14 @@ export default function MyStudyDrivePage() {
                         </div>
 
                         <div className="flex items-center justify-end gap-2">
-                          <button
+                          <button type="button"
                             onClick={() => setPreviewFile(item)}
                             className="w-9 h-9 rounded-xl flex items-center justify-center"
                             style={{ background: 'rgba(34,197,94,.12)', color: '#22c55e' }}
                           >
                             <Eye size={14} />
                           </button>
-                          <button
+                          <button type="button"
                             onClick={() => setMoveItem(item)}
                             className="w-9 h-9 rounded-xl flex items-center justify-center"
                             style={{ background: 'rgba(99,102,241,.12)', color: '#a5b4fc' }}
@@ -898,8 +898,8 @@ export default function MyStudyDrivePage() {
                               <Download size={14} />
                             </a>
                           ) : (
-                            <button
-                              disabled
+                            <button type="button"
+                              aria-label="Tải xuống chưa khả dụng" disabled
                               className="w-9 h-9 rounded-xl flex items-center justify-center opacity-40"
                               style={{ background: 'var(--bg2)', color: 'var(--text3)' }}
                             >
@@ -927,7 +927,7 @@ export default function MyStudyDrivePage() {
               <h3 className="text-[18px] font-semibold" style={{ color: 'var(--text)' }}>
                 Tạo folder mới
               </h3>
-              <button
+              <button type="button"
                 onClick={() => setShowCreateFolder(false)}
                 className="w-10 h-10 rounded-2xl flex items-center justify-center"
                 style={{ background: 'var(--bg3)', color: 'var(--text3)' }}
@@ -941,7 +941,7 @@ export default function MyStudyDrivePage() {
                 Tên folder
               </label>
               <input
-                value={newFolderName}
+                id="study-drive-folder-name" name="studyDriveFolderName" autoComplete="off" value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
                 placeholder="Ví dụ: TOPIK, Java, Đề thi..."
                 className="mt-2 w-full h-12 px-4 rounded-2xl outline-none text-[14px]"
@@ -957,14 +957,14 @@ export default function MyStudyDrivePage() {
             </div>
 
             <div className="mt-5 flex justify-end gap-2">
-              <button
+              <button type="button"
                 onClick={() => setShowCreateFolder(false)}
                 className="h-10 px-4 rounded-xl text-sm"
                 style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
               >
                 Hủy
               </button>
-              <button
+              <button type="button"
                 onClick={() => createFolderMut.mutate()}
                 className="h-10 px-4 rounded-xl text-sm font-medium text-white"
                 style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
@@ -986,7 +986,7 @@ export default function MyStudyDrivePage() {
               <h3 className="text-[18px] font-semibold" style={{ color: 'var(--text)' }}>
                 Đổi tên folder
               </h3>
-              <button
+              <button type="button"
                 onClick={() => setShowRenameFolder(false)}
                 className="w-10 h-10 rounded-2xl flex items-center justify-center"
                 style={{ background: 'var(--bg3)', color: 'var(--text3)' }}
@@ -997,7 +997,7 @@ export default function MyStudyDrivePage() {
 
             <div className="mt-4">
               <input
-                value={renameFolderName}
+                id="study-drive-folder-rename" name="studyDriveFolderRename" autoComplete="off" value={renameFolderName}
                 onChange={(e) => setRenameFolderName(e.target.value)}
                 className="w-full h-12 px-4 rounded-2xl outline-none text-[14px]"
                 style={{
@@ -1012,14 +1012,14 @@ export default function MyStudyDrivePage() {
             </div>
 
             <div className="mt-5 flex justify-end gap-2">
-              <button
+              <button type="button"
                 onClick={() => setShowRenameFolder(false)}
                 className="h-10 px-4 rounded-xl text-sm"
                 style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
               >
                 Hủy
               </button>
-              <button
+              <button type="button"
                 onClick={() => renameFolderMut.mutate()}
                 className="h-10 px-4 rounded-xl text-sm font-medium text-white"
                 style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
@@ -1046,7 +1046,7 @@ export default function MyStudyDrivePage() {
                   {moveItem.title}
                 </p>
               </div>
-              <button
+              <button type="button"
                 onClick={() => setMoveItem(null)}
                 className="w-10 h-10 rounded-2xl flex items-center justify-center"
                 style={{ background: 'var(--bg3)', color: 'var(--text3)' }}
@@ -1056,7 +1056,7 @@ export default function MyStudyDrivePage() {
             </div>
 
             <div className="mt-4 space-y-2 max-h-[320px] overflow-y-auto">
-              <button
+              <button type="button"
                 onClick={() => moveItemMut.mutate({ itemId: moveItem.id, targetFolderId: null })}
                 className="w-full rounded-2xl border px-3 py-3 text-left"
                 style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }}
@@ -1068,7 +1068,7 @@ export default function MyStudyDrivePage() {
               </button>
 
               {(rootFolders as any[]).map((folder: any) => (
-                <button
+                <button type="button"
                   key={folder.id}
                   onClick={() => moveItemMut.mutate({ itemId: moveItem.id, targetFolderId: folder.id })}
                   className="w-full rounded-2xl border px-3 py-3 text-left"
@@ -1100,7 +1100,7 @@ export default function MyStudyDrivePage() {
                   {previewFile.title}
                 </p>
               </div>
-              <button
+              <button type="button"
                 onClick={() => setPreviewFile(null)}
                 className="w-10 h-10 rounded-2xl flex items-center justify-center"
                 style={{ background: 'var(--bg3)', color: 'var(--text3)' }}

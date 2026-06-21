@@ -52,13 +52,13 @@ export default function ProjectKpiCards({ summary, timeline }: ProjectKpiCardsPr
   ]
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+    <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
       {kpis.map((kpi, index) => {
         const Icon = kpi.icon
         return (
           <div
             key={index}
-            className="p-4 rounded-2xl border"
+            className="min-h-[120px] rounded-3xl border p-4"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <div className="flex items-center justify-between mb-2">

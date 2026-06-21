@@ -53,32 +53,32 @@ export default function ProjectProgressHeader({
   const scheduleStatus = getScheduleStatusLabel()
 
   return (
-    <div className="flex items-center justify-between mb-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={onBack}
+    <div className="mb-5 flex flex-col gap-4 rounded-3xl border p-4 sm:mb-6 sm:p-5 lg:flex-row lg:items-center lg:justify-between" style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}>
+      <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
+        <button type="button"
+          aria-label="Quay lại bảng dự án" onClick={onBack}
           className="p-2 rounded-xl transition-colors"
           style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
         >
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
+          <h1 className="line-clamp-2 text-2xl font-bold leading-tight" style={{ color: 'var(--text)' }}>
             {project.name}
           </h1>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-sm" style={{ color: 'var(--text2)' }}>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full px-2.5 py-1 text-xs" style={{ color: 'var(--text2)' }}>
               {project.startDate && new Date(project.startDate).toLocaleDateString('vi-VN')} -{' '}
               {project.endDate && new Date(project.endDate).toLocaleDateString('vi-VN')}
             </span>
             <span
-              className="text-sm font-medium"
+              className="rounded-full px-2.5 py-1 text-xs font-medium"
               style={{ color: getCountdownColor() }}
             >
               {getCountdownText()}
             </span>
             <div
-              className="px-2 py-0.5 rounded text-xs font-medium"
+              className="rounded-full px-2.5 py-1 text-xs font-medium"
               style={{ background: scheduleStatus.bg, color: scheduleStatus.color }}
             >
               {scheduleStatus.text}
@@ -86,18 +86,18 @@ export default function ProjectProgressHeader({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={onRefresh}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+      <div className="grid w-full grid-cols-[auto_1fr] gap-2 lg:flex lg:w-auto">
+        <button type="button"
+          aria-label="Làm mới tiến độ" onClick={onRefresh}
+          className="flex h-11 items-center justify-center gap-2 rounded-2xl px-3 text-sm font-medium transition-colors"
           style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
         >
           <RefreshCw size={16} />
           Làm mới
         </button>
-        <button
-          onClick={onExport}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors"
+        <button type="button"
+          aria-label="Xuất báo cáo tiến độ" onClick={onExport}
+          className="flex h-11 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-medium text-white transition-colors"
           style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
         >
           <Download size={16} />
