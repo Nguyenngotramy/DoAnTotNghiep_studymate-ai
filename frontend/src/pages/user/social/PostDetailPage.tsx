@@ -17,6 +17,7 @@ import { postApi, friendApi, groupApi, authApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import { dedupeComments, socialCommentId, tagValues, visibleTags } from '@/utils/socialContent'
 
 const BACKEND_URL = '/api'
 
@@ -73,6 +74,8 @@ function normalizePost(p: any) {
     _id: gid(p._id ?? p.id),
     id: gid(p.id ?? p._id),
     authorId: gid(p.authorId),
+    tags: tagValues(p.tags),
+    comments: dedupeComments(p.comments),
   }
 }
 
@@ -329,16 +332,16 @@ export default function PostDetailPage() {
   const [commenting, setCommenting] = useState(false)
   const [sharePost, setSharePost] = useState<any>(null)
 
-  const loadPost = async () => {
+  const loadPost = async (silent = false) => {
     if (!id) return
-    setLoading(true)
+    if (!silent) setLoading(true)
     try {
       const data = await postApi.get(id)
       setPost(normalizePost(data))
     } catch {
       toast.error('Không tải được bài viết')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -408,12 +411,12 @@ export default function PostDetailPage() {
   }
 
   const handleComment = async () => {
-    if (!post?._id || !commentInput.trim()) return
+    if (commenting || !post?._id || !commentInput.trim()) return
     setCommenting(true)
     try {
       await postApi.addComment(post._id, commentInput.trim())
       setCommentInput('')
-      await loadPost()
+      await loadPost(true)
       toast.success('Đã bình luận')
       try {
         const latestUser = await authApi.me()
@@ -505,20 +508,19 @@ export default function PostDetailPage() {
             </div>
           </div>
 
-          {post.tags?.length > 0 && (
-            <div className="flex gap-2 flex-wrap mt-4">
-              {post.tags.map((t: string, i: number) => (
+          {visibleTags(post.tags).length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {visibleTags(post.tags).map(tag => (
                 <span
-                  key={i}
-                  className="text-[11px] px-2.5 py-1 rounded-full"
+                  key={tag.toLocaleLowerCase('vi')}
+                  className="rounded-full px-2.5 py-1 text-[11px]"
                   style={{ background: 'rgba(99,102,241,.12)', color: '#818cf8' }}
                 >
-                  #{t}
+                  {tag}
                 </span>
               ))}
             </div>
           )}
-
           <h1 className="text-[28px] font-bold leading-tight mt-4" style={{ color: 'var(--text)' }}>
             {post.title}
           </h1>
@@ -605,11 +607,11 @@ export default function PostDetailPage() {
             <span>{comments} bình luận</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               onClick={handleLike}
               className={clsx(
-                'flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-medium transition-all',
+                'h-10 min-w-0 rounded-2xl flex items-center justify-center gap-1.5 px-1 text-xs sm:text-sm font-medium transition-all',
                 isLiked ? 'bg-red-500/10 text-red-400' : 'hover:bg-white/[.04]',
               )}
               style={!isLiked ? { color: 'var(--text2)' } : {}}
@@ -623,7 +625,7 @@ export default function PostDetailPage() {
                 const el = document.getElementById('comment-box')
                 el?.scrollIntoView({ behavior: 'smooth' })
               }}
-              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-medium hover:bg-white/[.04] transition-all"
+              className="h-10 min-w-0 rounded-2xl flex items-center justify-center gap-1.5 px-1 text-xs sm:text-sm font-medium bg-slate-500/5 hover:bg-slate-500/10 transition-all"
               style={{ color: 'var(--text2)' }}
             >
               <MessageCircle size={15} />
@@ -633,7 +635,7 @@ export default function PostDetailPage() {
             <button
               onClick={handleSave}
               className={clsx(
-                'flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-medium transition-all',
+                'h-10 min-w-0 rounded-2xl flex items-center justify-center gap-1.5 px-1 text-xs sm:text-sm font-medium transition-all',
                 isSaved ? 'bg-indigo-500/10 text-indigo-400' : 'hover:bg-white/[.04]',
               )}
               style={!isSaved ? { color: 'var(--text2)' } : {}}
@@ -654,41 +656,44 @@ export default function PostDetailPage() {
           Bình luận
         </p>
 
-        <div className="flex gap-2.5 mb-4">
-          <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-[var(--bg3)]">
+        <form
+          onSubmit={e => {
+            e.preventDefault()
+            handleComment()
+          }}
+          className="mb-4 flex items-center gap-2"
+        >
+          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-[var(--bg3)]">
             {user?.avatar ? (
-              <img src={toMediaUrl(user.avatar)} alt="avatar" className="w-full h-full object-cover" />
+              <img src={toMediaUrl(user.avatar)} alt="avatar" className="h-full w-full object-cover" />
             ) : (
               <div
-                className="w-full h-full flex items-center justify-center text-[11px] font-semibold text-white"
+                className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-white"
                 style={{ background: COLORS[user?.fullName ?? ''] ?? '#6366f1' }}
               >
                 {user ? ini(user.fullName) : 'U'}
               </div>
             )}
           </div>
-
           <input
+            id="comment-input"
+            name="comment"
+            autoComplete="off"
             value={commentInput}
             onChange={e => setCommentInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleComment()}
-            placeholder="Viết bình luận của bạn..."
-            className="flex-1 h-11 px-4 rounded-xl border text-[13px] outline-none"
-            style={{
-              background: 'var(--bg3)',
-              borderColor: 'var(--border)',
-              color: 'var(--text)',
-            }}
+            placeholder="Viết bình luận..."
+            className="h-11 min-w-0 flex-1 rounded-2xl border px-4 text-sm outline-none"
+            style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }}
           />
           <button
-            onClick={handleComment}
+            type="submit"
             disabled={commenting || !commentInput.trim()}
-            className="w-11 h-11 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 flex items-center justify-center transition-colors"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-indigo-500 text-white transition-colors hover:bg-indigo-400 disabled:opacity-40"
+            aria-label="Gửi bình luận"
           >
-            {commenting ? <Loader2 size={15} className="animate-spin text-white" /> : <Send size={15} className="text-white" />}
+            {commenting ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
           </button>
-        </div>
-
+        </form>
         <div className="space-y-3">
           {(!post.comments || post.comments.length === 0) && (
             <p className="text-[12px] text-center py-6" style={{ color: 'var(--text3)' }}>
@@ -696,8 +701,8 @@ export default function PostDetailPage() {
             </p>
           )}
 
-          {post.comments?.map((c: any, i: number) => (
-            <div key={c.id ?? `comment-${i}`} className="flex gap-3">
+          {dedupeComments(post.comments).map((c: any) => (
+            <div key={socialCommentId(c)} className="flex gap-3">
               <button
                 onClick={() => c.authorId && navigate(`/u/${c.authorId}`)}
                 className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-[var(--bg3)]"

@@ -9,6 +9,7 @@ import { postApi, friendApi, groupApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import { visibleTags } from '@/utils/socialContent'
 
 const COLORS = ['#6366f1', '#14b8a6', '#f59e0b', '#ec4899', '#3b82f6', '#22c55e', '#f97316', '#8b5cf6']
 const SKILL_COLORS: Record<string, string> = {
@@ -439,16 +440,16 @@ export default function DiscoverPage() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex gap-1.5 mb-1.5 flex-wrap">
-                          {p.tags?.slice(0, 2).map((t: string, ti: number) => (
+                          {visibleTags(p.tags).slice(0, 2).map(tag => (
                             <span
-                              key={`${pid}-t-${ti}`}
+                              key={`${pid}-${tag.toLocaleLowerCase('vi')}`}
                               className="text-[10px] font-medium px-2 py-0.5 rounded-full"
                               style={{
-                                background: (SKILL_COLORS[t] ?? '#6366f1') + '18',
-                                color: SKILL_COLORS[t] ?? '#818cf8',
+                                background: (SKILL_COLORS[tag.slice(1)] ?? '#6366f1') + '18',
+                                color: SKILL_COLORS[tag.slice(1)] ?? '#818cf8',
                               }}
                             >
-                              #{t}
+                              {tag}
                             </span>
                           ))}
                         </div>
@@ -529,16 +530,16 @@ export default function DiscoverPage() {
                       style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
                     >
                       <div className="flex gap-1.5 mb-2 flex-wrap">
-                        {p.tags?.slice(0, 1).map((t: string, ti: number) => (
+                        {visibleTags(p.tags).slice(0, 1).map(tag => (
                           <span
-                            key={`${p._id}-nt-${ti}`}
+                            key={`${p._id}-${tag.toLocaleLowerCase('vi')}`}
                             className="text-[9px] font-medium px-2 py-0.5 rounded-full"
                             style={{
-                              background: (SKILL_COLORS[t] ?? '#6366f1') + '18',
-                              color: SKILL_COLORS[t] ?? '#818cf8',
+                              background: (SKILL_COLORS[tag.slice(1)] ?? '#6366f1') + '18',
+                              color: SKILL_COLORS[tag.slice(1)] ?? '#818cf8',
                             }}
                           >
-                            #{t}
+                            {tag}
                           </span>
                         ))}
                       </div>

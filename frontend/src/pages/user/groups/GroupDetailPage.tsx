@@ -41,6 +41,7 @@ import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 import { resolveUserAvatar } from '@/utils/avatar'
+import { dedupeComments } from '@/utils/socialContent'
 
 type PostAttachment = {
   name: string
@@ -1132,6 +1133,7 @@ export default function GroupDetailPage() {
                       ? post.likedBy.includes(String(user?.id))
                       : false
 
+                    const groupComments = dedupeComments(post.comments)
                     const canDelete = String(post.authorId) === String(user?.id) || isLeader
                     const menuOpen = postMenuOpen === post.id
 
@@ -1300,7 +1302,7 @@ export default function GroupDetailPage() {
                         </div>
 
                         <div
-                          className="px-3 py-2 border-t flex items-center gap-2"
+                          className="grid grid-cols-4 gap-1 border-t px-2 py-2 sm:flex sm:items-center sm:gap-2"
                           style={{ borderColor: 'var(--border)' }}
                         >
                           <button type="button"
@@ -1325,7 +1327,7 @@ export default function GroupDetailPage() {
 
                           <button type="button"
                             onClick={() => handleSharePost(post)}
-                            className="h-11 px-4 rounded-2xl inline-flex items-center justify-center gap-2 text-sm font-medium"
+                            className="h-11 min-w-0 rounded-2xl inline-flex items-center justify-center gap-1 px-1 text-xs sm:px-4 sm:text-sm font-medium"
                             style={{ color: 'var(--text2)' }}
                             title="Chia sẻ qua tin nhắn"
                           >
@@ -1334,7 +1336,7 @@ export default function GroupDetailPage() {
 
                           <button type="button"
                             onClick={() => handleReportPost(post.id)}
-                            className="h-11 px-4 rounded-2xl inline-flex items-center justify-center gap-2 text-sm font-medium"
+                            className="h-11 min-w-0 rounded-2xl inline-flex items-center justify-center gap-1 px-1 text-xs sm:px-4 sm:text-sm font-medium"
                             style={{ color: 'var(--text2)' }}
                             title="Report bài đăng"
                           >
@@ -1344,7 +1346,7 @@ export default function GroupDetailPage() {
                         </div>
 
                         <div className="px-4 pb-4 space-y-3">
-                          {(post.comments ?? []).map(comment => (
+                          {groupComments.map((comment: any) => (
                             <div key={comment.id} className="flex items-start gap-2.5 sm:gap-3">
                               <Avatar name={comment.authorName} avatar={comment.authorAvatar} size={34} />
                               <div className="flex-1 space-y-2">
@@ -1374,7 +1376,7 @@ export default function GroupDetailPage() {
                                   </button>
                                 </div>
 
-                                {(comment.replies ?? []).map(reply => (
+                                {(comment.replies ?? []).map((reply: any) => (
                                   <div key={reply.id} className="flex items-start gap-2 ml-4">
                                     <Avatar name={reply.authorName} avatar={reply.authorAvatar} size={28} />
                                     <div
@@ -1428,7 +1430,8 @@ export default function GroupDetailPage() {
                                     />
                                     <button type="button"
                                       onClick={() => handleReplyComment(post.id, comment.id)}
-                                      className="w-10 h-10 rounded-2xl flex items-center justify-center text-white"
+                                      disabled={replyCommentMut.isPending || !(replyDrafts[comment.id] ?? '').trim()}
+                                      className="w-10 h-10 rounded-2xl flex items-center justify-center text-white disabled:opacity-50"
                                       style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
                                     >
                                       <Send size={14} />
@@ -1463,7 +1466,7 @@ export default function GroupDetailPage() {
                               />
                               <button type="button"
                                 onClick={() => handleAddComment(post.id)}
-                                disabled={addCommentMut.isPending}
+                                disabled={addCommentMut.isPending || !(commentDrafts[post.id] ?? '').trim()}
                                 className="w-11 h-11 rounded-2xl flex items-center justify-center text-white disabled:opacity-60"
                                 style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}
                               >
