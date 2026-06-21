@@ -258,7 +258,7 @@ export default function SideToolbar() {
       {/* Pull tab */}
       <button
         onClick={() => setOpen(v => !v)}
-        className="fixed bottom-[76px] right-4 z-[10002] flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 lg:bottom-auto lg:right-0 lg:top-1/2 lg:h-24 lg:w-7 lg:-translate-y-1/2 lg:flex-col lg:gap-1.5 lg:rounded-l-lg lg:rounded-r-none"
+        className="fixed right-0 top-1/2 z-[10002] flex h-24 w-8 -translate-y-1/2 flex-col items-center justify-center gap-2 rounded-l-xl transition-all duration-300"
         style={{
           background: 'linear-gradient(180deg,#6366f1,#8b5cf6)',
           boxShadow: '-4px 0 20px rgba(99,102,241,.4)',
@@ -269,7 +269,7 @@ export default function SideToolbar() {
 
         <ChevronRight
           size={10}
-          className="hidden text-white/60 transition-transform duration-300 lg:block"
+          className="text-white/70 transition-transform duration-300"
           style={{ transform: open ? 'rotate(0deg)' : 'rotate(180deg)' }}
         />
       </button>
