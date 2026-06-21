@@ -207,16 +207,24 @@ export default function RegisterPage() {
   }
 
   const applySchedulePreset = (preset: 'EVENING' | 'WEEKEND' | 'MORNING') => {
+    const findSlot = (preferredStart: string, fallback: 'first' | 'last') =>
+      timeSlots.find(slot => slot.start === preferredStart)
+      ?? (fallback === 'first' ? timeSlots[0] : timeSlots[timeSlots.length - 1])
+      ?? { start: preferredStart, end: preferredStart === '19:00' ? '21:00' : '08:00' }
+    const evening = findSlot('19:00', 'last')
+    const morning = findSlot('06:00', 'first')
+    const weekendMorning = findSlot('08:00', 'first')
+    const weekendAfternoon = findSlot('15:00', 'last')
     const next =
       preset === 'EVENING'
-        ? ['MON', 'WED', 'FRI'].map(day => ({ day, start: '19:00', end: '21:00' }))
+        ? ['MON', 'WED', 'FRI'].map(day => ({ day, ...evening }))
         : preset === 'WEEKEND'
           ? [
-              { day: 'SAT', start: '08:00', end: '10:00' },
-              { day: 'SUN', start: '08:00', end: '10:00' },
-              { day: 'SAT', start: '15:00', end: '17:00' },
+              { day: 'SAT', ...weekendMorning },
+              { day: 'SUN', ...weekendMorning },
+              { day: 'SAT', ...weekendAfternoon },
             ]
-          : ['TUE', 'THU', 'SAT'].map(day => ({ day, start: '06:00', end: '08:00' }))
+          : ['TUE', 'THU', 'SAT'].map(day => ({ day, ...morning }))
     setSchedule(next)
   }
 
@@ -278,7 +286,7 @@ export default function RegisterPage() {
     `w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all`
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--bg)' }}>
+    <div className="h-[100dvh] flex overflow-x-hidden" style={{ background: 'var(--bg)' }}>
       <div
         className="hidden lg:flex flex-col justify-between w-[42%] p-10 relative overflow-hidden"
         style={{
@@ -382,7 +390,7 @@ export default function RegisterPage() {
         style={{ background: 'linear-gradient(to bottom,transparent,var(--border),transparent)' }}
       />
 
-      <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden min-h-screen">
+      <div className="flex-1 h-[100dvh] flex flex-col items-center justify-start lg:justify-center px-4 py-5 sm:p-8 relative overflow-x-hidden overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
         <div className="absolute inset-0 pointer-events-none">
           <div
             className="absolute -bottom-8 -left-8 w-64 h-64 rounded-full opacity-[.04]"
@@ -396,7 +404,7 @@ export default function RegisterPage() {
           </svg>
         </div>
 
-        <div className="lg:hidden mb-8 relative z-10">
+        <div className="lg:hidden mb-4 sm:mb-8 relative z-10">
           <Logo />
         </div>
 
@@ -417,7 +425,7 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        <div className="w-full max-w-[400px] relative z-10 max-h-[calc(100vh-130px)] overflow-y-auto pr-1 overscroll-contain">
+        <div className="w-full max-w-[400px] relative z-10 pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:max-h-[calc(100dvh-130px)] lg:overflow-y-auto lg:pr-1 lg:overscroll-contain">
           {step === 1 && (
             <div>
               <h1 className="text-[24px] font-bold mb-1" style={{ color: 'var(--text)' }}>
@@ -675,7 +683,7 @@ export default function RegisterPage() {
               {userType === 'STUDENT' && (
                 <div className="mb-4">
                   <label className="block text-[12px] font-medium mb-1.5" style={{ color: 'var(--text2)' }}>
-                    Chuy?n ng?nh ?ang h?c
+                    Chuyên ngành đang học
                   </label>
                   <AcademicSelect
                     value={major}
@@ -885,11 +893,11 @@ export default function RegisterPage() {
                     Sáng sớm
                   </button>
                 </div>
-                <div className="overflow-auto max-h-56">
-                  <table className="w-full min-w-[360px] text-[11px]">
+                <div className="overflow-x-auto overscroll-x-contain rounded-lg border" style={{ borderColor: 'var(--border)' }}>
+                  <table className="w-full min-w-[430px] table-fixed text-[11px]">
                     <thead>
                       <tr>
-                        <th className="py-1 pr-2 text-left font-medium" style={{ color: 'var(--text3)' }}>Giờ</th>
+                        <th className="sticky left-0 z-10 w-16 py-1 pr-2 text-left font-medium" style={{ color: 'var(--text3)' }}>Giờ</th>
                         {DAYS.map(d => (
                           <th key={d.key} className="py-1 px-0.5 font-medium" style={{ color: 'var(--text3)' }}>
                             {d.label}
@@ -900,17 +908,21 @@ export default function RegisterPage() {
                     <tbody>
                       {timeSlots.map(slot => (
                         <tr key={slot.start}>
-                          <td className="py-1 pr-2 whitespace-nowrap" style={{ color: 'var(--text3)' }}>{slot.label}</td>
+                          <td className="sticky left-0 z-10 py-1 pr-2 whitespace-nowrap" style={{ color: 'var(--text3)' }}>{slot.label}</td>
                           {DAYS.map(d => (
                             <td key={d.key} className="py-1 px-0.5 text-center">
                               <button
+                                type="button"
+                                aria-label={`${d.label} ${slot.label}`}
                                 onClick={() => toggleSlot(d.key, slot.start, slot.end)}
-                                className="w-8 h-7 rounded-md border transition-all"
+                                className="inline-flex w-8 h-7 items-center justify-center rounded-md border transition-all"
                                 style={{
                                   background: isSlotSelected(d.key, slot.start) ? 'rgba(99,102,241,.75)' : 'var(--bg2)',
                                   borderColor: isSlotSelected(d.key, slot.start) ? '#6366f1' : 'var(--border)',
                                 }}
-                              />
+                              >
+                                {isSlotSelected(d.key, slot.start) && <Check size={13} className="text-white" />}
+                              </button>
                             </td>
                           ))}
                         </tr>

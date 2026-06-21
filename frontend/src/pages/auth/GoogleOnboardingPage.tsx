@@ -155,16 +155,24 @@ export default function GoogleOnboardingPage() {
   }
 
   const applySchedulePreset = (preset: 'EVENING' | 'WEEKEND' | 'MORNING') => {
+    const findSlot = (preferredStart: string, fallback: 'first' | 'last') =>
+      timeSlots.find(slot => slot.start === preferredStart)
+      ?? (fallback === 'first' ? timeSlots[0] : timeSlots[timeSlots.length - 1])
+      ?? { start: preferredStart, end: preferredStart === '19:00' ? '21:00' : '08:00' }
+    const evening = findSlot('19:00', 'last')
+    const morning = findSlot('06:00', 'first')
+    const weekendMorning = findSlot('08:00', 'first')
+    const weekendAfternoon = findSlot('15:00', 'last')
     const next =
       preset === 'EVENING'
-        ? ['MON', 'WED', 'FRI'].map(day => ({ day, start: '19:00', end: '21:00' }))
+        ? ['MON', 'WED', 'FRI'].map(day => ({ day, ...evening }))
         : preset === 'WEEKEND'
           ? [
-              { day: 'SAT', start: '08:00', end: '10:00' },
-              { day: 'SUN', start: '08:00', end: '10:00' },
-              { day: 'SAT', start: '15:00', end: '17:00' },
+              { day: 'SAT', ...weekendMorning },
+              { day: 'SUN', ...weekendMorning },
+              { day: 'SAT', ...weekendAfternoon },
             ]
-          : ['TUE', 'THU', 'SAT'].map(day => ({ day, start: '06:00', end: '08:00' }))
+          : ['TUE', 'THU', 'SAT'].map(day => ({ day, ...morning }))
     setSchedule(next)
   }
 
@@ -205,7 +213,7 @@ export default function GoogleOnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden" style={{ background: '#0a0a0f' }}>
+    <div className="h-[100dvh] flex items-start sm:items-center justify-center px-4 py-5 sm:p-6 relative overflow-x-hidden overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]" style={{ background: '#0a0a0f' }}>
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full opacity-[.06]"
@@ -216,8 +224,8 @@ export default function GoogleOnboardingPage() {
         </svg>
       </div>
 
-      <div className="w-full max-w-[440px] relative z-10">
-        <div className="flex items-center justify-between mb-8">
+      <div className="w-full max-w-[440px] relative z-10 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="flex items-center justify-between mb-4 sm:mb-8">
           <Logo/>
           <div className="flex items-center gap-1.5 text-[12px] text-[#5a5a6e] px-3 py-1.5 rounded-lg"
             style={{ background: 'rgba(99,102,241,.1)', border: '0.5px solid rgba(99,102,241,.2)' }}>
@@ -254,7 +262,7 @@ export default function GoogleOnboardingPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl p-4 sm:p-6 max-h-[calc(100vh-190px)] overflow-y-auto overscroll-contain pr-5" style={{ background: '#14141c', border: '0.5px solid rgba(255,255,255,.08)' }}>
+        <div className="rounded-2xl p-4 sm:p-6 sm:max-h-[calc(100dvh-190px)] sm:overflow-y-auto sm:overscroll-contain sm:pr-5" style={{ background: '#14141c', border: '0.5px solid rgba(255,255,255,.08)' }}>
 
           {/* ── STEP 1: User type ── */}
           {step === 1 && (
@@ -449,11 +457,11 @@ export default function GoogleOnboardingPage() {
                   Sáng sớm
                 </button>
               </div>
-              <div className="overflow-auto max-h-72 -mx-2 px-2">
-                <table className="w-full text-[11px] min-w-[340px]">
+              <div className="overflow-x-auto overscroll-x-contain -mx-2 px-2 rounded-lg border border-white/[.08]">
+                <table className="w-full table-fixed text-[11px] min-w-[430px]">
                   <thead>
                     <tr>
-                      <th className="text-[#8b8b9e] font-normal py-2 pr-2 text-left w-14">Giờ</th>
+                      <th className="sticky left-0 z-10 w-16 bg-[#14141c] text-[#8b8b9e] font-normal py-2 pr-2 text-left">Giờ</th>
                       {DAYS.map(d => (
                         <th key={d.key} className="text-[#8b8b9e] font-normal py-2 px-0.5 text-center">{d.label}</th>
                       ))}
@@ -462,18 +470,22 @@ export default function GoogleOnboardingPage() {
                   <tbody>
                     {timeSlots.map(slot => (
                       <tr key={slot.start}>
-                        <td className="text-[#5a5a6e] py-1 pr-2 whitespace-nowrap">{slot.label}</td>
+                        <td className="sticky left-0 z-10 bg-[#14141c] text-[#5a5a6e] py-1 pr-2 whitespace-nowrap">{slot.label}</td>
                         {DAYS.map(d => (
                           <td key={d.key} className="py-1 px-0.5 text-center">
                             <button
+                              type="button"
+                              aria-label={`${d.label} ${slot.label}`}
                               onClick={() => toggleSlot(d.key, slot.start, slot.end)}
-                              className="w-8 h-7 rounded-md transition-all"
+                              className="inline-flex w-8 h-7 items-center justify-center rounded-md transition-all"
                               style={{
                                 background: isSelected(d.key, slot.start)
                                   ? 'rgba(99,102,241,0.75)' : 'rgba(255,255,255,0.04)',
                                 border: `1px solid ${isSelected(d.key, slot.start) ? '#6366f1' : 'rgba(255,255,255,0.08)'}`,
                               }}
-                            />
+                            >
+                              {isSelected(d.key, slot.start) && <Check size={13} className="text-white" />}
+                            </button>
                           </td>
                         ))}
                       </tr>

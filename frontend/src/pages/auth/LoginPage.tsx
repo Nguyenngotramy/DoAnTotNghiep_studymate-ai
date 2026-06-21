@@ -138,7 +138,7 @@ export default function LoginPage() {
     }`
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--bg)' }}>
+    <div className="h-[100dvh] flex overflow-x-hidden" style={{ background: 'var(--bg)' }}>
       <div
         className="hidden lg:flex flex-col justify-between w-[45%] p-10 relative overflow-hidden"
         style={{
@@ -245,7 +245,7 @@ export default function LoginPage() {
         style={{ background: 'linear-gradient(to bottom,transparent,var(--border),transparent)' }}
       />
 
-      <div className="flex-1 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+      <div className="flex-1 h-[100dvh] flex flex-col items-center justify-start lg:justify-center px-4 py-5 sm:p-8 relative overflow-x-hidden overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div
             className="absolute -bottom-10 -left-10 w-72 h-72 rounded-full opacity-[.04]"
@@ -263,11 +263,11 @@ export default function LoginPage() {
           </svg>
         </div>
 
-        <div className="lg:hidden mb-8 relative z-10">
+        <div className="lg:hidden mb-4 sm:mb-8 relative z-10">
           <Logo />
         </div>
 
-        <div className="w-full max-w-[380px] space-y-5 relative z-10">
+        <div className="w-full max-w-[380px] space-y-5 relative z-10 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <div>
             <h1 className="text-[26px] font-bold mb-1" style={{ color: 'var(--text)' }}>
               Chào mừng trở lại 👋
