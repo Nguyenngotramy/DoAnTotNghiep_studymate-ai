@@ -8,7 +8,7 @@ let catalogPromise: Promise<AdmissionProgramRow[]> | null = null
 
 function loadCatalog() {
   if (!catalogPromise) {
-    catalogPromise = fetch('/data/nganh_dao_tao_hien_tai.csv?v=admission-20260621')
+    catalogPromise = fetch('/data/nganh_dao_tao_hien_tai.csv?v=admission-20260621-v2')
       .then(response => {
         if (!response.ok) throw new Error('Không tải được danh mục trường và ngành')
         return response.text()

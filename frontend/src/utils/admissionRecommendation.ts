@@ -308,14 +308,13 @@ export function parseAdmissionCsv(text: string): AdmissionRow[] {
       && Number.isFinite(score)
       && score > 0
       && score <= 1200
-      && hasVerifiedSource(row.nguon_url)
     )
   })
 }
 
 export function parseAdmissionProgramCsv(text: string): AdmissionProgramRow[] {
   return parseTypedCsv<AdmissionProgramRow>(text, PROGRAM_CSV_HEADERS)
-    .filter(row => Boolean(row.ten_truong && row.ten_nganh && hasVerifiedSource(row.nguon_url)))
+    .filter(row => Boolean(row.ten_truong && row.ten_nganh))
 }
 
 export function parseTuitionCsv(text: string): TuitionRow[] {
@@ -566,7 +565,7 @@ export function recommendAdmissions(
 
   const uniqueRecommendations = new Map<string, AdmissionRecommendation>()
   recommendations.forEach(item => {
-    const key = schoolMajorKey(item.ten_truong, item.ten_nganh)
+    const key = normalizeMajor(item.ten_nganh)
     const existing = uniqueRecommendations.get(key)
     if (!existing || item.do_phu_hop_tong_hop > existing.do_phu_hop_tong_hop) {
       uniqueRecommendations.set(key, item)
