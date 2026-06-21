@@ -282,7 +282,9 @@ export default function SideToolbar() {
           background: theme.panel,
           borderLeft: `1px solid ${theme.border}`,
           boxShadow: open ? theme.shadow : 'none',
-          transform: open ? 'translateX(0)' : 'translateX(100%)',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+          transform: open ? 'translateX(0)' : 'translateX(calc(100% + 24px))',
         }}
       >
         {/* Header */}

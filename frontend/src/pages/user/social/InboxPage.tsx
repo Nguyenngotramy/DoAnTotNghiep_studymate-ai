@@ -1338,9 +1338,22 @@ export default function InboxPage() {
         <div className="flex-1 flex min-w-0">
           <div className="flex-1 flex flex-col min-w-0">
             <div
-              className="px-5 h-16 flex items-center gap-3 border-b flex-shrink-0"
+              className="h-16 flex flex-shrink-0 items-center gap-2 border-b px-3 sm:gap-3 sm:px-5"
               style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
             >
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedThread(null)
+                  setGroupSideOpen(false)
+                  navigate('/inbox', { replace: true })
+                }}
+                className="rounded-xl p-2 md:hidden"
+                style={{ color: 'var(--text3)', background: 'var(--bg3)' }}
+                aria-label="Quay lại danh sách chat"
+              >
+                <ArrowLeft size={17} />
+              </button>
               <div
                 className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
                 style={{
@@ -2057,7 +2070,18 @@ export default function InboxPage() {
               className="px-4 py-3 border-b flex items-center gap-3 flex-shrink-0"
               style={{ borderColor: 'var(--border)' }}
             >
-              <button onClick={() => navigate(-1)} className="md:hidden" style={{ color: 'var(--text3)' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedThread(null)
+                  setActiveId('')
+                  setDmSideOpen(false)
+                  navigate('/inbox', { replace: true })
+                }}
+                className="rounded-xl p-2 md:hidden"
+                style={{ color: 'var(--text3)', background: 'var(--bg3)' }}
+                aria-label="Quay lại danh sách chat"
+              >
                 <ArrowLeft size={16} />
               </button>
 
