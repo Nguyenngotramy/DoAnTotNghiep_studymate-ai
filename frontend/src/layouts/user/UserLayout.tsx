@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom'
 import SideToolbar from '@/components/SideToolbar'
 import FloatingAgent from '@/components/FloatingAgent'
 import { useAuthStore } from '@/store/authStore'
@@ -452,6 +452,8 @@ function NotifDropdown({
 export default function UserLayout() {
   const { user, refreshToken, logout, updateUser } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
+  const isChatRoute = location.pathname === '/inbox' || location.pathname.startsWith('/inbox/') || /^\/groups\/[^/]+\/chat$/.test(location.pathname)
   const qc = useQueryClient()
 
   const [showSearch, setShowSearch] = useState(false)
@@ -569,11 +571,11 @@ export default function UserLayout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
+    <div className="flex h-[100dvh] min-h-0 overflow-hidden" style={{ background: 'var(--bg)' }}>
       {showSearch && <SearchModal onClose={() => setShowSearch(false)} />}
 
       <SideToolbar />
-      <FloatingAgent /> 
+      {!isChatRoute && <FloatingAgent />} 
 
       {mobileNavOpen && (
         <button
@@ -662,9 +664,9 @@ export default function UserLayout() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col overflow-hidden pt-14 lg:pt-0">
+      <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
         <header
-          className="fixed inset-x-0 top-0 z-30 flex h-14 flex-shrink-0 items-center gap-2 px-3 sm:h-12 sm:gap-3 sm:px-5 lg:relative lg:inset-auto lg:z-auto"
+          className="relative z-30 flex h-14 flex-shrink-0 items-center gap-2 px-3 sm:h-12 sm:gap-3 sm:px-5 lg:z-auto"
           style={{ background: 'var(--bg2)', borderBottom: '0.5px solid var(--border)' }}
 >
           <button
@@ -672,7 +674,7 @@ export default function UserLayout() {
             onClick={() => setMobileNavOpen(true)}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg lg:hidden"
             style={{ background: 'var(--bg3)', border: '0.5px solid var(--border)', color: 'var(--text2)' }}
-            aria-label="M? menu"
+            aria-label="Mở menu"
           >
             <Menu size={18} />
           </button>
@@ -752,7 +754,15 @@ export default function UserLayout() {
           </Link>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-4 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:p-5" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}>
+        <main
+          className={clsx(
+            'min-h-0 flex-1 overflow-x-hidden overflow-y-auto',
+            isChatRoute
+              ? 'flex flex-col p-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] sm:p-5'
+              : 'px-3 pt-4 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:p-5',
+          )}
+          style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}
+        >
           <Outlet />
         </main>
       </div>

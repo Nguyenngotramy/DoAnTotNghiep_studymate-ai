@@ -1125,11 +1125,11 @@ export default function InboxPage() {
 
   return (
     <div
-      className="flex h-full min-h-0 overflow-hidden rounded-xl border sm:h-[calc(100vh-80px)] sm:rounded-2xl"
+      className="flex min-h-0 flex-1 overflow-hidden rounded-2xl border"
       style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}
     >
       <div className={clsx('w-full border-r flex-col flex-shrink-0 md:flex md:w-80', (selectedThread || isSelectedDm) ? 'hidden' : 'flex')} style={{ borderColor: 'var(--border)' }}>
-        <div className="p-4 border-b" style={{ borderColor: 'var(--border)' }}>
+        <div className="border-b p-4 sm:p-4" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[14px] font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
               <MessageCircle size={15} className="text-indigo-400" />
@@ -1139,7 +1139,7 @@ export default function InboxPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => refetchConvs()}
-                className="transition-colors p-1"
+                className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
                 style={{ color: 'var(--text3)' }}
                 title="Tải lại"
               >
@@ -1147,7 +1147,7 @@ export default function InboxPage() {
               </button>
 
               <div
-                className="w-7 h-7 rounded-lg border flex items-center justify-center"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border"
                 style={{ borderColor: 'var(--border)', color: 'var(--text3)' }}
                 title="Tìm kiếm"
               >
@@ -1390,7 +1390,7 @@ export default function InboxPage() {
               </button>
 
               <div
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] border"
+                className="hidden items-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] sm:flex"
                 style={
                   groupConnected
                     ? {
@@ -2067,7 +2067,7 @@ export default function InboxPage() {
         <div className="flex-1 flex min-w-0">
           <div className="flex-1 flex flex-col min-w-0">
             <div
-              className="px-4 py-3 border-b flex items-center gap-3 flex-shrink-0"
+              className="flex h-14 flex-shrink-0 items-center gap-2 border-b px-3 sm:h-auto sm:gap-3 sm:px-4 sm:py-3"
               style={{ borderColor: 'var(--border)' }}
             >
               <button
