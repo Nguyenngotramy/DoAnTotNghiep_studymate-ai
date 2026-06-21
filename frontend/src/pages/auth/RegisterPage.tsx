@@ -664,6 +664,7 @@ export default function RegisterPage() {
                   value={school}
                   onChange={selectSchool}
                   options={userType === 'STUDENT' ? academicCatalog.schools : schoolOptions}
+                  searchAliases={userType === 'STUDENT' ? academicCatalog.schoolSearchAliases : {}}
                   placeholder={userType === 'STUDENT' ? 'Chọn trường đại học' : 'Chọn trường học / tổ chức'}
                   type="school"
                   loading={userType === 'STUDENT' && academicCatalog.loading}

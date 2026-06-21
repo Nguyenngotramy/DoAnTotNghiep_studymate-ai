@@ -403,6 +403,87 @@ function normalizeSchool(value: string): string {
 function normalizeMajor(value: string): string {
   return normalize(value).replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim()
 }
+const MAJOR_GROUP_RULES: [string, string[]][] = [
+  ['Công nghệ thông tin', ['cong nghe thong tin', 'cntt', 'tin hoc']],
+  ['Khoa học máy tính', ['khoa hoc may tinh']],
+  ['Kỹ thuật phần mềm', ['ky thuat phan mem', 'cong nghe phan mem']],
+  ['Trí tuệ nhân tạo', ['tri tue nhan tao', 'artificial intelligence']],
+  ['Khoa học dữ liệu', ['khoa hoc du lieu', 'phan tich du lieu', 'du lieu lon']],
+  ['An toàn thông tin', ['an toan thong tin', 'an ninh mang', 'cyber security']],
+  ['Hệ thống thông tin', ['he thong thong tin']],
+  ['Mạng máy tính và truyền thông dữ liệu', ['mang may tinh', 'truyen thong du lieu']],
+  ['Công nghệ kỹ thuật máy tính', ['cong nghe ky thuat may tinh', 'ky thuat may tinh']],
+  ['Thương mại điện tử', ['thuong mai dien tu', 'kinh doanh so']],
+  ['Marketing', ['marketing', 'quan tri thuong hieu', 'marketing so']],
+  ['Quản trị kinh doanh', ['quan tri kinh doanh', 'khoi nghiep va phat trien kinh doanh']],
+  ['Kinh doanh quốc tế', ['kinh doanh quoc te', 'thuong mai quoc te']],
+  ['Logistics và quản lý chuỗi cung ứng', ['logistics', 'chuoi cung ung']],
+  ['Tài chính - Ngân hàng', ['tai chinh ngan hang', 'tai chinh - ngan hang', 'cong nghe tai chinh']],
+  ['Kế toán - Kiểm toán', ['ke toan', 'kiem toan']],
+  ['Kinh tế', ['kinh te', 'quan ly kinh te']],
+  ['Luật', ['luat']],
+  ['Ngôn ngữ Anh', ['ngon ngu anh', 'tieng anh thuong mai']],
+  ['Ngôn ngữ Trung Quốc', ['ngon ngu trung', 'tieng trung']],
+  ['Ngôn ngữ Nhật', ['ngon ngu nhat', 'tieng nhat']],
+  ['Ngôn ngữ Hàn Quốc', ['ngon ngu han', 'tieng han']],
+  ['Du lịch - Khách sạn', ['du lich', 'lu hanh', 'khach san', 'nha hang']],
+  ['Truyền thông - Quan hệ công chúng', ['truyen thong', 'quan he cong chung']],
+  ['Thiết kế đồ họa - Mỹ thuật số', ['thiet ke do hoa', 'my thuat so']],
+  ['Công nghệ kỹ thuật ô tô', ['ky thuat o to', 'cong nghe ky thuat o to']],
+  ['Kỹ thuật điện - Điện tử', ['ky thuat dien', 'dien tu', 'vien thong']],
+  ['Tự động hóa - Robot', ['tu dong hoa', 'robot']],
+  ['Cơ khí - Cơ điện tử', ['co khi', 'co dien tu']],
+  ['Xây dựng - Kiến trúc', ['xay dung', 'kien truc']],
+  ['Công nghệ sinh học', ['cong nghe sinh hoc']],
+  ['Công nghệ thực phẩm', ['cong nghe thuc pham']],
+  ['Y - Dược', ['y khoa', 'duoc hoc', 'rang ham mat', 'dieu duong', 'xet nghiem y hoc']],
+  ['Tâm lý học', ['tam ly hoc']],
+  ['Sư phạm - Giáo dục', ['su pham', 'giao duc']],
+]
+
+const SCHOOL_ALIASES: Record<string, string[]> = {
+  'truong dai hoc cong nghe thong tin va truyen thong viet han': ['vku'],
+  'dai hoc kinh te quoc dan': ['neu'],
+  'truong dai hoc kinh te quoc dan': ['neu'],
+  'dai hoc bach khoa ha noi': ['hust', 'bka'],
+  'truong dai hoc bach khoa da nang': ['dut', 'bku da nang'],
+  'truong dai hoc bach khoa dai hoc da nang': ['dut', 'bku da nang'],
+  'truong dai hoc bach khoa dai hoc quoc gia tphcm': ['hcmut', 'bku'],
+  'truong dai hoc cong nghe thong tin dai hoc quoc gia tphcm': ['uit'],
+  'truong dai hoc khoa hoc tu nhien tphcm': ['hcmus'],
+  'truong dai hoc khoa hoc xa hoi va nhan van tphcm': ['hcmussh', 'ussh'],
+  'truong dai hoc kinh te tphcm': ['ueh'],
+  'truong dai hoc kinh te luat tphcm': ['uel'],
+  'truong dai hoc ngoai thuong': ['ftu'],
+  'truong dai hoc thuong mai': ['tmu'],
+  'hoc vien ngan hang': ['hvnh', 'bav'],
+  'hoc vien cong nghe buu chinh vien thong': ['ptit'],
+  'truong dai hoc giao thong van tai tphcm': ['uth'],
+  'truong dai hoc cong nghiep tphcm': ['iuh'],
+  'truong dai hoc kinh te tai chinh tphcm': ['uef'],
+  'truong dai hoc quoc te hong bang': ['hiu'],
+  'dai hoc phenikaa': ['phenikaa', 'pka'],
+  'truong dai hoc fpt': ['fptu', 'fpt'],
+  'dai hoc can tho': ['ctu'],
+}
+
+export function majorGroupName(value: string): string {
+  const normalized = normalize(value)
+  const match = MAJOR_GROUP_RULES.find(([, keywords]) =>
+    keywords.some(keyword => normalized.includes(keyword)),
+  )
+  return match?.[0] ?? value.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+export function schoolSearchTerms(schoolCode: string, schoolName: string): string {
+  const normalizedName = normalizeSchool(schoolName)
+  return [schoolCode, schoolName, ...(SCHOOL_ALIASES[normalizedName] ?? [])].join(' ')
+}
+
+function schoolMatchesQuery(row: AdmissionRow, query: string): boolean {
+  if (!query) return true
+  return normalize(schoolSearchTerms(row.ma_truong, row.ten_truong)).includes(query)
+}
 
 function schoolMajorKey(school: string, major: string): string {
   return `${normalizeSchool(school)}|${normalizeMajor(major)}`
@@ -467,8 +548,12 @@ export function recommendAdmissions(
 
   const recommendations = latestRows(rows)
     .flatMap<AdmissionRecommendation>(row => {
-      if (majorQuery && !normalize(row.ten_nganh).includes(majorQuery)) return []
-      if (schoolQuery && !normalize(row.ten_truong).includes(schoolQuery)) return []
+      if (
+        majorQuery
+        && !normalize(row.ten_nganh).includes(majorQuery)
+        && !normalize(majorGroupName(row.ten_nganh)).includes(majorQuery)
+      ) return []
+      if (!schoolMatchesQuery(row, schoolQuery)) return []
       if (
         locationQuery &&
         !normalize(`${row.khu_vuc_truong} ${row.ten_truong}`).includes(locationQuery)
@@ -565,7 +650,7 @@ export function recommendAdmissions(
 
   const uniqueRecommendations = new Map<string, AdmissionRecommendation>()
   recommendations.forEach(item => {
-    const key = normalizeMajor(item.ten_nganh)
+    const key = normalize(majorGroupName(item.ten_nganh))
     const existing = uniqueRecommendations.get(key)
     if (!existing || item.do_phu_hop_tong_hop > existing.do_phu_hop_tong_hop) {
       uniqueRecommendations.set(key, item)

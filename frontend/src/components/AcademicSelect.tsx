@@ -19,6 +19,7 @@ interface AcademicSelectProps {
   loading?: boolean
   helperText?: string
   theme?: 'light' | 'dark'
+  searchAliases?: Record<string, string>
 }
 
 const normalize = (value: string) =>
@@ -34,6 +35,7 @@ export default function AcademicSelect({
   loading = false,
   helperText,
   theme = 'light',
+  searchAliases = {},
 }: AcademicSelectProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -52,10 +54,10 @@ export default function AcademicSelect({
   const filtered = useMemo(() => {
     const needle = normalize(query.trim())
     const matched = needle
-      ? options.filter(option => normalize(option).includes(needle))
+      ? options.filter(option => normalize(option + ' ' + (searchAliases[option] ?? '')).includes(needle))
       : options
     return matched.slice(0, 100)
-  }, [options, query])
+  }, [options, query, searchAliases])
 
   const choose = (option: string) => {
     onChange(option)

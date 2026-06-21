@@ -24,9 +24,11 @@ import { useAuthStore } from '@/store/authStore'
 import {
   SUBJECT_LABELS,
   calculateCombinationScores,
+  majorGroupName,
   parseAdmissionCsv,
   parseAdmissionProgramCsv,
   parseTuitionCsv,
+  schoolSearchTerms,
   recommendAdmissions,
   type AdmissionProgramRow,
   type AdmissionRow,
@@ -201,13 +203,18 @@ export default function AdmissionRecommendationPage() {
     [scores, priorityScore],
   )
   const majors = useMemo(
-    () => [...new Set(rows.map(row => row.ten_nganh).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi')),
+    () => [...new Set(rows.map(row => majorGroupName(row.ten_nganh)).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'vi')),
     [rows],
   )
-  const schools = useMemo(
-    () => [...new Set(rows.map(row => row.ten_truong).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi')),
-    [rows],
-  )
+  const schoolSuggestions = useMemo(() => {
+    const unique = new Map<string, { code: string; name: string }>()
+    rows.forEach(row => {
+      const key = row.ma_truong || row.ten_truong
+      if (!unique.has(key)) unique.set(key, { code: row.ma_truong, name: row.ten_truong })
+    })
+    return [...unique.values()].sort((a, b) => a.name.localeCompare(b.name, 'vi'))
+  }, [rows])
   const hasLocationData = useMemo(
     () => rows.some(row => Boolean(row.khu_vuc_truong?.trim())),
     [rows],
@@ -337,7 +344,10 @@ export default function AdmissionRecommendationPage() {
             <label className="space-y-1.5">
               <span className="text-[11px] font-medium" style={{ color: 'var(--text2)' }}>Trường mong muốn</span>
               <input list="school-options" value={schoolQuery} onChange={e => setSchoolQuery(e.target.value)} placeholder="Để trống nếu muốn xem nhiều trường" className={inputClass} />
-              <datalist id="school-options">{schools.map(item => <option key={item} value={item} />)}</datalist>
+              <datalist id="school-options">{schoolSuggestions.flatMap(item => [
+                <option key={`${item.code}-code`} value={item.code || item.name} label={item.name} />,
+                <option key={`${item.code}-name`} value={item.name} label={schoolSearchTerms(item.code, item.name)} />,
+              ])}</datalist>
             </label>
             <label className="space-y-1.5 sm:col-span-2">
               <span className="text-[11px] font-medium" style={{ color: 'var(--text2)' }}>Địa điểm mong muốn</span>

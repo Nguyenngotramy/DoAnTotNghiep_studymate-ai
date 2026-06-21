@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  majorGroupName,
   parseAdmissionProgramCsv,
+  schoolSearchTerms,
   type AdmissionProgramRow,
 } from '@/utils/admissionRecommendation'
 
@@ -45,13 +47,20 @@ export function useAcademicCatalog(selectedSchool = '') {
     [rows],
   )
 
+  const schoolSearchAliases = useMemo(() => Object.fromEntries(
+    schools.map(school => {
+      const row = rows.find(item => item.ten_truong === school)
+      return [school, row ? schoolSearchTerms(row.ma_truong, row.ten_truong) : school]
+    }),
+  ), [rows, schools])
+
   const majors = useMemo(() => {
     const source = selectedSchool
       ? rows.filter(row => row.ten_truong === selectedSchool)
       : rows
-    return [...new Set(source.map(row => row.ten_nganh).filter(Boolean))]
+    return [...new Set(source.map(row => majorGroupName(row.ten_nganh)).filter(Boolean))]
       .sort((a, b) => a.localeCompare(b, 'vi'))
   }, [rows, selectedSchool])
 
-  return { schools, majors, loading }
+  return { schools, schoolSearchAliases, majors, loading }
 }
