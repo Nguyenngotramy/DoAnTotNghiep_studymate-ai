@@ -467,12 +467,25 @@ const SCHOOL_ALIASES: Record<string, string[]> = {
   'dai hoc can tho': ['ctu'],
 }
 
+function cleanMajorVariant(value: string): string {
+  return value
+    .replace(/^\s*(?:chương trình\s+)?chất lượng cao\s+/i, '')
+    .replace(/^\s*CLC\s*[-:]?\s*/i, '')
+    .replace(/\s*[-–]\s*thí sinh\s+(?:nam\s+|nữ\s+)?miền\s+(?:bắc|nam).*$/i, '')
+    .replace(/\s*[-–]\s*thí sinh\s+(?:nam|nữ).*$/i, '')
+    .replace(/\s*,?\s*chuyên ngành\s+.+$/i, '')
+    .replace(/\s*\([^)]*(?:chất lượng cao|CLC|thí sinh miền)[^)]*\)\s*/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function majorGroupName(value: string): string {
-  const normalized = normalize(value)
+  const cleaned = cleanMajorVariant(value)
+  const normalized = normalize(cleaned)
   const match = MAJOR_GROUP_RULES.find(([, keywords]) =>
     keywords.some(keyword => normalized.includes(keyword)),
   )
-  return match?.[0] ?? value.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim()
+  return match?.[0] ?? cleaned.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
 export function schoolSearchTerms(schoolCode: string, schoolName: string): string {

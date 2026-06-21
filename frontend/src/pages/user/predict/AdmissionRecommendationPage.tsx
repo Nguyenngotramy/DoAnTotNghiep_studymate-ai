@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import AcademicSelect from '@/components/AcademicSelect'
 import { useAuthStore } from '@/store/authStore'
 import {
   SUBJECT_LABELS,
@@ -337,17 +338,29 @@ export default function AdmissionRecommendationPage() {
         <Panel title="1. Bạn đang tìm gì?" icon={<Search size={17} />}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="space-y-1.5">
-              <span className="text-[11px] font-medium" style={{ color: 'var(--text2)' }}>Ngành mong muốn</span>
-              <input list="major-options" value={majorQuery} onChange={e => setMajorQuery(e.target.value)} placeholder="Ví dụ: Công nghệ thông tin" className={inputClass} />
-              <datalist id="major-options">{majors.map(item => <option key={item} value={item} />)}</datalist>
+              <span className="text-[11px] font-medium" style={{ color: 'var(--text2)' }}>Nhóm ngành mong muốn</span>
+              <AcademicSelect
+                value={majorQuery}
+                onChange={setMajorQuery}
+                options={majors}
+                placeholder="Ví dụ: Công nghệ thông tin"
+                type="major"
+                loading={loadingData}
+              />
             </label>
             <label className="space-y-1.5">
               <span className="text-[11px] font-medium" style={{ color: 'var(--text2)' }}>Trường mong muốn</span>
-              <input list="school-options" value={schoolQuery} onChange={e => setSchoolQuery(e.target.value)} placeholder="Để trống nếu muốn xem nhiều trường" className={inputClass} />
-              <datalist id="school-options">{schoolSuggestions.flatMap(item => [
-                <option key={`${item.code}-code`} value={item.code || item.name} label={item.name} />,
-                <option key={`${item.code}-name`} value={item.name} label={schoolSearchTerms(item.code, item.name)} />,
-              ])}</datalist>
+              <AcademicSelect
+                value={schoolQuery}
+                onChange={setSchoolQuery}
+                options={schoolSuggestions.map(item => item.name)}
+                searchAliases={Object.fromEntries(
+                  schoolSuggestions.map(item => [item.name, schoolSearchTerms(item.code, item.name)]),
+                )}
+                placeholder="Tìm tên hoặc viết tắt: VKU, TMU, NEU..."
+                type="school"
+                loading={loadingData}
+              />
             </label>
             <label className="space-y-1.5 sm:col-span-2">
               <span className="text-[11px] font-medium" style={{ color: 'var(--text2)' }}>Địa điểm mong muốn</span>
