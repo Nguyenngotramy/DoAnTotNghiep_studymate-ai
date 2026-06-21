@@ -278,10 +278,19 @@ function parseTypedCsv<T extends Record<string, string>>(
   text: string,
   headers: (keyof T)[],
 ): T[] {
-  return parseCsvValues(text).slice(1).map(values => {
+  const rows = parseCsvValues(text)
+  const sourceHeaders = (rows[0] ?? []).map((header, index) =>
+    (index === 0 ? header.replace(/^\uFEFF/, '') : header).trim(),
+  )
+  const sourceIndexes = new Map(
+    sourceHeaders.map((header, index) => [header, index]),
+  )
+
+  return rows.slice(1).map(values => {
     const item = {} as T
-    headers.forEach((header, index) => {
-      item[header] = (values[index] ?? '').trim() as T[keyof T]
+    headers.forEach(header => {
+      const index = sourceIndexes.get(String(header))
+      item[header] = (index == null ? '' : values[index] ?? '').trim() as T[keyof T]
     })
     return item
   })
