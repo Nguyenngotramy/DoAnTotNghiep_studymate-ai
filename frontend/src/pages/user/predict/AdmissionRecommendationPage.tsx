@@ -157,9 +157,9 @@ export default function AdmissionRecommendationPage() {
   useEffect(() => {
     let active = true
     Promise.all([
-      fetch('/data/diem_chuan_tuyensinh247.csv?v=riasec-20260613'),
-      fetch('/data/nganh_dao_tao_hien_tai.csv?v=20260613'),
-      fetch('/data/hoc_phi_tham_khao.csv?v=20260613'),
+      fetch('/data/diem_chuan_tuyensinh247.csv?v=admission-20260621'),
+      fetch('/data/nganh_dao_tao_hien_tai.csv?v=admission-20260621'),
+      fetch('/data/hoc_phi_tham_khao.csv?v=admission-20260621'),
     ])
       .then(async responses => {
         const failed = responses.find(response => !response.ok)
