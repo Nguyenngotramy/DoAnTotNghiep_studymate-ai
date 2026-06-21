@@ -71,7 +71,6 @@ function rid(v: any): string {
 }
 
 function ini(n: string) {
-
   return (n ?? 'ND')
     .split(' ')
     .map((w: string) => w[0] ?? '')
@@ -429,11 +428,7 @@ export default function InboxPage() {
         return
       }
 
-      const currentDmValid =
-        selectedThread?.threadType === 'DM' &&
-        dmThreads.some(c => dmPartnerId(c) === dmPartnerId(selectedThread))
-
-      if (!currentDmValid && selectedThread?.threadType === 'DM') {
+      if (selectedThread?.threadType === 'DM' || activeId) {
         setSelectedThread(null)
         setActiveId('')
       }
@@ -445,18 +440,8 @@ export default function InboxPage() {
         selectedThread?.threadType === 'GROUP' &&
         groupThreads.some(c => rid(c.groupId) === rid(selectedThread?.groupId))
 
-      if (!currentGroupValid) {
-        if (groupThreads.length > 0) {
-          const firstGroup = groupThreads[0]
-          if (
-            selectedThread?.threadType !== 'GROUP' ||
-            rid(selectedThread?.groupId) !== rid(firstGroup.groupId)
-          ) {
-            setSelectedThread(firstGroup)
-          }
-        } else if (selectedThread !== null) {
-          setSelectedThread(null)
-        }
+      if (!currentGroupValid && selectedThread?.threadType === 'GROUP') {
+        setSelectedThread(null)
       }
     }
   }, [paramUserId, activeTab, activeId, dmThreads, groupThreads, selectedThread])
@@ -676,40 +661,23 @@ export default function InboxPage() {
   }
 
   const switchToDmTab = () => {
-    if (activeTab !== 'dm') setActiveTab('dm')
+    setActiveTab('dm')
     setSearchText('')
+    setSelectedThread(null)
+    setActiveId('')
+    setDmSideOpen(false)
     setGroupSideOpen(false)
-
-    if (selectedThread?.threadType === 'DM') return
-
-    if (dmThreads.length > 0) {
-      const first = dmThreads[0]
-      if (dmPartnerId(selectedThread) !== dmPartnerId(first)) setSelectedThread(first)
-      if (rid(activeId) !== dmPartnerId(first)) setActiveId(dmPartnerId(first))
-      navigate(`/inbox/${dmPartnerId(first)}`, { replace: true })
-    } else {
-      setSelectedThread(null)
-      setActiveId('')
-    }
+    navigate('/inbox', { replace: true, state: null })
   }
 
   const switchToGroupTab = () => {
-    if (activeTab !== 'group') setActiveTab('group')
+    setActiveTab('group')
     setSearchText('')
+    setSelectedThread(null)
+    setActiveId('')
     setDmSideOpen(false)
-
-    navigate('/inbox', { replace: true })
-
-    if (selectedThread?.threadType === 'GROUP') return
-
-    if (groupThreads.length > 0) {
-      const first = groupThreads[0]
-      if (rid(selectedThread?.groupId) !== rid(first.groupId)) {
-        setSelectedThread(first)
-      }
-    } else {
-      setSelectedThread(null)
-    }
+    setGroupSideOpen(false)
+    navigate('/inbox', { replace: true, state: null })
   }
 
   const selectThread = useCallback((conv: Conversation) => {
@@ -1115,7 +1083,7 @@ export default function InboxPage() {
     [groupThreads],
   )
 
-  const handleBackToInboxList = useCallback(() => {
+  const clearOpenChatUi = useCallback(() => {
     setSelectedThread(null)
     setActiveId('')
     setDmSideOpen(false)
@@ -1124,8 +1092,19 @@ export default function InboxPage() {
     setGroupShowEmoji(false)
     setReplyTo(null)
     setGroupReplyTo(null)
+  }, [])
+
+  const handleBackFromDirectChat = useCallback(() => {
+    clearOpenChatUi()
+    setActiveTab('dm')
     navigate('/inbox', { replace: true, state: null })
-  }, [navigate])
+  }, [clearOpenChatUi, navigate])
+
+  const handleBackFromGroupChat = useCallback(() => {
+    clearOpenChatUi()
+    setActiveTab('group')
+    navigate('/inbox', { replace: true, state: null })
+  }, [clearOpenChatUi, navigate])
   return (
     <div
       className="flex h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden rounded-2xl border"
@@ -1333,17 +1312,17 @@ export default function InboxPage() {
         </div>
       ) : activeTab === 'group' && isSelectedGroup ? (
         <div className="flex-1 flex min-w-0">
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div
               className="sticky top-0 z-30 flex h-14 flex-shrink-0 items-center gap-2 border-b bg-white/95 px-3 backdrop-blur sm:h-16 sm:gap-3 sm:px-5"
               style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
             >
               <button
                 type="button"
-                onClick={handleBackToInboxList}
-                className="rounded-xl p-2 md:hidden"
+                onClick={handleBackFromGroupChat}
+                className="relative z-40 rounded-xl p-2 md:hidden"
                 style={{ color: 'var(--text3)', background: 'var(--bg3)' }}
-                aria-label="Quay lại danh sách tin nhắn"
+                aria-label="Quay lại danh sách nhóm chat"
               >
                 <ArrowLeft size={17} />
               </button>
@@ -1373,7 +1352,7 @@ export default function InboxPage() {
                   setDmSideOpen(false)
                   setGroupSideOpen(v => !v)
                 }}
-                className="w-10 h-10 rounded-xl border flex items-center justify-center"
+                className="relative z-40 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border"
                 style={{
                   background: 'var(--bg3)',
                   borderColor: 'var(--border)',
@@ -1439,7 +1418,7 @@ export default function InboxPage() {
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-5" style={{ background: 'var(--bg)' }}>
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5" style={{ background: 'var(--bg)' }}>
               {groupLoading ? (
                 <div className="flex justify-center py-8">
                   <Loader2 size={20} className="animate-spin text-indigo-400" />
@@ -1786,7 +1765,7 @@ export default function InboxPage() {
                   type="button"
                   aria-label="Chọn ảnh cho nhóm"
                   onClick={() => groupImageRef.current?.click()}
-                  className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+                  className="inline-flex h-10 flex-shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
                   style={{
                     background: 'var(--bg3)',
                     borderColor: 'var(--border)',
@@ -1801,7 +1780,7 @@ export default function InboxPage() {
                   type="button"
                   aria-label="Chọn tài liệu cho nhóm"
                   onClick={() => groupFileRef.current?.click()}
-                  className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+                  className="inline-flex h-10 flex-shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
                   style={{
                     background: 'var(--bg3)',
                     borderColor: 'var(--border)',
@@ -1817,7 +1796,7 @@ export default function InboxPage() {
                     type="button"
                   aria-label="Mở bảng emoji nhóm"
                   onClick={() => setGroupShowEmoji(v => !v)}
-                    className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+                    className="inline-flex h-10 flex-shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
                     style={{
                       background: 'var(--bg3)',
                       borderColor: 'var(--border)',
@@ -1857,7 +1836,7 @@ export default function InboxPage() {
                   borderColor: 'var(--border)',
                 }}
               >
-                <input id="group-message-input" name="groupMessage" autoComplete="off"
+                <input id="inbox-group-message-input" name="inboxGroupMessage" autoComplete="off"
                   ref={groupInputRef}
                   value={groupInput}
                   onChange={e => setGroupInput(e.target.value)}
@@ -2068,15 +2047,15 @@ export default function InboxPage() {
         </div>
       ) : isSelectedDm ? (
         <div className="flex-1 flex min-w-0">
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div
               className="sticky top-0 z-30 flex h-14 flex-shrink-0 items-center gap-2 border-b bg-white/95 px-3 backdrop-blur sm:h-auto sm:gap-3 sm:px-4 sm:py-3"
               style={{ borderColor: 'var(--border)' }}
             >
               <button
                 type="button"
-                onClick={handleBackToInboxList}
-                className="rounded-xl p-2 md:hidden"
+                onClick={handleBackFromDirectChat}
+                className="relative z-40 rounded-xl p-2 md:hidden"
                 style={{ color: 'var(--text3)', background: 'var(--bg3)' }}
                 aria-label="Quay lại danh sách tin nhắn"
               >
@@ -2110,7 +2089,7 @@ export default function InboxPage() {
                   setGroupSideOpen(false)
                   setDmSideOpen(v => !v)
                 }}
-                className="w-10 h-10 rounded-xl border flex items-center justify-center"
+                className="relative z-40 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border"
                 style={{
                   background: 'var(--bg3)',
                   borderColor: 'var(--border)',
@@ -2156,7 +2135,7 @@ export default function InboxPage() {
               </div>
             )}
 
-            <div className="flex-1 space-y-2 overflow-y-auto px-2 py-3 sm:space-y-3 sm:p-4">
+            <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-2 py-3 sm:space-y-3 sm:p-4">
               {loadMsgs ? (
                 <div className="flex justify-center py-8">
                   <Loader2 size={20} className="animate-spin text-indigo-400" />
@@ -2480,7 +2459,7 @@ export default function InboxPage() {
                   type="button"
                   aria-label="Chọn ảnh"
                   onClick={() => imageRef.current?.click()}
-                  className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+                  className="inline-flex h-10 flex-shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
                   style={{
                     background: 'var(--bg3)',
                     borderColor: 'var(--border)',
@@ -2495,7 +2474,7 @@ export default function InboxPage() {
                   type="button"
                   aria-label="Chọn tài liệu"
                   onClick={() => fileRef.current?.click()}
-                  className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+                  className="inline-flex h-10 flex-shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
                   style={{
                     background: 'var(--bg3)',
                     borderColor: 'var(--border)',
@@ -2511,7 +2490,7 @@ export default function InboxPage() {
                     type="button"
                   aria-label="Mở bảng emoji"
                   onClick={() => setShowEmoji(v => !v)}
-                    className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+                    className="inline-flex h-10 flex-shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
                     style={{
                       background: 'var(--bg3)',
                       borderColor: 'var(--border)',
