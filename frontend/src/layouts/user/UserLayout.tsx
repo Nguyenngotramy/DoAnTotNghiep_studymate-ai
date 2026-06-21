@@ -662,9 +662,9 @@ export default function UserLayout() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden pt-14 lg:pt-0">
         <header
-          className="relative z-[10001] h-14 flex-shrink-0 flex items-center gap-2 px-3 sm:h-12 sm:gap-3 sm:px-5 lg:z-auto"
+          className="fixed inset-x-0 top-0 z-30 flex h-14 flex-shrink-0 items-center gap-2 px-3 sm:h-12 sm:gap-3 sm:px-5 lg:relative lg:inset-auto lg:z-auto"
           style={{ background: 'var(--bg2)', borderBottom: '0.5px solid var(--border)' }}
 >
           <button

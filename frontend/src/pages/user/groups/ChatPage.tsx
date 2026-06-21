@@ -722,7 +722,7 @@ export default function ChatPage() {
 
   return (
     <div
-      className="flex h-[calc(100dvh-88px)] min-h-0 overflow-hidden rounded-xl sm:-m-5 sm:h-[calc(100vh-4rem)] sm:rounded-none"
+      className="flex h-full min-h-0 overflow-hidden rounded-xl sm:-m-5 sm:h-[calc(100vh-4rem)] sm:rounded-none"
       style={{ background: 'var(--bg)' }}
     >
       <div className="flex flex-col flex-1 min-w-0">

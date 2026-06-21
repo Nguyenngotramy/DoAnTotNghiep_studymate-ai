@@ -1125,7 +1125,7 @@ export default function InboxPage() {
 
   return (
     <div
-      className="flex h-[calc(100dvh-88px)] min-h-0 overflow-hidden rounded-xl border sm:h-[calc(100vh-80px)] sm:rounded-2xl"
+      className="flex h-full min-h-0 overflow-hidden rounded-xl border sm:h-[calc(100vh-80px)] sm:rounded-2xl"
       style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}
     >
       <div className={clsx('w-full border-r flex-col flex-shrink-0 md:flex md:w-80', (selectedThread || isSelectedDm) ? 'hidden' : 'flex')} style={{ borderColor: 'var(--border)' }}>
