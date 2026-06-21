@@ -14,7 +14,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useUiStore } from "@/store/uiStore";
 
 const API_URL = "/ai-agent";
-const SESSION_KEY = "studymind_chat_session";
+const sessionStorageKey = (userId) => `studymind_chat_session:${userId || "guest"}`;
 
 const AGENT_MAP = {
   TutorAgent: "Tutor",
@@ -122,6 +122,30 @@ async function readAiResponse(res) {
   throw error;
 }
 
+function storedMessageToUi(item) {
+  const role = item.role === "assistant" ? "ai" : "user";
+  let text = item.content || "";
+  let structured = null;
+  if (role === "ai") {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed?.type === "quiz" && Array.isArray(parsed.questions)) {
+        structured = { type: "quiz", items: parsed.questions };
+      } else if (parsed?.type === "flashcard" && Array.isArray(parsed.flashcards)) {
+        structured = { type: "flashcard", items: parsed.flashcards };
+      }
+      if (structured) text = `Đã tạo ${structured.items.length} ${structured.type === "quiz" ? "câu quiz" : "flashcard"}.`;
+    } catch {}
+  }
+  const created = item.created_at ? new Date(`${item.created_at.replace(" ", "T")}Z`) : new Date();
+  return {
+    id: `history-${item.id}`,
+    role,
+    text,
+    structured,
+    time: Number.isNaN(created.getTime()) ? timeNow() : created.toLocaleTimeString("vi", { hour: "2-digit", minute: "2-digit" }),
+  };
+}
 function StructuredPreview({ structured }) {
   if (!structured?.items?.length) return null;
 
@@ -325,7 +349,10 @@ export default function FloatingAgent() {
   const [validatingKey, setValidatingKey] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
 
-  const [sessionId, setSessionId] = useState(() => localStorage.getItem(SESSION_KEY) || "");
+  const [showHistory, setShowHistory] = useState(false);
+  const [recentSessions, setRecentSessions] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [sessionId, setSessionId] = useState("");
 
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -344,6 +371,54 @@ export default function FloatingAgent() {
   useEffect(() => {
     loadAiProviders().then(setProviders).catch(() => setProviders([]));
   }, []);
+
+  const tenantId = user?.id ? `user:${user.id}` : "";
+
+  const loadRecentSessions = useCallback(async () => {
+    if (!tenantId) return [];
+    try {
+      const res = await fetch(`${API_URL}/sessions?limit=5&tenant_id=${encodeURIComponent(tenantId)}`, {
+        headers: getAiRequestHeaders(),
+      });
+      const data = await readAiResponse(res);
+      const sessions = Array.isArray(data.sessions) ? data.sessions.slice(0, 5) : [];
+      setRecentSessions(sessions);
+      return sessions;
+    } catch {
+      setRecentSessions([]);
+      return [];
+    }
+  }, [tenantId]);
+
+  const loadSession = useCallback(async (nextSessionId) => {
+    if (!nextSessionId || !tenantId) return;
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/history/${encodeURIComponent(nextSessionId)}?limit=100&tenant_id=${encodeURIComponent(tenantId)}`, {
+        headers: getAiRequestHeaders(),
+      });
+      const data = await readAiResponse(res);
+      setMessages((data.messages || []).map(storedMessageToUi));
+      setSessionId(nextSessionId);
+      localStorage.setItem(sessionStorageKey(user?.id), nextSessionId);
+      setShowQuick(!(data.messages || []).length);
+      setShowHistory(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không tải được lịch sử AI");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [tenantId, user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const savedSession = localStorage.getItem(sessionStorageKey(user.id)) || "";
+    setSessionId(savedSession);
+    loadRecentSessions().then((sessions) => {
+      const target = savedSession || sessions[0]?.session_id;
+      if (target) loadSession(target);
+    });
+  }, [user?.id, loadRecentSessions, loadSession]);
 
   const sendMessage = useCallback(async (text) => {
     const msg = (text ?? input).trim();
@@ -379,7 +454,7 @@ export default function FloatingAgent() {
       }
       if (data.session_id) {
         setSessionId(data.session_id);
-        localStorage.setItem(SESSION_KEY, data.session_id);
+        localStorage.setItem(sessionStorageKey(user?.id), data.session_id);
       }
 
       let savedResource = null;
@@ -387,7 +462,7 @@ export default function FloatingAgent() {
         try {
           savedResource = await persistStructured(data.structured, msg);
         } catch (error) {
-          toast.error(error?.response?.data?.message ?? "Khong the tu dong luu. Hay dang nhap va thu lai.");
+          toast.error(error?.response?.data?.message ?? "Không thể tự động lưu. Hãy đăng nhập và thử lại.");
         }
       }
 
@@ -407,15 +482,26 @@ export default function FloatingAgent() {
 
       if (!open) setUnread((n) => n + 1);
       setActiveAgent(data.agent ?? null);
+      loadRecentSessions();
     } catch (error) {
+      const errorCode = error?.code || "";
+      const shouldOfferAlternative = /CREDIT|QUOTA|TOKEN|RATE|TIMEOUT|HTTP_40[29]|HTTP_50[234]/.test(errorCode);
+      if (shouldOfferAlternative) {
+        setShowApiKey(true);
+        toast.error("AI chưa hoàn tất. Bạn có thể nạp thêm token hoặc dùng API key cá nhân.");
+      }
+      const baseMessage = error instanceof Error
+        ? error.message
+        : "Không thể kết nối AI service. Vui lòng thử lại.";
+      const helpMessage = shouldOfferAlternative
+        ? `${baseMessage}\n\nGợi ý: nạp thêm AI token hoặc mở mục KEY để thêm API key cá nhân.`
+        : baseMessage;
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           role: "ai",
-          text: `❌ ${error?.code ? `[${error.code}] ` : ""}${error instanceof Error
-            ? error.message
-            : "Không thể kết nối AI service tại cổng 8001. Kiểm tra FastAPI đang chạy chưa."}`,
+          text: `❌ ${errorCode ? `[${errorCode}] ` : ""}${helpMessage}`,
           time: timeNow(),
         },
       ]);
@@ -424,8 +510,7 @@ export default function FloatingAgent() {
 
     setLoading(false);
     setTimeout(() => setActiveAgent(null), 2000);
-  }, [input, loading, open, sessionId, user?.id]);
-
+  }, [input, loading, open, sessionId, user?.id, loadRecentSessions]);
   const saveProviderConfig = async () => {
     if (!aiConfig.api_key.trim()) {
       clearAiConfig();
@@ -480,18 +565,30 @@ export default function FloatingAgent() {
     }
   };
 
-  const clearHistory = async () => {
-    try {
-      await fetch(`${API_URL}/history`, {
-        method: "DELETE",
-        headers: getAiRequestHeaders(),
-      });
-    } catch {}
-    localStorage.removeItem(SESSION_KEY);
+  const startNewChat = () => {
+    localStorage.removeItem(sessionStorageKey(user?.id));
     setSessionId("");
     setMessages([]);
     setShowQuick(true);
+    setShowHistory(false);
     setActiveAgent(null);
+  };
+
+  const clearHistory = async () => {
+    if (!sessionId || !tenantId) return startNewChat();
+    try {
+      const params = new URLSearchParams({ session_id: sessionId, tenant_id: tenantId });
+      const res = await fetch(`${API_URL}/history?${params}`, {
+        method: "DELETE",
+        headers: getAiRequestHeaders(),
+      });
+      await readAiResponse(res);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không xóa được lịch sử AI");
+      return;
+    }
+    startNewChat();
+    loadRecentSessions();
   };
 
   const handleKeyDown = (e) => {
@@ -675,6 +772,17 @@ export default function FloatingAgent() {
               </div>
             </div>
 
+            <button
+              onClick={startNewChat}
+              title="Cuộc trò chuyện mới"
+              style={{
+                background: "none", border: "none", cursor: "pointer",
+                color: "var(--sm-faint)", padding: 4, borderRadius: 6,
+                fontSize: 18, lineHeight: 1,
+              }}
+            >
+              +
+            </button>
             {/* Agent dots — 6 chuyên gia, không hiển thị Orchestrator/Classifier */}
             <div style={{ display: "flex", gap: 5 }}>
               {ACTIVE_AGENTS.map((key) => (
@@ -687,6 +795,21 @@ export default function FloatingAgent() {
               ))}
             </div>
 
+            <button
+              onClick={() => {
+                setShowHistory((value) => !value);
+                if (!showHistory) loadRecentSessions();
+              }}
+              title="5 cuộc trò chuyện gần nhất"
+              style={{
+                background: showHistory ? "rgba(124,58,237,.14)" : "none",
+                border: "none", cursor: "pointer",
+                color: showHistory ? "#a78bfa" : "var(--sm-faint)",
+                padding: "4px 6px", borderRadius: 6, fontSize: 11,
+              }}
+            >
+              Lịch sử
+            </button>
             <button
               onClick={() => setShowApiKey((v) => !v)}
               title="API key cá nhân"
@@ -718,6 +841,48 @@ export default function FloatingAgent() {
             </button>
           </div>
 
+          {showHistory && (
+            <div style={{
+              padding: "10px 12px",
+              borderBottom: "1px solid var(--sm-border)",
+              background: "var(--sm-surface)",
+              display: "grid",
+              gap: 6,
+              maxHeight: 190,
+              overflowY: "auto",
+            }}>
+              <div style={{ fontSize: 11, color: "var(--sm-muted)", padding: "0 2px 2px" }}>
+                5 cuộc trò chuyện gần nhất
+              </div>
+              {historyLoading ? (
+                <div style={{ fontSize: 12, color: "var(--sm-muted)", padding: 8 }}>Đang tải lịch sử...</div>
+              ) : recentSessions.length ? recentSessions.map((session) => (
+                <button
+                  key={session.session_id}
+                  onClick={() => loadSession(session.session_id)}
+                  style={{
+                    textAlign: "left",
+                    background: session.session_id === sessionId ? "rgba(124,58,237,.13)" : "var(--sm-input)",
+                    color: "var(--sm-text)",
+                    border: "1px solid var(--sm-border)",
+                    borderRadius: 8,
+                    padding: "8px 10px",
+                    cursor: "pointer",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {session.title || "Cuộc trò chuyện AI"}
+                  </div>
+                  <div style={{ fontSize: 10, color: "var(--sm-muted)", marginTop: 2 }}>
+                    {session.message_count || 0} tin nhắn
+                  </div>
+                </button>
+              )) : (
+                <div style={{ fontSize: 12, color: "var(--sm-muted)", padding: 8 }}>Chưa có cuộc trò chuyện nào.</div>
+              )}
+            </div>
+          )}
           {showApiKey && (
             <div style={{
               padding: "10px 14px",

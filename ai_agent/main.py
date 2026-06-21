@@ -33,6 +33,7 @@ from provider_config import (
 )
 from llm_runtime import (
     LLMTurnTimeoutError,
+    classify_provider_error,
     provider_status,
     record_provider_failure,
 )
@@ -703,28 +704,16 @@ def _remember_turn(session_id: str, user_text: str, assistant_text: str) -> None
 
 
 def _friendly_ai_error(e: Exception, used_user_key: bool = False) -> str:
-    msg = str(e).lower()
-    if isinstance(e, LLMTurnTimeoutError) or "turn exceeded" in msg:
-        return "AI phản hồi quá thời gian cho phép. Vui lòng thử lại với yêu cầu ngắn hơn."
-    if "capacity queue is full" in msg:
-        return "AI đang có nhiều yêu cầu cùng lúc. Vui lòng thử lại sau vài giây."
-    if "429" in msg or "rate-limit" in msg or "rate limit" in msg or "temporarily rate-limited" in msg:
-        if used_user_key:
-            return "Provider đang giới hạn tốc độ với API key của bạn. Hãy thử lại sau vài phút hoặc kiểm tra quota/key."
-        return (
-            "Hạn mức AI miễn phí của hệ thống đang tạm hết. Hãy thử lại sau, nâng cấp gói, "
-            "hoặc mở mục KEY để nhập OpenRouter/Anthropic API key của riêng bạn."
-        )
-    if "402" in msg or "credits" in msg or "afford" in msg or "billing" in msg:
-        if used_user_key:
-            return "API key của bạn không đủ credit cho model đã chọn. Hãy nạp thêm credit hoặc chọn OpenRouter Free."
-        return (
-            "Credit của model AI hiện tại không đủ. Hệ thống đang chuyển sang model miễn phí; "
-            "nếu lỗi tiếp diễn, hãy thử lại sau hoặc nhập API key riêng."
-        )
-    if "api key" in msg or "authentication" in msg or "401" in msg:
-        return "API key không hợp lệ hoặc thiếu quyền truy cập model. Vui lòng kiểm tra lại key."
-    return "AI service đang bận hoặc provider tạm thời không phản hồi. Vui lòng thử lại sau."
+    return classify_provider_error(e, used_user_key=used_user_key)["message"]
+
+
+def _ai_error_payload(e: Exception, used_user_key: bool = False) -> dict:
+    error = classify_provider_error(e, used_user_key=used_user_key)
+    return {
+        "code": error["code"],
+        "message": error["message"],
+        "retryable": error["retryable"],
+    }
 
 
 def _extract_requested_count(text: str, default: int, max_value: int) -> int:
@@ -1192,6 +1181,7 @@ async def chat(msg: ChatMessage):
     run_context = _request_ai_context(msg, run_context)
     prefetched_sources: list[dict] = []
     request_succeeded = False
+    error_info = None
     try:
         if tenant_id and kb_filter and route not in {"quiz", "flashcard"}:
             kb_content, prefetched_sources = await _search_kb_context(
@@ -1241,7 +1231,11 @@ async def chat(msg: ChatMessage):
             msg.model,
             bool(msg.api_key and msg.api_key.strip()),
         )
-        response = _friendly_ai_error(e, used_user_key=bool(msg.api_key and msg.api_key.strip()))
+        error_info = _ai_error_payload(
+            e,
+            used_user_key=bool(msg.api_key and msg.api_key.strip()),
+        )
+        response = error_info["message"]
         agent_name = "System"
         structured = None
         manual_sources = []
@@ -1276,6 +1270,7 @@ async def chat(msg: ChatMessage):
         "structured": structured,
         "sources":    manual_sources or meta.get("sources", []),
         "classification": classification_to_api(clf) if clf.subject_code != "other" else None,
+        "error": error_info,
         "ai_config": {
             "mode": "byok" if msg.api_key and msg.api_key.strip() else "system_free",
             "intro_priority": intro_priority,
@@ -1382,12 +1377,17 @@ async def group_assistant(req: GroupAssistantRequest):
             req.model,
             bool(req.api_key and req.api_key.strip()),
         )
+        error = classify_provider_error(
+            exc,
+            used_user_key=bool(req.api_key and req.api_key.strip()),
+        )
         raise HTTPException(
-            status_code=503,
-            detail=_friendly_ai_error(
-                exc,
-                used_user_key=bool(req.api_key and req.api_key.strip()),
-            ),
+            status_code=error["status"],
+            detail={
+                "code": error["code"],
+                "message": error["message"],
+                "retryable": error["retryable"],
+            },
         ) from exc
 
     response = {
@@ -2012,6 +2012,17 @@ def list_subjects():
 
 
 # ── HISTORY ────────────────────────────────────────────
+
+@app.get("/sessions")
+def list_chat_sessions(tenant_id: str, limit: int = 5):
+    """List recent AI conversations for the authenticated tenant."""
+    tenant = tenant_id.strip()
+    if not tenant:
+        raise HTTPException(status_code=422, detail="Cần tenant_id để tải lịch sử chat.")
+    return {
+        "sessions": chat_store.list_sessions(tenant, limit=limit),
+        "limit": max(1, min(limit, 20)),
+    }
 
 @app.delete("/history")
 def clear_history(session_id: str, tenant_id: Optional[str] = None):

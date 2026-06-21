@@ -189,6 +189,46 @@ class ChatStore:
             for row in reversed(rows)
         ]
 
+    def list_sessions(self, tenant_id: str, limit: int = 5) -> list[dict]:
+        """Return the most recently active chat sessions owned by one tenant."""
+        tenant = (tenant_id or "").strip()
+        if not tenant:
+            return []
+        safe_limit = max(1, min(limit, 20))
+        prefix = f"{tenant}::"
+        with self._lock, self._connection() as conn:
+            rows = conn.execute(
+                """
+                SELECT m.session_id,
+                       MAX(m.id) AS last_message_id,
+                       MAX(m.created_at) AS updated_at,
+                       COUNT(*) AS message_count,
+                       COALESCE((
+                           SELECT first_user.content
+                           FROM chat_messages first_user
+                           WHERE first_user.session_id = m.session_id
+                             AND first_user.role = 'user'
+                           ORDER BY first_user.id ASC
+                           LIMIT 1
+                       ), 'Cuộc trò chuyện AI') AS title
+                FROM chat_messages m
+                WHERE substr(m.session_id, 1, ?) = ?
+                GROUP BY m.session_id
+                ORDER BY last_message_id DESC
+                LIMIT ?
+                """,
+                (len(prefix), prefix, safe_limit),
+            ).fetchall()
+
+        return [
+            {
+                "session_id": row["session_id"][len(prefix):],
+                "title": str(row["title"] or "Cuộc trò chuyện AI").strip()[:80],
+                "updated_at": row["updated_at"],
+                "message_count": int(row["message_count"] or 0),
+            }
+            for row in rows
+        ]
     def remember_turn(self, session_id: str, user_text: str, assistant_text: str) -> None:
         with self._lock, self._connection() as conn:
             conn.execute("BEGIN IMMEDIATE")

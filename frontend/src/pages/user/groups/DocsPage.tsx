@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { documentApi, flashcardApi, quizApi, postApi, groupApi, membershipApi } from '@/api/services'
+import { documentApi, flashcardApi, quizApi, postApi, groupApi } from '@/api/services'
 import type { Document, Flashcard, QuizQuestion, FlashcardFolder, QuizFolder, Post } from '@/types'
 import {
   Upload,
@@ -31,6 +31,22 @@ import { addNote } from '@/utils/notesStorage'
 // ─────────────────────────────────────────
 
 const BACKEND_URL = '/ai-agent'
+
+async function readAiJson<T = any>(res: Response): Promise<T> {
+  const contentType = res.headers.get('content-type') || ''
+  const data: any = contentType.includes('application/json')
+    ? await res.json().catch(() => ({}))
+    : { detail: await res.text() }
+  if (res.ok) return data as T
+  const detail = data?.detail
+  const message = typeof detail === 'object'
+    ? detail?.message
+    : detail || data?.message || `AI trả về lỗi HTTP ${res.status}`
+  const needsAlternative = [400, 402, 409, 429, 502, 503, 504].includes(res.status)
+  throw new Error(needsAlternative
+    ? `${message}\nGợi ý: nạp thêm AI token hoặc thêm API key cá nhân trong cửa sổ StudyMind.`
+    : message)
+}
 
 const DOC_ICON: Record<string, { label: string; bg: string; color: string }> = {
   PDF:   { label: 'PDF',  bg: 'rgba(239,68,68,.12)',   color: '#ef4444' },
@@ -66,20 +82,6 @@ const resolveDocUrl = (fileUrl?: string) => {
 // Không còn dùng extractMarkdown() ở frontend nữa.
 // ─────────────────────────────────────────
 
-type AiCreditAction = 'summary' | 'flashcard' | 'quiz' | 'documentChat'
-
-function usesPersonalAiKey() {
-  const config = getAiConfig()
-  return Boolean(config.validated && config.api_key)
-}
-
-async function checkAiCredit(action: AiCreditAction) {
-  await membershipApi.checkAiCredits(action, usesPersonalAiKey())
-}
-
-async function consumeAiCredit(action: AiCreditAction) {
-  await membershipApi.consumeAiCredits(action, usesPersonalAiKey())
-}
 async function backendSummary(
   doc: Document,
   style: string,
@@ -88,7 +90,6 @@ async function backendSummary(
   docTopic?: string,
   blogContext?: string,
 ): Promise<string> {
-  await checkAiCredit('summary')
   const res = await fetch(`${BACKEND_URL}/summary`, {
     method: 'POST',
     headers: getAiRequestHeaders(true),
@@ -103,9 +104,7 @@ async function backendSummary(
       blog_context: blogContext || undefined,
     })),
   })
-  if (!res.ok) throw new Error(await res.text())
-  const data = await res.json()
-  await consumeAiCredit('summary')
+  const data = await readAiJson(res)
   return data.summary as string
 }
 
@@ -132,7 +131,6 @@ async function backendFlashcard(
   subject?: string,
   docTopic?: string,
 ): Promise<Flashcard[]> {
-  await checkAiCredit('flashcard')
   const res = await fetch(`${BACKEND_URL}/flashcard`, {
     method: 'POST',
     headers: getAiRequestHeaders(true),
@@ -147,12 +145,10 @@ async function backendFlashcard(
       format: 'qa',
     })),
   })
-  if (!res.ok) throw new Error(await res.text())
-  const data = await res.json()
+  const data = await readAiJson(res)
   if (data.pipeline === 'vocabulary_json' && data.vocabulary?.vocabulary?.length) {
     toast.success(`Đã trích ${data.vocabulary.vocabulary.length} từ → tạo ${data.num_cards} flashcard`)
   }
-  await consumeAiCredit('flashcard')
   return (data.flashcards as { question: string; answer: string }[]).map((c, i) => ({
     id: String(i),
     question: c.question,
@@ -167,7 +163,6 @@ async function backendQuiz(
   subject?: string,
   docTopic?: string,
 ): Promise<QuizQuestion[]> {
-  await checkAiCredit('quiz')
   const res = await fetch(`${BACKEND_URL}/quiz`, {
     method: 'POST',
     headers: getAiRequestHeaders(true),
@@ -181,15 +176,13 @@ async function backendQuiz(
       num_questions,
     })),
   })
-  if (!res.ok) throw new Error(await res.text())
-  const data = await res.json()
+  const data = await readAiJson(res)
   if (data.pipeline === 'vocabulary_json' && data.vocabulary?.vocabulary?.length) {
     toast.success(`Quiz từ ${data.vocabulary.vocabulary.length} từ vựng JSON`)
   }
   if (Number(data.num_questions) < num_questions) {
     toast(`AI tạo được ${data.num_questions}/${num_questions} câu hợp lệ; câu trùng hoặc lỗi đã được loại bỏ.`)
   }
-  await consumeAiCredit('quiz')
   return (data.questions as Record<string, unknown>[]).map((q, i) => ({
     id: String(i),
     question: String(q.question ?? ''),
@@ -213,7 +206,6 @@ async function backendChat(
   docTopic?: string,
   sessionId?: string,
 ): Promise<ChatApiResult> {
-  await checkAiCredit('documentChat')
   const res = await fetch(`${BACKEND_URL}/chat`, {
     method: 'POST',
     headers: getAiRequestHeaders(true),
@@ -224,9 +216,7 @@ async function backendChat(
       doc_topic: docTopic,
     })),
   })
-  if (!res.ok) throw new Error(await res.text())
-  const data = await res.json()
-  await consumeAiCredit('documentChat')
+  const data = await readAiJson(res)
   return data
 }
 
