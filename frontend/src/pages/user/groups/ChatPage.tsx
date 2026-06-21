@@ -245,7 +245,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
-  const [showGroupAgentHelp, setShowGroupAgentHelp] = useState(true)
+  const [showGroupAgentHelp, setShowGroupAgentHelp] = useState(false)
   const [showMentionBox, setShowMentionBox] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -706,6 +706,16 @@ export default function ChatPage() {
     [group, safeMembers]
   )
 
+  const handleBackToGroup = useCallback(() => {
+    setShowSidePanel(false)
+    setShowEmoji(false)
+    setShowMentionBox(false)
+    setMenuOpenId(null)
+    setReactionPickerId(null)
+    setReplyTo(null)
+    navigate(groupId ? `/groups/${groupId}` : '/groups', { replace: true })
+  }, [groupId, navigate])
+
   if (loading) {
     return (
       <div
@@ -727,7 +737,7 @@ export default function ChatPage() {
     >
       <div className="flex flex-col flex-1 min-w-0">
         <div
-          className="relative z-30 flex h-14 flex-shrink-0 items-center gap-2 border-b px-3 sm:h-16 sm:gap-3 sm:px-5"
+          className="sticky top-0 z-30 flex h-14 flex-shrink-0 items-center gap-2 border-b bg-white/95 px-3 backdrop-blur sm:h-16 sm:gap-3 sm:px-5"
           style={{
             background: 'var(--bg2)',
             borderColor: 'var(--border)',
@@ -735,8 +745,8 @@ export default function ChatPage() {
         >
           <button
             type="button"
-            aria-label="Quay lại trang nhóm"
-            onClick={() => navigate(`/groups/${groupId}`)}
+            aria-label="Quay lại nhóm"
+            onClick={handleBackToGroup}
             className="p-2 rounded-xl transition-colors"
             style={{ color: 'var(--text3)', background: 'transparent' }}
           >
@@ -764,7 +774,7 @@ export default function ChatPage() {
 
           <button
             type="button"
-            aria-label="Mở chi tiết nhóm"
+            aria-label="Thông tin nhóm"
             onClick={() => setShowSidePanel(v => !v)}
             className="w-10 h-10 rounded-xl border flex items-center justify-center"
             style={{
@@ -821,7 +831,7 @@ export default function ChatPage() {
                     color: 'var(--text2)',
                   }}
                 >
-                  <button
+                  <button type="button"
                     className="truncate text-left flex-1"
                     onClick={() => scrollToMessage(msg.id)}
                   >
@@ -830,7 +840,7 @@ export default function ChatPage() {
                   </button>
 
                   {canManagePins && (
-                    <button
+                    <button type="button"
                       onClick={() => handlePin(msg.id, true)}
                       className="opacity-70 hover:opacity-100"
                       title="Gỡ ghim"
@@ -929,7 +939,7 @@ export default function ChatPage() {
                                 isMe ? 'right-0' : 'left-0'
                               )}
                             >
-                              <button
+                              <button type="button"
                                 onClick={() => setReactionPickerId(reactionPickerId === msg.id ? null : msg.id)}
                                 className="w-8 h-8 rounded-full border flex items-center justify-center"
                                 style={{
@@ -943,7 +953,7 @@ export default function ChatPage() {
                               </button>
 
                               {canManagePins && (
-                                <button
+                                <button type="button"
                                   onClick={() => handlePin(msg.id, !!msg.pinned)}
                                   className="w-8 h-8 rounded-full border flex items-center justify-center"
                                   style={{
@@ -957,7 +967,7 @@ export default function ChatPage() {
                                 </button>
                               )}
 
-                              <button
+                              <button type="button"
                                 onClick={() => setMenuOpenId(menuOpenId === msg.id ? null : msg.id)}
                                 className="w-8 h-8 rounded-full border flex items-center justify-center"
                                 style={{
@@ -984,7 +994,7 @@ export default function ChatPage() {
                               }}
                             >
                               {EMOJIS.map(emoji => (
-                                <button
+                                <button type="button"
                                   key={emoji}
                                   onClick={() => handleReact(msg.id, emoji)}
                                   className="text-[18px] hover:scale-110 transition-transform"
@@ -1007,7 +1017,7 @@ export default function ChatPage() {
                               }}
                             >
                               {!msg.recalled && (
-                                <button
+                                <button type="button"
                                   onClick={() => {
                                     navigator.clipboard.writeText(msg.content || '')
                                     toast.success('Đã sao chép tin nhắn')
@@ -1021,7 +1031,7 @@ export default function ChatPage() {
                               )}
 
                               {!msg.recalled && (
-                                <button
+                                <button type="button"
                                   onClick={() => startReply(msg)}
                                   className="w-full px-3 py-3 text-left text-[13px] hover:bg-white/[.04] flex items-center gap-2"
                                   style={{ color: 'var(--text)' }}
@@ -1032,7 +1042,7 @@ export default function ChatPage() {
                               )}
 
                               {isMe && !msg.recalled && (
-                                <button
+                                <button type="button"
                                   onClick={() => handleRecall(msg.id)}
                                   className="w-full px-3 py-3 text-left text-[13px] hover:bg-white/[.04]"
                                   style={{ color: '#ef4444' }}
@@ -1143,7 +1153,7 @@ export default function ChatPage() {
                                     </div>
 
                                     {msg.taskProposal.status === 'PENDING' && isLeader && (
-                                      <button
+                                      <button type="button"
                                         onClick={() => approveGroupAgentTasks(msg.id)}
                                         disabled={approvingProposalId === msg.id}
                                         className="mt-3 w-full h-10 rounded-xl text-white flex items-center justify-center gap-2 font-medium disabled:opacity-60"
@@ -1165,8 +1175,8 @@ export default function ChatPage() {
                                     )}
 
                                     {msg.taskProposal.status === 'APPROVED' && (
-                                      <button
-                                        onClick={openTaskBoard}
+                                      <button type="button"
+                                        aria-label="Mở bảng công việc nhóm" onClick={openTaskBoard}
                                         className="mt-3 w-full h-9 rounded-xl border text-[12px] font-medium"
                                         style={{ color: '#a5b4fc', borderColor: 'rgba(99,102,241,.35)' }}
                                       >
@@ -1190,7 +1200,7 @@ export default function ChatPage() {
                           {!!msg.reactions?.length && !msg.recalled && (
                             <div className="flex flex-wrap gap-1 mt-1">
                               {msg.reactions.map(r => (
-                                <button
+                                <button type="button"
                                   key={r.emoji}
                                   onClick={() => handleReact(msg.id, r.emoji)}
                                   className="px-2 py-0.5 rounded-full text-[12px] border"
@@ -1260,7 +1270,7 @@ export default function ChatPage() {
                 </div>
               </div>
 
-              <button
+              <button type="button"
                 onClick={() => setReplyTo(null)}
                 className="w-7 h-7 rounded-full flex items-center justify-center"
                 style={{ color: 'var(--text3)' }}
@@ -1283,7 +1293,7 @@ export default function ChatPage() {
                   }}
                 >
                   <span className="text-[12px] max-w-[180px] truncate">{file.name}</span>
-                  <button
+                  <button type="button"
                     onClick={() => removePicked(idx)}
                     className="w-5 h-5 rounded-full flex items-center justify-center"
                     style={{ color: 'var(--text3)' }}
@@ -1316,7 +1326,7 @@ export default function ChatPage() {
             </div>
           )}
           <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
-            <input
+            <input id="group-chat-image-upload" name="groupChatImageUpload"
               ref={imageRef}
               type="file"
               accept="image/*"
@@ -1324,7 +1334,7 @@ export default function ChatPage() {
               hidden
               onChange={e => handlePickImages(e.target.files)}
             />
-            <input
+            <input id="group-chat-file-upload" name="groupChatFileUpload"
               ref={fileRef}
               type="file"
               multiple
@@ -1387,7 +1397,7 @@ export default function ChatPage() {
                   }}
                 >
                   {[...EMOJIS, ...EXTRA_EMOJIS].map(emoji => (
-                    <button
+                    <button type="button"
                       key={emoji}
                       onClick={() => addEmoji(emoji)}
                       className="text-xl hover:scale-110 transition-transform"
@@ -1399,7 +1409,7 @@ export default function ChatPage() {
               )}
             </div>
 
-            <button
+            <button type="button"
               onClick={() => {
                 setInput(prev => `${prev}${prev && !prev.endsWith(' ') ? ' ' : ''}@all `)
                 inputRef.current?.focus()
@@ -1415,7 +1425,7 @@ export default function ChatPage() {
               @all
             </button>
 
-            <button
+            <button type="button"
               onClick={() => {
                 setInput('@GroupAgent ')
                 setShowGroupAgentHelp(true)
@@ -1436,7 +1446,7 @@ export default function ChatPage() {
 
           <div className="relative">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-              <input
+              <input id="group-message-input" name="groupMessage" autoComplete="off"
                 ref={inputRef}
                 value={input}
                 onChange={e => handleInputChange(e.target.value)}
@@ -1486,7 +1496,7 @@ export default function ChatPage() {
                 }}
               >
                 {mentionCandidates.map(item => (
-                  <button
+                  <button type="button"
                     key={item.id}
                     onClick={() => insertMention(item.name)}
                     className="w-full px-3 py-3 text-left text-[13px] hover:bg-white/[.04]"
@@ -1499,7 +1509,7 @@ export default function ChatPage() {
             )}
           </div>
 
-          <p className="text-[11px] mt-2" style={{ color: 'var(--text3)' }}>
+          <p className="mt-2 hidden text-[11px] sm:block" style={{ color: 'var(--text3)' }}>
             Enter để gửi · trưởng nhóm / nhóm phó có thể ghim · mọi thành viên có thể reply và thu hồi tin nhắn của chính mình
           </p>
         </div>
@@ -1534,7 +1544,7 @@ export default function ChatPage() {
               ['task', 'Task'],
               ['reminder', 'Nhắc'],
             ].map(([key, label]) => (
-              <button
+              <button type="button"
                 key={key}
                 onClick={() => setSideTab(key as any)}
                 className="px-3 py-2 rounded-xl text-[12px] border"
@@ -1566,7 +1576,7 @@ export default function ChatPage() {
                         borderColor: 'var(--border)',
                       }}
                     >
-                      <button
+                      <button type="button"
                         onClick={() => {
                           scrollToMessage(msg.id)
                           setShowSidePanel(false)
@@ -1582,7 +1592,7 @@ export default function ChatPage() {
                       </button>
 
                       {canManagePins && (
-                        <button
+                        <button type="button"
                           onClick={() => handlePin(msg.id, true)}
                           className="mt-2 text-[12px]"
                           style={{ color: '#ef4444' }}
@@ -1711,7 +1721,7 @@ export default function ChatPage() {
 
                         <div className="flex flex-wrap gap-2 mt-3">
                           {!isMe && (
-                            <button
+                            <button type="button"
                               onClick={() =>
                                 navigate(`/inbox/${memberId}`, {
                                   state: {
@@ -1734,7 +1744,7 @@ export default function ChatPage() {
                             </button>
                           )}
 
-                          <button
+                          <button type="button"
                             onClick={() => navigate(`/u/${memberId}`)}
                             className="px-3 py-2 rounded-xl text-[12px] border"
                             style={{
@@ -1747,7 +1757,7 @@ export default function ChatPage() {
                           </button>
 
                           {isLeader && !isMe && member.role !== 'LEADER' && (
-                            <button
+                            <button type="button"
                               onClick={async () => {
                                 try {
                                   await groupApi.changeRole(
@@ -1777,7 +1787,7 @@ export default function ChatPage() {
                           )}
 
                           {isLeaderOrDeputy && !isMe && member.role !== 'LEADER' && (
-                            <button
+                            <button type="button"
                               onClick={async () => {
                                 const ok = window.confirm(`Đuổi ${member.fullName} khỏi nhóm?`)
                                 if (!ok) return
@@ -1866,7 +1876,7 @@ export default function ChatPage() {
                   </div>
 
                   <div className="mt-3 flex gap-2">
-                    <button
+                    <button type="button"
                       onClick={openTaskBoard}
                       className="flex-1 h-10 rounded-xl text-[12px] font-medium"
                       style={{ background: '#6366f1', color: '#fff' }}
@@ -1874,7 +1884,7 @@ export default function ChatPage() {
                       Mở board task
                     </button>
 
-                    <button
+                    <button type="button"
                       onClick={openTaskBoard}
                       className="w-10 h-10 rounded-xl border flex items-center justify-center"
                       style={{
@@ -1897,7 +1907,7 @@ export default function ChatPage() {
                     <div className="text-[13px] font-semibold" style={{ color: 'var(--text)' }}>
                       Task gần deadline
                     </div>
-                    <button
+                    <button type="button"
                       onClick={openTaskBoard}
                       className="text-[11px]"
                       style={{ color: '#818cf8' }}
@@ -1922,7 +1932,7 @@ export default function ChatPage() {
                         const overdue = isOverdue(task.deadline, task.status)
 
                         return (
-                          <button
+                          <button type="button"
                             key={normalizeId(task.id)}
                             onClick={() => openTaskDetail(task.id)}
                             className="w-full text-left rounded-2xl border p-3 hover:bg-white/[.03] transition-all"
@@ -1985,7 +1995,7 @@ export default function ChatPage() {
                     <div className="text-[13px] font-semibold" style={{ color: 'var(--text)' }}>
                       Task giao cho tôi
                     </div>
-                    <button
+                    <button type="button"
                       onClick={openTaskBoard}
                       className="text-[11px]"
                       style={{ color: '#818cf8' }}
@@ -2007,7 +2017,7 @@ export default function ChatPage() {
                       {myTasks.slice(0, 4).map((task: any) => {
                         const meta = taskStatusMeta(task.status)
                         return (
-                          <button
+                          <button type="button"
                             key={normalizeId(task.id)}
                             onClick={() => openTaskDetail(task.id)}
                             className="w-full text-left rounded-2xl border p-3 hover:bg-white/[.03] transition-all"

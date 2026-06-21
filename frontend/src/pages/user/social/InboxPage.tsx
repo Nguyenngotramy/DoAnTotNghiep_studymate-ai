@@ -71,6 +71,7 @@ function rid(v: any): string {
 }
 
 function ini(n: string) {
+
   return (n ?? 'ND')
     .split(' ')
     .map((w: string) => w[0] ?? '')
@@ -1114,9 +1115,20 @@ export default function InboxPage() {
     [groupThreads],
   )
 
+  const handleBackToInboxList = useCallback(() => {
+    setSelectedThread(null)
+    setActiveId('')
+    setDmSideOpen(false)
+    setGroupSideOpen(false)
+    setShowEmoji(false)
+    setGroupShowEmoji(false)
+    setReplyTo(null)
+    setGroupReplyTo(null)
+    navigate('/inbox', { replace: true, state: null })
+  }, [navigate])
   return (
     <div
-      className="flex min-h-0 flex-1 overflow-hidden rounded-2xl border"
+      className="flex h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden rounded-2xl border"
       style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}
     >
       <div className={clsx('w-full border-r flex-col flex-shrink-0 md:flex md:w-80', (selectedThread || isSelectedDm) ? 'hidden' : 'flex')} style={{ borderColor: 'var(--border)' }}>
@@ -1128,7 +1140,7 @@ export default function InboxPage() {
             </h2>
 
             <div className="flex items-center gap-2">
-              <button
+              <button type="button"
                 onClick={() => refetchConvs()}
                 className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
                 style={{ color: 'var(--text3)' }}
@@ -1152,7 +1164,7 @@ export default function InboxPage() {
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
           >
             <Search size={14} style={{ color: 'var(--text3)' }} />
-            <input
+            <input id="inbox-conversation-search" name="conversationSearch" autoComplete="off"
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
               placeholder={activeTab === 'dm' ? 'Tìm theo tên người dùng...' : 'Tìm theo tên nhóm...'}
@@ -1162,7 +1174,7 @@ export default function InboxPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <button
+            <button type="button"
               onClick={switchToDmTab}
               className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[12px] font-medium"
               style={{
@@ -1179,7 +1191,7 @@ export default function InboxPage() {
               )}
             </button>
 
-            <button
+            <button type="button"
               onClick={switchToGroupTab}
               className="flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[12px] font-medium"
               style={{
@@ -1240,7 +1252,7 @@ export default function InboxPage() {
               const avatarUrl = resolveUserAvatar((conv as any).avatar ?? (conv as any).user?.avatar)
 
               return (
-                <button
+                <button type="button"
                   key={key}
                   onClick={() => selectThread(conv)}
                   className={clsx(
@@ -1323,19 +1335,15 @@ export default function InboxPage() {
         <div className="flex-1 flex min-w-0">
           <div className="flex-1 flex flex-col min-w-0">
             <div
-              className="h-16 flex flex-shrink-0 items-center gap-2 border-b px-3 sm:gap-3 sm:px-5"
+              className="sticky top-0 z-30 flex h-14 flex-shrink-0 items-center gap-2 border-b bg-white/95 px-3 backdrop-blur sm:h-16 sm:gap-3 sm:px-5"
               style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
             >
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedThread(null)
-                  setGroupSideOpen(false)
-                  navigate('/inbox', { replace: true })
-                }}
+                onClick={handleBackToInboxList}
                 className="rounded-xl p-2 md:hidden"
                 style={{ color: 'var(--text3)', background: 'var(--bg3)' }}
-                aria-label="Quay lại danh sách chat"
+                aria-label="Quay lại danh sách tin nhắn"
               >
                 <ArrowLeft size={17} />
               </button>
@@ -1360,7 +1368,7 @@ export default function InboxPage() {
 
               <button
                 type="button"
-                aria-label="Mở chi tiết nhóm"
+                aria-label="Thông tin nhóm"
                 onClick={() => {
                   setDmSideOpen(false)
                   setGroupSideOpen(v => !v)
@@ -1417,12 +1425,12 @@ export default function InboxPage() {
                         color: 'var(--text2)',
                       }}
                     >
-                      <button className="truncate text-left flex-1" onClick={() => scrollToGroupMessage((msg as any).id)}>
+                      <button type="button" className="truncate text-left flex-1" onClick={() => scrollToGroupMessage((msg as any).id)}>
                         <span className="font-medium">{(msg as any).senderName}:</span>{' '}
                         {(msg as any).recalled ? 'Tin nhắn đã được thu hồi' : ((msg as any).content || '[Tệp đính kèm]')}
                       </button>
 
-                      <button onClick={() => handleGroupPin((msg as any).id, true)} className="opacity-70 hover:opacity-100" title="Gỡ ghim">
+                      <button type="button" onClick={() => handleGroupPin((msg as any).id, true)} className="opacity-70 hover:opacity-100" title="Gỡ ghim">
                         <X size={14} />
                       </button>
                     </div>
@@ -1506,7 +1514,7 @@ export default function InboxPage() {
                                     isMe ? 'right-0' : 'left-0',
                                   )}
                                 >
-                                  <button
+                                  <button type="button"
                                     onClick={() => setGroupReactionPickerId(groupReactionPickerId === (msg as any).id ? null : (msg as any).id)}
                                     className="w-8 h-8 rounded-full border flex items-center justify-center"
                                     style={{
@@ -1518,7 +1526,7 @@ export default function InboxPage() {
                                     <Smile size={14} />
                                   </button>
 
-                                  <button
+                                  <button type="button"
                                     onClick={() => handleGroupPin((msg as any).id, !!(msg as any).pinned)}
                                     className="w-8 h-8 rounded-full border flex items-center justify-center"
                                     style={{
@@ -1530,7 +1538,7 @@ export default function InboxPage() {
                                     <Pin size={14} />
                                   </button>
 
-                                  <button
+                                  <button type="button"
                                     onClick={() => setGroupMenuOpenId(groupMenuOpenId === (msg as any).id ? null : (msg as any).id)}
                                     className="w-8 h-8 rounded-full border flex items-center justify-center"
                                     style={{
@@ -1556,7 +1564,7 @@ export default function InboxPage() {
                                   }}
                                 >
                                   {EMOJIS.map(emoji => (
-                                    <button
+                                    <button type="button"
                                       key={emoji}
                                       onClick={() => handleGroupReact(rid((msg as any).id), emoji)}
                                       className="text-[18px] hover:scale-110 transition-transform"
@@ -1579,7 +1587,7 @@ export default function InboxPage() {
                                   }}
                                 >
                                   {!(msg as any).recalled && (
-                                    <button
+                                    <button type="button"
                                       onClick={() => {
                                         navigator.clipboard.writeText((msg as any).content || '')
                                         toast.success('Đã sao chép tin nhắn')
@@ -1593,7 +1601,7 @@ export default function InboxPage() {
                                   )}
 
                                   {!(msg as any).recalled && (
-                                    <button
+                                    <button type="button"
                                       onClick={() => startGroupReply(msg)}
                                       className="w-full px-3 py-3 text-left text-[13px] hover:bg-white/[.04] flex items-center gap-2"
                                       style={{ color: 'var(--text)' }}
@@ -1604,7 +1612,7 @@ export default function InboxPage() {
                                   )}
 
                                   {isMe && !(msg as any).recalled && (
-                                    <button
+                                    <button type="button"
                                       onClick={() => handleGroupRecall((msg as any).id)}
                                       className="w-full px-3 py-3 text-left text-[13px] hover:bg-white/[.04]"
                                       style={{ color: '#ef4444' }}
@@ -1666,7 +1674,7 @@ export default function InboxPage() {
                               {!!(msg as any).reactions?.length && !(msg as any).recalled && (
                                 <div className="flex flex-wrap gap-1 mt-1">
                                   {(msg as any).reactions.map((r: any) => (
-                                    <button
+                                    <button type="button"
                                       key={r.emoji}
                                       onClick={() => handleGroupReact(rid((msg as any).id), r.emoji)}
                                       className="px-2 py-0.5 rounded-full text-[12px] border"
@@ -1722,7 +1730,7 @@ export default function InboxPage() {
                     </div>
                   </div>
 
-                  <button
+                  <button type="button"
                     onClick={() => setGroupReplyTo(null)}
                     className="w-7 h-7 rounded-full flex items-center justify-center"
                     style={{ color: 'var(--text3)' }}
@@ -1745,7 +1753,7 @@ export default function InboxPage() {
                       }}
                     >
                       <span className="text-[12px] max-w-[180px] truncate">{file.name}</span>
-                      <button
+                      <button type="button"
                         onClick={() => removeGroupPicked(idx)}
                         className="w-5 h-5 rounded-full flex items-center justify-center"
                         style={{ color: 'var(--text3)' }}
@@ -1757,8 +1765,8 @@ export default function InboxPage() {
                 </div>
               )}
 
-              <div className="flex gap-2 items-center mb-3 flex-wrap">
-                <input
+              <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
+                <input id="group-chat-image-upload" name="groupChatImageUpload"
                   ref={groupImageRef}
                   type="file"
                   accept="image/*"
@@ -1766,7 +1774,7 @@ export default function InboxPage() {
                   hidden
                   onChange={e => handleGroupPickImages(e.target.files)}
                 />
-                <input
+                <input id="group-chat-file-upload" name="groupChatFileUpload"
                   ref={groupFileRef}
                   type="file"
                   multiple
@@ -1829,7 +1837,7 @@ export default function InboxPage() {
                       }}
                     >
                       {[...EMOJIS, ...EXTRA_EMOJIS].map(emoji => (
-                        <button
+                        <button type="button"
                           key={emoji}
                           onClick={() => addGroupEmoji(emoji)}
                           className="text-xl hover:scale-110 transition-transform"
@@ -1849,7 +1857,7 @@ export default function InboxPage() {
                   borderColor: 'var(--border)',
                 }}
               >
-                <input
+                <input id="group-message-input" name="groupMessage" autoComplete="off"
                   ref={groupInputRef}
                   value={groupInput}
                   onChange={e => setGroupInput(e.target.value)}
@@ -1907,7 +1915,7 @@ export default function InboxPage() {
                   ['files', 'File'],
                   ['media', 'Ảnh'],
                 ].map(([key, label]) => (
-                  <button
+                  <button type="button"
                     key={key}
                     onClick={() => setGroupSideTab(key as GroupSideTab)}
                     className="px-3 py-2 rounded-xl text-[12px] border"
@@ -1944,7 +1952,7 @@ export default function InboxPage() {
                     </div>
                   </div>
 
-                  <button
+                  <button type="button"
                     onClick={() => navigate(`/groups/${selectedGroupId}/chat`)}
                     className="w-full px-3 py-2 rounded-xl text-[12px]"
                     style={{ background: '#6366f1', color: '#fff' }}
@@ -1969,7 +1977,7 @@ export default function InboxPage() {
                             borderColor: 'var(--border)',
                           }}
                         >
-                          <button
+                          <button type="button"
                             onClick={() => {
                               scrollToGroupMessage((msg as any).id)
                               setGroupSideOpen(false)
@@ -1984,7 +1992,7 @@ export default function InboxPage() {
                             </div>
                           </button>
 
-                          <button
+                          <button type="button"
                             onClick={() => handleGroupPin((msg as any).id, true)}
                             className="mt-2 text-[12px]"
                             style={{ color: '#ef4444' }}
@@ -2062,20 +2070,15 @@ export default function InboxPage() {
         <div className="flex-1 flex min-w-0">
           <div className="flex-1 flex flex-col min-w-0">
             <div
-              className="flex h-14 flex-shrink-0 items-center gap-2 border-b px-3 sm:h-auto sm:gap-3 sm:px-4 sm:py-3"
+              className="sticky top-0 z-30 flex h-14 flex-shrink-0 items-center gap-2 border-b bg-white/95 px-3 backdrop-blur sm:h-auto sm:gap-3 sm:px-4 sm:py-3"
               style={{ borderColor: 'var(--border)' }}
             >
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedThread(null)
-                  setActiveId('')
-                  setDmSideOpen(false)
-                  navigate('/inbox', { replace: true })
-                }}
+                onClick={handleBackToInboxList}
                 className="rounded-xl p-2 md:hidden"
                 style={{ color: 'var(--text3)', background: 'var(--bg3)' }}
-                aria-label="Quay lại danh sách chat"
+                aria-label="Quay lại danh sách tin nhắn"
               >
                 <ArrowLeft size={16} />
               </button>
@@ -2102,7 +2105,7 @@ export default function InboxPage() {
 
               <button
                 type="button"
-                aria-label="Mở chi tiết cuộc trò chuyện"
+                aria-label="Thông tin cuộc trò chuyện"
                 onClick={() => {
                   setGroupSideOpen(false)
                   setDmSideOpen(v => !v)
@@ -2139,12 +2142,12 @@ export default function InboxPage() {
                         color: 'var(--text2)',
                       }}
                     >
-                      <button className="truncate text-left flex-1" onClick={() => scrollToMessage((msg as any).id)}>
+                      <button type="button" className="truncate text-left flex-1" onClick={() => scrollToMessage((msg as any).id)}>
                         <span className="font-medium">{(msg as any).senderName ?? activeName}:</span>{' '}
                         {(msg as any).recalled ? 'Tin nhắn đã được thu hồi' : ((msg as any).content || '[Tệp đính kèm]')}
                       </button>
 
-                      <button onClick={() => handlePin((msg as any).id, true)} className="opacity-70 hover:opacity-100" title="Gỡ ghim">
+                      <button type="button" onClick={() => handlePin((msg as any).id, true)} className="opacity-70 hover:opacity-100" title="Gỡ ghim">
                         <X size={14} />
                       </button>
                     </div>
@@ -2200,7 +2203,7 @@ export default function InboxPage() {
                                 mine ? 'right-0' : 'left-0',
                               )}
                             >
-                              <button
+                              <button type="button"
                                 onClick={() => setReactionPickerId(reactionPickerId === (msg as any).id ? null : (msg as any).id)}
                                 className="w-8 h-8 rounded-full border flex items-center justify-center"
                                 style={{
@@ -2212,7 +2215,7 @@ export default function InboxPage() {
                                 <Smile size={14} />
                               </button>
 
-                              <button
+                              <button type="button"
                                 onClick={() => handlePin((msg as any).id, !!(msg as any).pinned)}
                                 className="w-8 h-8 rounded-full border flex items-center justify-center"
                                 style={{
@@ -2224,7 +2227,7 @@ export default function InboxPage() {
                                 <Pin size={14} />
                               </button>
 
-                              <button
+                              <button type="button"
                                 onClick={() => setMenuOpenId(menuOpenId === (msg as any).id ? null : (msg as any).id)}
                                 className="w-8 h-8 rounded-full border flex items-center justify-center"
                                 style={{
@@ -2250,7 +2253,7 @@ export default function InboxPage() {
                               }}
                             >
                               {EMOJIS.map(emoji => (
-                                <button
+                                <button type="button"
                                   key={emoji}
                                   onClick={() => handleReact((msg as any).id, emoji)}
                                   className="text-[18px] hover:scale-110 transition-transform"
@@ -2273,7 +2276,7 @@ export default function InboxPage() {
                               }}
                             >
                               {!(msg as any).recalled && (
-                                <button
+                                <button type="button"
                                   onClick={() => {
                                     navigator.clipboard.writeText((msg as any).content || '')
                                     toast.success('Đã sao chép tin nhắn')
@@ -2287,7 +2290,7 @@ export default function InboxPage() {
                               )}
 
                               {!(msg as any).recalled && (
-                                <button
+                                <button type="button"
                                   onClick={() => startReply(msg)}
                                   className="w-full px-3 py-3 text-left text-[13px] hover:bg-white/[.04] flex items-center gap-2"
                                   style={{ color: 'var(--text)' }}
@@ -2298,7 +2301,7 @@ export default function InboxPage() {
                               )}
 
                               {mine && !(msg as any).recalled && (
-                                <button
+                                <button type="button"
                                   onClick={() => handleRecall((msg as any).id)}
                                   className="w-full px-3 py-3 text-left text-[13px] hover:bg-white/[.04]"
                                   style={{ color: '#ef4444' }}
@@ -2361,7 +2364,7 @@ export default function InboxPage() {
                           {!!(msg as any).reactions?.length && !(msg as any).recalled && (
                             <div className="flex flex-wrap gap-1 mt-1">
                               {(msg as any).reactions.map((r: DirectMessageReaction) => (
-                                <button
+                                <button type="button"
                                   key={r.emoji}
                                   onClick={() => handleReact((msg as any).id, r.emoji)}
                                   className="px-2 py-0.5 rounded-full text-[12px] border"
@@ -2421,7 +2424,7 @@ export default function InboxPage() {
                     </div>
                   </div>
 
-                  <button
+                  <button type="button"
                     onClick={() => setReplyTo(null)}
                     className="w-7 h-7 rounded-full flex items-center justify-center"
                     style={{ color: 'var(--text3)' }}
@@ -2444,7 +2447,7 @@ export default function InboxPage() {
                       }}
                     >
                       <span className="text-[12px] max-w-[180px] truncate">{file.name}</span>
-                      <button
+                      <button type="button"
                         onClick={() => removePicked(idx)}
                         className="w-5 h-5 rounded-full flex items-center justify-center"
                         style={{ color: 'var(--text3)' }}
@@ -2456,8 +2459,8 @@ export default function InboxPage() {
                 </div>
               )}
 
-              <div className="flex gap-2 items-center mb-3 flex-wrap">
-                <input
+              <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
+                <input id="direct-chat-image-upload" name="directChatImageUpload"
                   ref={imageRef}
                   type="file"
                   accept="image/*"
@@ -2465,7 +2468,7 @@ export default function InboxPage() {
                   hidden
                   onChange={e => handlePickImages(e.target.files)}
                 />
-                <input
+                <input id="direct-chat-file-upload" name="directChatFileUpload"
                   ref={fileRef}
                   type="file"
                   multiple
@@ -2528,7 +2531,7 @@ export default function InboxPage() {
                       }}
                     >
                       {[...EMOJIS, ...EXTRA_EMOJIS].map(emoji => (
-                        <button
+                        <button type="button"
                           key={emoji}
                           onClick={() => addEmoji(emoji)}
                           className="text-xl hover:scale-110 transition-transform"
@@ -2548,7 +2551,7 @@ export default function InboxPage() {
                   borderColor: 'var(--border)',
                 }}
               >
-                <input
+                <input id="direct-message-input" name="directMessage" autoComplete="off"
                   ref={inputRef}
                   value={input}
                   onChange={e => setInput(e.target.value)}
@@ -2602,7 +2605,7 @@ export default function InboxPage() {
                   ['files', 'File'],
                   ['media', 'Ảnh'],
                 ].map(([key, label]) => (
-                  <button
+                  <button type="button"
                     key={key}
                     onClick={() => setDmSideTab(key as DmSideTab)}
                     className="px-3 py-2 rounded-xl text-[12px] border"
@@ -2657,7 +2660,7 @@ export default function InboxPage() {
                             borderColor: 'var(--border)',
                           }}
                         >
-                          <button
+                          <button type="button"
                             onClick={() => {
                               scrollToMessage((msg as any).id)
                               setDmSideOpen(false)
@@ -2672,7 +2675,7 @@ export default function InboxPage() {
                             </div>
                           </button>
 
-                          <button
+                          <button type="button"
                             onClick={() => handlePin((msg as any).id, true)}
                             className="mt-2 text-[12px]"
                             style={{ color: '#ef4444' }}

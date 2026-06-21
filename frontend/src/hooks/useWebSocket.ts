@@ -29,64 +29,88 @@ export function useWebSocket(
   }, [onMessage])
 
   useEffect(() => {
-    if (!groupId) return
+    if (!groupId) {
+      setConnected(false)
+      return
+    }
 
-    const client = new Client({
-      webSocketFactory: () => new SockJS(WS_URL),
-      reconnectDelay: 3000,
-      debug: () => {},
-      connectHeaders: token
-        ? { Authorization: `Bearer ${token}` }
-        : {},
+    let disposed = false
+    let client: Client | null = null
 
-      onConnect: () => {
-        setConnected(true)
+    const activateTimer = window.setTimeout(() => {
+      if (disposed) return
 
-        client.subscribe(
-          `/topic/group.${groupId}`,
-          frame => {
-            try {
-              const parsed = JSON.parse(frame.body)
+      client = new Client({
+        webSocketFactory: () => new SockJS(WS_URL),
+        reconnectDelay: 3000,
+        debug: () => {},
+        connectHeaders: token
+          ? { Authorization: `Bearer ${token}` }
+          : {},
 
-              onMessageRef.current({
-                ...parsed,
-                id: normalizeId(parsed?._id ?? parsed?.id),
-                senderId: normalizeId(parsed?.senderId),
-                groupId: normalizeId(parsed?.groupId),
-                replyTo: parsed?.replyTo ?? null,
-                attachments: Array.isArray(parsed?.attachments) ? parsed.attachments : [],
-                reactions: Array.isArray(parsed?.reactions) ? parsed.reactions : [],
-                mentionUserIds: Array.isArray(parsed?.mentionUserIds) ? parsed.mentionUserIds : [],
-                pinned: !!parsed?.pinned,
-                recalled: !!parsed?.recalled,
-              })
-            } catch {
-              //
-            }
-          },
-          token
-            ? { Authorization: `Bearer ${token}` }
-            : {},
-        )
-      },
+        onConnect: () => {
+          if (disposed || !client) return
+          setConnected(true)
 
-      onDisconnect: () => setConnected(false),
-      onStompError: () => setConnected(false),
-      onWebSocketError: () => setConnected(false),
-      onWebSocketClose: () => setConnected(false),
-    })
+          client.subscribe(
+            `/topic/group.${groupId}`,
+            frame => {
+              try {
+                const parsed = JSON.parse(frame.body)
 
-    client.activate()
-    clientRef.current = client
+                onMessageRef.current({
+                  ...parsed,
+                  id: normalizeId(parsed?._id ?? parsed?.id),
+                  senderId: normalizeId(parsed?.senderId),
+                  groupId: normalizeId(parsed?.groupId),
+                  replyTo: parsed?.replyTo ?? null,
+                  attachments: Array.isArray(parsed?.attachments) ? parsed.attachments : [],
+                  reactions: Array.isArray(parsed?.reactions) ? parsed.reactions : [],
+                  mentionUserIds: Array.isArray(parsed?.mentionUserIds) ? parsed.mentionUserIds : [],
+                  pinned: !!parsed?.pinned,
+                  recalled: !!parsed?.recalled,
+                })
+              } catch {
+                // Ignore malformed realtime frames; API polling remains available.
+              }
+            },
+            token
+              ? { Authorization: `Bearer ${token}` }
+              : {},
+          )
+        },
+
+        onDisconnect: () => {
+          if (!disposed) setConnected(false)
+        },
+        onStompError: () => {
+          if (!disposed) setConnected(false)
+        },
+        onWebSocketError: () => {
+          if (!disposed) setConnected(false)
+        },
+        onWebSocketClose: () => {
+          if (!disposed) setConnected(false)
+        },
+      })
+
+      clientRef.current = client
+      client.activate()
+    }, 50)
 
     return () => {
+      disposed = true
+      window.clearTimeout(activateTimer)
       setConnected(false)
-      try {
-        client.deactivate()
-      } catch {
-        //
+
+      const activeClient = client ?? clientRef.current
+      if (clientRef.current === activeClient) clientRef.current = null
+
+      if (activeClient) {
+        void activeClient.deactivate({ force: true }).catch(() => {
+          // A socket may close while it is still connecting; UI continues via API polling.
+        })
       }
-      clientRef.current = null
     }
   }, [groupId, token])
 
