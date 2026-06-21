@@ -512,7 +512,7 @@ export default function GroupsPage() {
           onClick={() => setModal(null)}
         >
           <div
-            className="max-h-[calc(100dvh-1rem)] w-full max-w-md overflow-y-auto rounded-t-3xl border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[90vh] sm:rounded-2xl sm:p-6"
+            className="max-h-[calc(100dvh-4.5rem)] w-full max-w-md overflow-y-auto rounded-t-3xl border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[90vh] sm:rounded-2xl sm:p-6"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
             onClick={e => e.stopPropagation()}
           >

@@ -258,7 +258,7 @@ export default function SideToolbar() {
       {/* Pull tab */}
       <button
         onClick={() => setOpen(v => !v)}
-        className="fixed bottom-[76px] right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 lg:bottom-auto lg:right-0 lg:top-1/2 lg:h-24 lg:w-7 lg:-translate-y-1/2 lg:flex-col lg:gap-1.5 lg:rounded-l-lg lg:rounded-r-none"
+        className="fixed bottom-[76px] right-4 z-[10002] flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 lg:bottom-auto lg:right-0 lg:top-1/2 lg:h-24 lg:w-7 lg:-translate-y-1/2 lg:flex-col lg:gap-1.5 lg:rounded-l-lg lg:rounded-r-none"
         style={{
           background: 'linear-gradient(180deg,#6366f1,#8b5cf6)',
           boxShadow: '-4px 0 20px rgba(99,102,241,.4)',
@@ -276,9 +276,9 @@ export default function SideToolbar() {
 
       {/* Panel */}
       <div
-        className="fixed top-0 right-0 h-full z-40 flex flex-col transition-all duration-300 ease-in-out"
+        className="fixed bottom-[76px] right-3 top-16 z-[10000] flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 ease-in-out lg:bottom-0 lg:right-0 lg:top-0 lg:h-full lg:rounded-none lg:border-y-0 lg:border-r-0"
         style={{
-          width: 'min(340px, 100vw)',
+          width: 'min(340px, calc(100vw - 24px))',
           background: theme.panel,
           borderLeft: `1px solid ${theme.border}`,
           boxShadow: open ? theme.shadow : 'none',
@@ -588,7 +588,7 @@ export default function SideToolbar() {
       {/* Overlay khi open trên mobile */}
       {open && (
         <div
-          className="fixed inset-0 z-30 lg:hidden"
+          className="fixed inset-x-0 bottom-0 top-14 z-[9999] lg:hidden"
           onClick={() => setOpen(false)}
           style={{ background: theme.overlay }}
         />

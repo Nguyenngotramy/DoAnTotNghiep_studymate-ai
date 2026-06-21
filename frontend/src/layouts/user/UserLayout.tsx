@@ -752,7 +752,7 @@ export default function UserLayout() {
           </Link>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:p-5">
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pt-4 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:p-5" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorY: 'contain' }}>
           <Outlet />
         </main>
       </div>
