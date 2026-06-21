@@ -508,7 +508,7 @@ export default function GroupsPage() {
 
       {modal && (
         <div
-          className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
+          className="fixed inset-x-0 bottom-0 top-14 z-[10000] sm:inset-0 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
           onClick={() => setModal(null)}
         >
           <div

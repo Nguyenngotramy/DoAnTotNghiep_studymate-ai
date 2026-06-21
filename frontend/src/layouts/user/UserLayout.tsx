@@ -664,7 +664,7 @@ export default function UserLayout() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <header
-          className="h-14 flex-shrink-0 flex items-center gap-2 px-3 sm:h-12 sm:gap-3 sm:px-5"
+          className="relative z-[10001] h-14 flex-shrink-0 flex items-center gap-2 px-3 sm:h-12 sm:gap-3 sm:px-5 lg:z-auto"
           style={{ background: 'var(--bg2)', borderBottom: '0.5px solid var(--border)' }}
 >
           <button
@@ -752,7 +752,7 @@ export default function UserLayout() {
           </Link>
         </header>
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:p-5">
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:p-5">
           <Outlet />
         </main>
       </div>

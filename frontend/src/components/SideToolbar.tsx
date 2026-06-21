@@ -258,7 +258,7 @@ export default function SideToolbar() {
       {/* Pull tab */}
       <button
         onClick={() => setOpen(v => !v)}
-        className="fixed bottom-4 left-4 z-50 flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 lg:bottom-auto lg:left-auto lg:right-0 lg:top-1/2 lg:h-24 lg:w-7 lg:-translate-y-1/2 lg:flex-col lg:gap-1.5 lg:rounded-l-lg lg:rounded-r-none"
+        className="fixed bottom-[76px] right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 lg:bottom-auto lg:right-0 lg:top-1/2 lg:h-24 lg:w-7 lg:-translate-y-1/2 lg:flex-col lg:gap-1.5 lg:rounded-l-lg lg:rounded-r-none"
         style={{
           background: 'linear-gradient(180deg,#6366f1,#8b5cf6)',
           boxShadow: '-4px 0 20px rgba(99,102,241,.4)',

@@ -56,7 +56,7 @@ function CreateFolderModal({
   const [color, setColor] = useState('#6366f1')
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-x-0 bottom-0 top-14 z-[10000] sm:inset-0 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
         className="w-full max-w-md rounded-[28px] border p-5"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
@@ -203,7 +203,7 @@ function CreateQuizModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-x-0 bottom-0 top-14 z-[10000] sm:inset-0 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
         className="max-h-[calc(100dvh-1rem)] w-full max-w-5xl overflow-y-auto rounded-t-3xl border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[88vh] sm:rounded-[28px] sm:p-5"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
