@@ -727,13 +727,15 @@ export default function ChatPage() {
     >
       <div className="flex flex-col flex-1 min-w-0">
         <div
-          className="flex h-14 flex-shrink-0 items-center gap-2 border-b px-3 sm:h-16 sm:gap-3 sm:px-5"
+          className="relative z-30 flex h-14 flex-shrink-0 items-center gap-2 border-b px-3 sm:h-16 sm:gap-3 sm:px-5"
           style={{
             background: 'var(--bg2)',
             borderColor: 'var(--border)',
           }}
         >
           <button
+            type="button"
+            aria-label="Quay lại trang nhóm"
             onClick={() => navigate(`/groups/${groupId}`)}
             className="p-2 rounded-xl transition-colors"
             style={{ color: 'var(--text3)', background: 'transparent' }}
@@ -761,6 +763,8 @@ export default function ChatPage() {
           </div>
 
           <button
+            type="button"
+            aria-label="Mở chi tiết nhóm"
             onClick={() => setShowSidePanel(v => !v)}
             className="w-10 h-10 rounded-xl border flex items-center justify-center"
             style={{
@@ -1222,7 +1226,7 @@ export default function ChatPage() {
         </div>
 
         <div
-          className="chat-composer px-3 py-3 border-t flex-shrink-0 sm:px-5 sm:py-4"
+          className="chat-composer flex-shrink-0 border-t px-3 pt-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] sm:px-5 sm:py-4"
           style={{
             background: 'var(--bg2)',
             borderColor: 'var(--border)',
@@ -1311,7 +1315,7 @@ export default function ChatPage() {
               <p className="mt-2 text-[10px] text-violet-500">Chi phí: {membershipSummary?.aiCosts?.groupAgent ?? 3} token/lần · Còn {membershipSummary?.aiWallet?.available ?? '—'} token</p>
             </div>
           )}
-          <div className="flex gap-2 items-center mb-3 flex-wrap">
+          <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1">
             <input
               ref={imageRef}
               type="file"
@@ -1329,8 +1333,10 @@ export default function ChatPage() {
             />
 
             <button
+              type="button"
+              aria-label="Chọn ảnh hoặc meme"
               onClick={() => imageRef.current?.click()}
-              className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
               style={{
                 background: 'var(--bg3)',
                 borderColor: 'var(--border)',
@@ -1342,8 +1348,10 @@ export default function ChatPage() {
             </button>
 
             <button
+              type="button"
+              aria-label="Chọn tài liệu"
               onClick={() => fileRef.current?.click()}
-              className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
               style={{
                 background: 'var(--bg3)',
                 borderColor: 'var(--border)',
@@ -1356,8 +1364,10 @@ export default function ChatPage() {
 
             <div className="relative">
               <button
+                type="button"
+                aria-label="Mở bảng emoji"
                 onClick={() => setShowEmoji(v => !v)}
-                className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
                 style={{
                   background: 'var(--bg3)',
                   borderColor: 'var(--border)',
@@ -1394,7 +1404,7 @@ export default function ChatPage() {
                 setInput(prev => `${prev}${prev && !prev.endsWith(' ') ? ' ' : ''}@all `)
                 inputRef.current?.focus()
               }}
-              className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
               style={{
                 background: 'var(--bg3)',
                 borderColor: 'var(--border)',
@@ -1411,7 +1421,7 @@ export default function ChatPage() {
                 setShowGroupAgentHelp(true)
                 inputRef.current?.focus()
               }}
-              className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-[12px]"
               style={{ background: 'rgba(139,92,246,.1)', borderColor: 'rgba(139,92,246,.3)', color: '#8b5cf6' }}
               title="Nhờ AI đề xuất và phân công task cho thành viên"
             >
@@ -1425,7 +1435,7 @@ export default function ChatPage() {
           </div>
 
           <div className="relative">
-            <div className="flex gap-3 items-center">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <input
                 ref={inputRef}
                 value={input}
@@ -1437,7 +1447,7 @@ export default function ChatPage() {
                   }
                 }}
                 placeholder="Nhắn tin nhóm... dùng @all hoặc @tên thành viên"
-                className="flex-1 h-12 px-4 rounded-2xl text-[14px] outline-none transition-colors"
+                className="h-12 min-w-0 flex-1 rounded-2xl px-4 text-[14px] outline-none transition-colors"
                 style={{
                   background: 'var(--bg3)',
                   border: '1px solid var(--border)',
@@ -1446,9 +1456,11 @@ export default function ChatPage() {
               />
 
               <button
+                type="button"
+                aria-label="Gửi tin nhắn nhóm"
                 onClick={send}
                 disabled={(!input.trim() && pickedFiles.length === 0) || sending}
-                className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all disabled:opacity-50"
+                className="relative z-40 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl transition-all disabled:opacity-50"
                 style={{
                   background: input.trim() || pickedFiles.length
                     ? 'linear-gradient(135deg,#6366f1,#8b5cf6)'
@@ -1495,7 +1507,7 @@ export default function ChatPage() {
 
       {showSidePanel && (
         <div
-          className="hidden w-[320px] flex-shrink-0 border-l xl:block"
+          className="fixed bottom-0 right-0 top-14 z-[70] w-[min(88vw,360px)] overflow-hidden border-l shadow-2xl xl:static xl:z-auto xl:w-[320px] xl:flex-shrink-0 xl:shadow-none"
           style={{
             background: 'var(--bg2)',
             borderColor: 'var(--border)',
@@ -1508,7 +1520,7 @@ export default function ChatPage() {
             <div className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>
               Trợ năng nhóm
             </div>
-            <button onClick={() => setShowSidePanel(false)}>
+            <button type="button" onClick={() => setShowSidePanel(false)} aria-label="Đóng chi tiết nhóm">
               <X size={18} />
             </button>
           </div>

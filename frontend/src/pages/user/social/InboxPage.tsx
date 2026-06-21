@@ -1359,6 +1359,8 @@ export default function InboxPage() {
               </div>
 
               <button
+                type="button"
+                aria-label="Mở chi tiết nhóm"
                 onClick={() => {
                   setDmSideOpen(false)
                   setGroupSideOpen(v => !v)
@@ -1691,7 +1693,7 @@ export default function InboxPage() {
               <div ref={groupBottomRef} />
             </div>
 
-            <div className="chat-composer p-3 border-t flex-shrink-0 sm:p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
+            <div className="chat-composer flex-shrink-0 border-t p-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] sm:p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
               {groupReplyTo && (
                 <div
                   className="mb-3 rounded-2xl border px-3 py-3 flex items-start justify-between gap-3"
@@ -1773,6 +1775,8 @@ export default function InboxPage() {
                 />
 
                 <button
+                  type="button"
+                  aria-label="Chọn ảnh cho nhóm"
                   onClick={() => groupImageRef.current?.click()}
                   className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
                   style={{
@@ -1786,6 +1790,8 @@ export default function InboxPage() {
                 </button>
 
                 <button
+                  type="button"
+                  aria-label="Chọn tài liệu cho nhóm"
                   onClick={() => groupFileRef.current?.click()}
                   className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
                   style={{
@@ -1800,7 +1806,9 @@ export default function InboxPage() {
 
                 <div className="relative">
                   <button
-                    onClick={() => setGroupShowEmoji(v => !v)}
+                    type="button"
+                  aria-label="Mở bảng emoji nhóm"
+                  onClick={() => setGroupShowEmoji(v => !v)}
                     className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
                     style={{
                       background: 'var(--bg3)',
@@ -1857,9 +1865,11 @@ export default function InboxPage() {
                 />
 
                 <button
+                  type="button"
+                  aria-label="Gửi tin nhắn nhóm"
                   onClick={doSendGroup}
                   disabled={(!groupInput.trim() && groupPickedFiles.length === 0) || groupSending}
-                  className="w-8 h-8 rounded-lg bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 transition-all flex items-center justify-center flex-shrink-0"
+                  className="relative z-40 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-500 transition-all hover:bg-indigo-400 disabled:opacity-40"
                 >
                   {groupSending ? (
                     <Loader2 size={14} className="animate-spin text-white" />
@@ -1873,20 +1883,20 @@ export default function InboxPage() {
 
           {groupSideOpen && (
             <div
-              className="hidden w-[320px] flex-shrink-0 border-l xl:block"
+              className="fixed bottom-0 right-0 top-14 z-[70] w-[min(86vw,340px)] overflow-hidden border-l shadow-2xl xl:static xl:z-auto xl:w-[320px] xl:flex-shrink-0 xl:shadow-none"
               style={{
                 background: 'var(--bg2)',
                 borderColor: 'var(--border)',
               }}
             >
               <div
-                className="h-16 px-4 flex items-center justify-between border-b"
+                className="flex h-16 items-center justify-between border-b px-4"
                 style={{ borderColor: 'var(--border)' }}
               >
                 <div className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>
                   Trợ năng nhóm
                 </div>
-                <button onClick={() => setGroupSideOpen(false)}>
+                <button type="button" onClick={() => setGroupSideOpen(false)} aria-label="Đóng chi tiết nhóm">
                   <X size={18} />
                 </button>
               </div>
@@ -2091,6 +2101,8 @@ export default function InboxPage() {
               </div>
 
               <button
+                type="button"
+                aria-label="Mở chi tiết cuộc trò chuyện"
                 onClick={() => {
                   setGroupSideOpen(false)
                   setDmSideOpen(v => !v)
@@ -2380,7 +2392,7 @@ export default function InboxPage() {
               <div ref={bottomRef} />
             </div>
 
-            <div className="chat-composer p-3 border-t flex-shrink-0 sm:p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
+            <div className="chat-composer flex-shrink-0 border-t p-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] sm:p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg2)' }}>
               {replyTo && (
                 <div
                   className="mb-3 rounded-2xl border px-3 py-3 flex items-start justify-between gap-3"
@@ -2462,6 +2474,8 @@ export default function InboxPage() {
                 />
 
                 <button
+                  type="button"
+                  aria-label="Chọn ảnh"
                   onClick={() => imageRef.current?.click()}
                   className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
                   style={{
@@ -2475,6 +2489,8 @@ export default function InboxPage() {
                 </button>
 
                 <button
+                  type="button"
+                  aria-label="Chọn tài liệu"
                   onClick={() => fileRef.current?.click()}
                   className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
                   style={{
@@ -2489,7 +2505,9 @@ export default function InboxPage() {
 
                 <div className="relative">
                   <button
-                    onClick={() => setShowEmoji(v => !v)}
+                    type="button"
+                  aria-label="Mở bảng emoji"
+                  onClick={() => setShowEmoji(v => !v)}
                     className="h-10 px-3 rounded-xl border inline-flex items-center gap-2 text-[12px]"
                     style={{
                       background: 'var(--bg3)',
@@ -2546,9 +2564,11 @@ export default function InboxPage() {
                 />
 
                 <button
+                  type="button"
+                  aria-label="Gửi tin nhắn"
                   onClick={doSend}
                   disabled={(!input.trim() && pickedFiles.length === 0) || sending}
-                  className="w-8 h-8 rounded-lg bg-indigo-500 hover:bg-indigo-400 disabled:opacity-40 transition-all flex items-center justify-center flex-shrink-0"
+                  className="relative z-40 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-500 transition-all hover:bg-indigo-400 disabled:opacity-40"
                 >
                   {sending ? <Loader2 size={14} className="animate-spin text-white" /> : <Send size={14} className="text-white" />}
                 </button>
@@ -2558,20 +2578,20 @@ export default function InboxPage() {
 
           {dmSideOpen && (
             <div
-              className="hidden w-[320px] flex-shrink-0 border-l xl:block"
+              className="fixed bottom-0 right-0 top-14 z-[70] w-[min(86vw,340px)] overflow-hidden border-l shadow-2xl xl:static xl:z-auto xl:w-[320px] xl:flex-shrink-0 xl:shadow-none"
               style={{
                 background: 'var(--bg2)',
                 borderColor: 'var(--border)',
               }}
             >
               <div
-                className="h-16 px-4 flex items-center justify-between border-b"
+                className="flex h-16 items-center justify-between border-b px-4"
                 style={{ borderColor: 'var(--border)' }}
               >
                 <div className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>
                   Chi tiết đoạn chat
                 </div>
-                <button onClick={() => setDmSideOpen(false)}>
+                <button type="button" onClick={() => setDmSideOpen(false)} aria-label="Đóng chi tiết cuộc trò chuyện">
                   <X size={18} />
                 </button>
               </div>
