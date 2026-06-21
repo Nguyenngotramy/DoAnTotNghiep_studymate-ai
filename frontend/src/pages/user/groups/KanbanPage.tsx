@@ -321,11 +321,11 @@ function AddTaskModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="rounded-3xl p-5 w-full max-w-md border"
+        className="max-h-[calc(100dvh-1rem)] w-full max-w-md overflow-y-auto rounded-t-3xl border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[90vh] sm:rounded-3xl sm:p-5"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >
@@ -350,7 +350,7 @@ function AddTaskModal({
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
           />
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
             <select
               className={inp}
               style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
@@ -374,7 +374,7 @@ function AddTaskModal({
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
             <input
               className={inp}
               style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}

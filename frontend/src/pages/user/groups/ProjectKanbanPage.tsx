@@ -705,7 +705,7 @@ function EditProjectTimelineModal({
   })
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
         className="w-full max-w-lg rounded-[24px] p-4 sm:p-6 border shadow-2xl"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
@@ -863,9 +863,9 @@ function AddTaskModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-[24px] p-4 sm:p-6 border shadow-2xl"
+        className="max-h-[calc(100dvh-1rem)] w-full max-w-md overflow-y-auto rounded-t-3xl border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[90vh] sm:rounded-[24px] sm:p-6"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >

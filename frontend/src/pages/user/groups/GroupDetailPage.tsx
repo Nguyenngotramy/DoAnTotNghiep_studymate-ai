@@ -40,6 +40,7 @@ import { dmApi, documentApi, groupApi, groupPostApi, studyDriveApi, authApi } fr
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
+import { resolveUserAvatar } from '@/utils/avatar'
 
 type PostAttachment = {
   name: string
@@ -93,9 +94,7 @@ type GroupPost = {
 const BACKEND = '/api'
 
 function resolveAvatarUrl(avatar?: string | null) {
-  if (!avatar) return ''
-  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar
-  return `${BACKEND}${avatar.startsWith('/') ? avatar : `/${avatar}`}`
+  return resolveUserAvatar(avatar)
 }
 
 function resolveMediaUrl(url?: string | null) {

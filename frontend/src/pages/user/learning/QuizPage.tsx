@@ -56,7 +56,7 @@ function CreateFolderModal({
   const [color, setColor] = useState('#6366f1')
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
         className="w-full max-w-md rounded-[28px] border p-5"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
@@ -203,9 +203,9 @@ function CreateQuizModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
-        className="w-full max-w-5xl rounded-[28px] border p-5 max-h-[88vh] overflow-y-auto"
+        className="max-h-[calc(100dvh-1rem)] w-full max-w-5xl overflow-y-auto rounded-t-3xl border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[88vh] sm:rounded-[28px] sm:p-5"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >
@@ -223,7 +223,7 @@ function CreateQuizModal({
         </div>
 
         {!initialData && (
-          <div className="flex gap-2 mb-4">
+          <div className="grid grid-cols-2 gap-2 mb-4">
             {[
               { key: 'form' as const, label: 'Nhập tay' },
               { key: 'json' as const, label: 'Nhập JSON' },
@@ -287,14 +287,14 @@ function CreateQuizModal({
               className="w-full min-h-[220px] rounded-2xl px-4 py-3 outline-none resize-none font-mono text-[12px]"
               style={{ background: 'var(--bg3)', border: '1px solid var(--border)', color: 'var(--text)' }}
             />
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setJsonInput(QUIZ_JSON_EXAMPLE)}
                 className="px-4 h-10 rounded-2xl text-[12px] border"
                 style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text2)' }}
               >
-                Xem mẫu
+                Dán ví dụ mẫu
               </button>
               <button
                 type="button"
@@ -372,7 +372,7 @@ function CreateQuizModal({
         </div>
         )}
 
-        <div className="flex gap-3 mt-4">
+        <div className="flex flex-col gap-3 mt-4 sm:flex-row">
           <button
             onClick={addQuestion}
             disabled={mode === 'json' && !initialData}
@@ -634,7 +634,7 @@ export default function QuizPage() {
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
               <button
                 onClick={() => setShowFolderModal(true)}
                 className="h-11 px-4 rounded-2xl border text-[13px] font-medium flex items-center gap-2"

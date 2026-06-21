@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore'
 import { authApi, notificationApi, dmApi, membershipApi } from '@/api/services'
 import toast from 'react-hot-toast'
 import { initials } from '@/utils/helpers'
+import { resolveUserAvatar } from '@/utils/avatar'
 import {
   LayoutDashboard, BookOpen, Compass, Users, MessageCircle,
   UsersRound, KanbanSquare, Layers, HelpCircle, BarChart2,
@@ -274,9 +275,7 @@ function notifMeta(type?: string) {
 }
 
 function resolveAvatarUrl(avatar?: string | null) {
-  if (!avatar) return ''
-  if (avatar.startsWith('http://') || avatar.startsWith('https://')) return avatar
-  return `${BACKEND}${avatar.startsWith('/') ? avatar : `/${avatar}`}`
+  return resolveUserAvatar(avatar)
 }
 
 function Avatar({

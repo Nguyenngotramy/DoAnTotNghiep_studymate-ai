@@ -27,6 +27,7 @@ import clsx from 'clsx'
 import { chatApi, dmApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import { useWebSocket } from '@/hooks/useWebSocket'
+import { resolveUserAvatar } from '@/utils/avatar'
 import type {
   ChatAttachment,
   ChatMessage,
@@ -123,7 +124,7 @@ function Avatar({
   size?: number
   bg?: string
 }) {
-  const url = toAbsUrl(avatar)
+  const url = resolveUserAvatar(avatar)
 
   if (url) {
     return (
@@ -1124,7 +1125,7 @@ export default function InboxPage() {
 
   return (
     <div
-      className="flex h-[calc(100dvh-72px)] overflow-hidden rounded-xl border sm:h-[calc(100vh-80px)] sm:rounded-2xl"
+      className="flex h-[calc(100dvh-88px)] min-h-0 overflow-hidden rounded-xl border sm:h-[calc(100vh-80px)] sm:rounded-2xl"
       style={{ background: 'var(--bg)', borderColor: 'var(--border)' }}
     >
       <div className={clsx('w-full border-r flex-col flex-shrink-0 md:flex md:w-80', (selectedThread || isSelectedDm) ? 'hidden' : 'flex')} style={{ borderColor: 'var(--border)' }}>
@@ -1245,7 +1246,7 @@ export default function InboxPage() {
                   ? `${isGroup ? `${lm.senderName ?? 'Ai đó'}: ` : (iMySent ? 'Bạn: ' : '')}${lm.content}`
                   : (lm?.attachments?.length ? '[Tệp đính kèm]' : '')
 
-              const avatarUrl = toAbsUrl((conv as any).avatar ?? (conv as any).user?.avatar)
+              const avatarUrl = resolveUserAvatar((conv as any).avatar ?? (conv as any).user?.avatar)
 
               return (
                 <button

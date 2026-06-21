@@ -155,6 +155,12 @@ export default function SideToolbar() {
   }, [activeId, activeNote])
 
   const createNote = () => {
+    const blankNote = notes.find(note => !note.content.trim() && (!note.title.trim() || note.title.trim() === 'Ghi chú mới'))
+    if (blankNote) {
+      setActiveId(blankNote.id)
+      return
+    }
+
     const note: Note = {
       id: Date.now().toString(),
       title: 'Ghi chú mới',
@@ -252,30 +258,18 @@ export default function SideToolbar() {
       {/* Pull tab */}
       <button
         onClick={() => setOpen(v => !v)}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 hover:right-0 group"
+        className="fixed bottom-4 left-4 z-50 flex h-11 w-11 items-center justify-center rounded-full transition-all duration-300 lg:bottom-auto lg:left-auto lg:right-0 lg:top-1/2 lg:h-24 lg:w-7 lg:-translate-y-1/2 lg:flex-col lg:gap-1.5 lg:rounded-l-lg lg:rounded-r-none"
         style={{
-          width: 28,
-          height: 96,
           background: 'linear-gradient(180deg,#6366f1,#8b5cf6)',
-          borderRadius: '8px 0 0 8px',
           boxShadow: '-4px 0 20px rgba(99,102,241,.4)',
-          transform: `translateY(-50%) ${open ? 'translateX(4px)' : 'translateX(0)'}`,
         }}
         title="Ghi chú (StudyMate Notes)"
       >
         <StickyNote size={14} className="text-white/90" />
 
-        <div className="flex flex-col gap-[3px]">
-          {['S', 'D', 'M'].map(c => (
-            <span key={c} className="text-[8px] font-bold text-white/70 leading-none">
-              {c}
-            </span>
-          ))}
-        </div>
-
         <ChevronRight
           size={10}
-          className="text-white/60 transition-transform duration-300"
+          className="hidden text-white/60 transition-transform duration-300 lg:block"
           style={{ transform: open ? 'rotate(0deg)' : 'rotate(180deg)' }}
         />
       </button>
@@ -284,7 +278,7 @@ export default function SideToolbar() {
       <div
         className="fixed top-0 right-0 h-full z-40 flex flex-col transition-all duration-300 ease-in-out"
         style={{
-          width: 340,
+          width: 'min(340px, 100vw)',
           background: theme.panel,
           borderLeft: `1px solid ${theme.border}`,
           boxShadow: open ? theme.shadow : 'none',
@@ -406,7 +400,7 @@ export default function SideToolbar() {
 
               {/* Format buttons */}
               <div
-                className="flex items-center gap-0.5 px-3 py-1.5 flex-shrink-0"
+                className="flex items-center gap-0.5 overflow-x-auto px-3 py-1.5 flex-shrink-0"
                 style={{ borderBottom: `1px solid ${theme.borderSoft}` }}
               >
                 {[
@@ -438,7 +432,7 @@ export default function SideToolbar() {
                   </button>
                 ))}
 
-                <div className="ml-auto flex gap-1">
+                <div className="ml-auto flex shrink-0 gap-1">
                   {NOTE_COLORS.map(c => (
                     <button
                       key={c}

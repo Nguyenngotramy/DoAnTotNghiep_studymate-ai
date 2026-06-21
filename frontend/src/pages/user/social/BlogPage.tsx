@@ -488,10 +488,10 @@ function CommentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[10000] flex items-end justify-center p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl border"
+        className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border shadow-2xl sm:max-h-[88vh] sm:rounded-2xl"
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
         onClick={e => e.stopPropagation()}
       >
@@ -504,7 +504,7 @@ function CommentModal({
           </button>
         </div>
 
-        <div className="max-h-80 overflow-y-auto px-5 py-4 space-y-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 space-y-4 sm:px-5">
           {rootComments.length === 0 && (
             <p className="text-[12px] text-center py-8" style={{ color: 'var(--text3)' }}>
               Chưa có bình luận nào
@@ -523,7 +523,7 @@ function CommentModal({
           })}
         </div>
 
-        <div className="px-5 py-3 border-t flex gap-2.5 items-center" style={{ borderColor: 'var(--border)' }}>
+        <div className="flex items-center gap-2 border-t px-3 py-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] sm:gap-2.5 sm:px-5" style={{ borderColor: 'var(--border)' }}>
           <UserAvatar name={user?.fullName} avatar={user?.avatar} size={32} />
 
           <input
@@ -658,7 +658,7 @@ function ReportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[10000] flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
         className="relative w-full max-w-md rounded-2xl p-5 border shadow-2xl"
@@ -1026,7 +1026,7 @@ function PostCard({
           <span>{cmts} bình luận</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           <button
             onClick={() => postId && onLike(postId)}
             className={clsx(
@@ -1051,7 +1051,7 @@ function PostCard({
           <button
             onClick={() => postId && onSave(postId)}
             className={clsx(
-              'flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-semibold transition-all',
+              'col-span-2 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-semibold transition-all sm:col-span-1',
               isSaved ? 'bg-indigo-500/10 text-[#534AB7]' : 'hover:bg-white/[.04]',
             )}
             style={!isSaved ? { color: 'var(--text2)' } : {}}
@@ -1707,7 +1707,7 @@ export default function BlogPage() {
 
           {/* Large Compose Modal */}
           {composeExpanded && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[10000] flex items-end justify-center p-0 sm:items-center sm:p-4">
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseModal} />
               <div
                 className="relative w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl border flex flex-col max-h-[90vh]"

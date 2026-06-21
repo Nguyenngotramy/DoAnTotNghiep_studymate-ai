@@ -437,7 +437,7 @@ export default function GroupsPage() {
 
   return (
     <div className="max-w-5xl">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex flex-col gap-3 mb-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-[18px] font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
             <Users size={18} className="text-indigo-400" /> Nhóm học của tôi
@@ -447,10 +447,10 @@ export default function GroupsPage() {
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
           <button
             onClick={() => setModal('join')}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-[12px] transition-all"
+            className="flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-[12px] transition-all"
             style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
           >
             <Hash size={13} /> Nhập mã nhóm
@@ -508,17 +508,17 @@ export default function GroupsPage() {
 
       {modal && (
         <div
-          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 z-[10000] flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
           onClick={() => setModal(null)}
         >
           <div
-            className="border rounded-2xl p-6 w-full max-w-md"
+            className="max-h-[calc(100dvh-1rem)] w-full max-w-md overflow-y-auto rounded-t-3xl border p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-h-[90vh] sm:rounded-2xl sm:p-6"
             style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
             onClick={e => e.stopPropagation()}
           >
             {modal === 'create' ? (
               <>
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex flex-col gap-3 mb-5 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>
                     Tạo nhóm học mới
                   </h2>
@@ -591,7 +591,7 @@ export default function GroupsPage() {
                       Kiểu hiển thị mã nhóm
                     </label>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
                       <button
                         type="button"
                         onClick={() => createForm.setValue('publicVisible', true)}
@@ -645,7 +645,7 @@ export default function GroupsPage() {
                       Cách tham gia nhóm
                     </label>
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
                       <button
                         type="button"
                         onClick={() => createForm.setValue('requireApproval', false)}
@@ -745,7 +745,7 @@ export default function GroupsPage() {
               </>
             ) : (
               <>
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex flex-col gap-3 mb-5 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className="text-[15px] font-semibold" style={{ color: 'var(--text)' }}>
                     Tham gia nhóm
                   </h2>

@@ -45,6 +45,13 @@ export default function QuizPracticeSession({
     if (q.id) {
       onRecordAttempt(quizSet.id, q.id, correct)
     }
+
+    if (idx + 1 >= sessionQuestions.length) {
+      window.setTimeout(() => {
+        setDone(true)
+        if (sessionQuestions.length >= 3) onSessionComplete(sessionQuestions.length)
+      }, 900)
+    }
   }
 
   const next = () => {
@@ -70,9 +77,9 @@ export default function QuizPracticeSession({
 
   if (done) {
     return (
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto pb-4">
         <div
-          className="rounded-[30px] border p-8 text-center"
+          className="rounded-[24px] border p-4 text-center sm:rounded-[30px] sm:p-8"
           style={{
             background:
               'linear-gradient(180deg, color-mix(in srgb, var(--bg2) 95%, #6366f1 5%), var(--bg2))',
@@ -128,7 +135,7 @@ export default function QuizPracticeSession({
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <button
               onClick={() => {
                 restart()
@@ -323,7 +330,7 @@ export default function QuizPracticeSession({
         </div>
       )}
 
-      {answered && (
+      {answered && idx + 1 < total && (
         <button
           onClick={next}
           className="w-full py-3.5 rounded-2xl text-[13px] font-semibold text-white transition-all flex items-center justify-center gap-2"

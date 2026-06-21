@@ -34,6 +34,7 @@ import clsx from 'clsx'
 import { chatApi, groupApi, taskApi, membershipApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import { useWebSocket } from '@/hooks/useWebSocket'
+import { resolveUserAvatar } from '@/utils/avatar'
 import type { ChatAttachment, ChatMessage, ChatReplyPreview, GroupMember, Task, TaskStatus } from '@/types'
 
 const API_BASE = '/api'
@@ -115,7 +116,7 @@ function Avatar({
   size?: number
 }) {
   const [error, setError] = useState(false)
-  const url = resolveUrl(avatar)
+  const url = resolveUserAvatar(avatar)
 
   if (url && !error) {
     return (
@@ -721,7 +722,7 @@ export default function ChatPage() {
 
   return (
     <div
-      className="-mx-3 -my-4 flex h-[calc(100dvh-56px)] overflow-hidden sm:-m-5 sm:h-[calc(100vh-4rem)]"
+      className="flex h-[calc(100dvh-88px)] min-h-0 overflow-hidden rounded-xl sm:-m-5 sm:h-[calc(100vh-4rem)] sm:rounded-none"
       style={{ background: 'var(--bg)' }}
     >
       <div className="flex flex-col flex-1 min-w-0">

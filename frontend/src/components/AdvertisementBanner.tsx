@@ -37,7 +37,7 @@ export default function AdvertisementBanner() {
         <X size={16} />
       </button>
 
-      <div className="relative px-6 py-5 flex items-center gap-4">
+      <div className="relative flex flex-col items-start gap-4 px-4 py-5 pr-12 sm:flex-row sm:items-center sm:px-6">
         <div className="flex-shrink-0">
           <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
             <Sparkles size={24} className="text-white" />
@@ -54,10 +54,10 @@ export default function AdvertisementBanner() {
           </p>
         </div>
 
-        <div className="flex-shrink-0">
+        <div className="w-full flex-shrink-0 sm:w-auto">
           <button
             onClick={() => window.location.href = '/membership'}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-600 font-semibold text-[13px] hover:bg-white/90 transition-colors"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-[13px] font-semibold text-indigo-600 transition-colors hover:bg-white/90 sm:w-auto"
           >
             <Zap size={16} />
             Nâng cấp ngay

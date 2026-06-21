@@ -540,12 +540,12 @@ export default function FloatingAgent() {
           font-family: 'Nunito', 'Inter', sans-serif !important;
         }
         @media (max-width: 640px) {
-          .sm-fab { right: 16px !important; bottom: 84px !important; }
+          .sm-fab { right: 16px !important; bottom: 16px !important; width: 46px !important; height: 46px !important; }
           .sm-panel {
             right: 16px !important;
-            bottom: 154px !important;
+            bottom: 76px !important;
             width: calc(100vw - 32px) !important;
-            max-height: calc(100dvh - 174px) !important;
+            max-height: calc(100dvh - 92px) !important;
           }
         }
         .sm-quick-btn:hover {
@@ -790,10 +790,15 @@ export default function FloatingAgent() {
                   {validatingKey ? "Kiểm tra..." : "Lưu"}
                 </button>
               </div>
-              <div style={{ color: aiConfig.validated ? "#22c55e" : "var(--sm-muted)", fontSize: 11 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8, color: aiConfig.validated ? "#22c55e" : "var(--sm-muted)", fontSize: 11 }}>
                 {aiConfig.validated
                   ? "Đã xác thực. Key này được dùng cho chat, tài liệu, quiz, flashcard và từ vựng."
-                  : "Để trống key để dùng hạn mức free của hệ thống."}
+                  : "Bạn có thể thêm API key cá nhân hoặc nạp token AI để tiếp tục sử dụng."}
+                {!aiConfig.validated && (
+                  <button type="button" onClick={() => { window.location.href = "/membership"; }} style={{ background: "rgba(124,58,237,.14)", border: "1px solid rgba(124,58,237,.3)", color: "#a78bfa", borderRadius: 8, padding: "6px 9px", cursor: "pointer", fontSize: 11 }}>
+                    Nạp token AI
+                  </button>
+                )}
               </div>
             </div>
           )}
