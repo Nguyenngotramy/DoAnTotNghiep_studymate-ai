@@ -36,27 +36,27 @@ import UserAvatar from '@/components/UserAvatar'
 import { dedupeComments, socialCommentId, tagValues, visibleTags } from '@/utils/socialContent'
 
 const SUBJECTS = [
-  'Táº¥t cáº£',
-  'ToÃ¡n',
-  'Váº­t lÃ½',
-  'HÃ³a há»c',
-  'Sinh há»c',
-  'Ngá»¯ vÄƒn',
-  'Tiáº¿ng Anh',
-  'Láº­p trÃ¬nh',
+  'Tất cả',
+  'Toán',
+  'Vật lý',
+  'Hóa học',
+  'Sinh học',
+  'Ngữ văn',
+  'Tiếng Anh',
+  'Lập trình',
   'AI/ML',
   'IELTS',
   'TOEIC'
 ]
 
 const COLORS: Record<string, string> = {
-  'Nguyá»…n VÄƒn A': '#6366f1',
-  'Tráº§n Thá»‹ Hoa': '#14b8a6',
-  'LÃª Minh Tuáº¥n': '#f59e0b',
-  'Pháº¡m Thu Háº±ng': '#ec4899',
-  'Báº£o Long': '#3b82f6',
-  'HoÃ ng VÄƒn Khoa': '#22c55e',
-  'Tráº§n BÃ­ch TrÃ¢m': '#8b5cf6',
+  'Nguyễn Văn A': '#6366f1',
+  'Trần Thị Hoa': '#14b8a6',
+  'Lê Minh Tuấn': '#f59e0b',
+  'Phạm Thu Hằng': '#ec4899',
+  'Bảo Long': '#3b82f6',
+  'Hoàng Văn Khoa': '#22c55e',
+  'Trần Bích Trâm': '#8b5cf6',
 }
 
 function toMediaUrl(url?: string) {
@@ -135,10 +135,10 @@ function ini(n: string): string {
 function ago(d?: string): string {
   if (!d) return ''
   const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000)
-  if (s < 60) return 'vá»«a xong'
-  if (s < 3600) return `${Math.floor(s / 60)} phÃºt`
-  if (s < 86400) return `${Math.floor(s / 3600)} giá»`
-  return `${Math.floor(s / 86400)} ngÃ y`
+  if (s < 60) return 'vừa xong'
+  if (s < 3600) return `${Math.floor(s / 60)} phút`
+  if (s < 86400) return `${Math.floor(s / 3600)} giờ`
+  return `${Math.floor(s / 86400)} ngày`
 }
 
 function getCommentId(c: any): string {
@@ -165,7 +165,7 @@ function normalizePost(p: any): Post {
   }
 }
 
-const SHORT_AI_SUMMARY = 'Ná»™i dung bÃ i viáº¿t chÆ°a Ä‘á»§ Ä‘á»ƒ tÃ³m táº¯t rÃµ rÃ ng.'
+const SHORT_AI_SUMMARY = 'Nội dung bài viết chưa đủ để tóm tắt rõ ràng.'
 
 function hasValidAiSummary(post: Post): boolean {
   return post.aiSummaryStatus === 'DONE'
@@ -206,14 +206,14 @@ function normalizeText(value?: any): string {
   return String(value ?? '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/Ä‘/g, 'd')
-    .replace(/Ä/g, 'D')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
     .toLowerCase()
     .trim()
 }
 
 function postMatchesTag(post: any, tag: string): boolean {
-  if (!tag || tag === 'Táº¥t cáº£') return true
+  if (!tag || tag === 'Tất cả') return true
   const target = normalizeText(tag)
   const candidates = [
     post?.subject,
@@ -241,8 +241,8 @@ function postMatchesSearch(post: any, query: string): boolean {
   return tokens.length > 0 && tokens.every(token => searchable.includes(token))
 }
 
-function inferSubjectFromTags(tags: string[], fallback = 'KhÃ¡c'): string {
-  const normalizedMap = new Map(SUBJECTS.filter(s => s !== 'Táº¥t cáº£').map(s => [normalizeText(s), s]))
+function inferSubjectFromTags(tags: string[], fallback = 'Khác'): string {
+  const normalizedMap = new Map(SUBJECTS.filter(s => s !== 'Tất cả').map(s => [normalizeText(s), s]))
   for (const tag of tags) {
     const hit = normalizedMap.get(normalizeText(tag))
     if (hit) return hit
@@ -279,11 +279,11 @@ function CommentModal({
     setLoading(true)
     try {
       await postApi.addComment(post.id, input.trim())
-      toast.success('ÄÃ£ bÃ¬nh luáº­n')
+      toast.success('Đã bình luận')
       setInput('')
       onDone()
     } catch {
-      toast.error('Lá»—i khi bÃ¬nh luáº­n')
+      toast.error('Lỗi khi bình luận')
     } finally {
       setLoading(false)
     }
@@ -294,12 +294,12 @@ function CommentModal({
     setReplyLoading(true)
     try {
       await postApi.replyComment(post.id, parentCommentId, replyInput.trim())
-      toast.success('ÄÃ£ tráº£ lá»i bÃ¬nh luáº­n')
+      toast.success('Đã trả lời bình luận')
       setReplyInput('')
       setReplyToId(null)
       onDone()
     } catch {
-      toast.error('Lá»—i khi tráº£ lá»i')
+      toast.error('Lỗi khi trả lời')
     } finally {
       setReplyLoading(false)
     }
@@ -310,25 +310,25 @@ function CommentModal({
     setEditLoading(true)
     try {
       await postApi.editComment(post.id, commentId, editInput.trim())
-      toast.success('ÄÃ£ cáº­p nháº­t bÃ¬nh luáº­n')
+      toast.success('Đã cập nhật bình luận')
       setEditInput('')
       setEditId(null)
       onDone()
     } catch {
-      toast.error('Lá»—i khi sá»­a bÃ¬nh luáº­n')
+      toast.error('Lỗi khi sửa bình luận')
     } finally {
       setEditLoading(false)
     }
   }
 
   const handleDelete = async (commentId: string) => {
-    if (!commentId || !window.confirm('Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a bÃ¬nh luáº­n nÃ y?')) return
+    if (!commentId || !window.confirm('Bạn có chắc chắn muốn xóa bình luận này?')) return
     try {
       await postApi.deleteComment(post.id, commentId)
-      toast.success('ÄÃ£ xÃ³a bÃ¬nh luáº­n')
+      toast.success('Đã xóa bình luận')
       onDone()
     } catch {
-      toast.error('Lá»—i khi xÃ³a bÃ¬nh luáº­n')
+      toast.error('Lỗi khi xóa bình luận')
     }
   }
 
@@ -383,7 +383,7 @@ function CommentModal({
                     className="text-[10px] hover:text-indigo-400 transition-colors"
                     style={{ color: 'var(--text3)' }}
                   >
-                    Sá»­a
+                    Sửa
                   </button>
                 )}
                 {canDelete && !c.deleted && (
@@ -392,7 +392,7 @@ function CommentModal({
                     onClick={() => handleDelete(commentId)}
                     className="text-[10px] text-red-400 hover:text-red-300"
                   >
-                    XÃ³a
+                    Xóa
                   </button>
                 )}
               </div>
@@ -420,7 +420,7 @@ function CommentModal({
                   className="text-[10px] px-2 py-1 rounded text-white"
                   style={{ background: '#534AB7' }}
                 >
-                  LÆ°u
+                  Lưu
                 </button>
                 <button
                   type="button"
@@ -431,7 +431,7 @@ function CommentModal({
                   className="text-[10px] px-2 py-1 rounded border"
                   style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
                 >
-                  Há»§y
+                  Hủy
                 </button>
               </div>
             ) : (
@@ -456,7 +456,7 @@ function CommentModal({
                 className="text-[10px] font-medium hover:text-indigo-400 transition-colors"
                 style={{ color: 'var(--text3)' }}
               >
-                Pháº£n há»“i
+                Phản hồi
               </button>
             </div>
           )}
@@ -469,7 +469,7 @@ function CommentModal({
                 autoComplete="off"
                 value={replyInput}
                 onChange={e => setReplyInput(e.target.value)}
-                placeholder="Tráº£ lá»i bÃ¬nh luáº­n..."
+                placeholder="Trả lời bình luận..."
                 className="flex-1 rounded-xl px-3 py-1.5 text-[11px] outline-none border"
                 style={{
                   background: 'var(--bg3)',
@@ -484,7 +484,7 @@ function CommentModal({
                 className="px-3 py-1.5 rounded-lg hover:opacity-90 disabled:opacity-40 text-[11px] text-white font-medium transition-colors"
                 style={{ background: '#534AB7' }}
               >
-                Gá»­i
+                Gửi
               </button>
               <button
                 type="button"
@@ -495,7 +495,7 @@ function CommentModal({
                 className="px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors border"
                 style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
               >
-                Há»§y
+                Hủy
               </button>
             </div>
           )}
@@ -514,7 +514,7 @@ function CommentModal({
       >
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
           <span className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>
-            BÃ¬nh luáº­n Â· {commentsList.length}
+            Bình luận · {commentsList.length}
           </span>
           <button type="button" onClick={onClose} style={{ color: 'var(--text3)' }}>
             <X size={16} />
@@ -524,7 +524,7 @@ function CommentModal({
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 space-y-4 sm:px-5">
           {rootComments.length === 0 && (
             <p className="text-[12px] text-center py-8" style={{ color: 'var(--text3)' }}>
-              ChÆ°a cÃ³ bÃ¬nh luáº­n nÃ o
+              Chưa có bình luận nào
             </p>
           )}
 
@@ -555,7 +555,7 @@ function CommentModal({
             autoComplete="off"
             value={input}
             onChange={event => setInput(event.target.value)}
-            placeholder="Viáº¿t bÃ¬nh luáº­n..."
+            placeholder="Viết bình luận..."
             className="h-11 min-w-0 flex-1 rounded-2xl border px-4 text-sm outline-none"
             style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }}
           />
@@ -564,7 +564,7 @@ function CommentModal({
             disabled={loading || !input.trim()}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white disabled:opacity-40"
             style={{ background: '#534AB7' }}
-            aria-label="Gá»­i bÃ¬nh luáº­n"
+            aria-label="Gửi bình luận"
           >
             {loading ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
           </button>
@@ -620,7 +620,7 @@ function PostMenu({
             style={{ color: 'var(--text2)' }}
           >
             <EyeOff size={13} />
-            áº¨n bÃ i viáº¿t
+            Ẩn bài viết
           </button>
 
           {!mine && (
@@ -632,7 +632,7 @@ function PostMenu({
               className="w-full px-3 py-2.5 text-left text-[12px] flex items-center gap-2 hover:bg-white/[.04] text-amber-400"
             >
               <Flag size={13} />
-              BÃ¡o cÃ¡o vi pháº¡m
+              Báo cáo vi phạm
             </button>
           )}
 
@@ -645,7 +645,7 @@ function PostMenu({
               className="w-full px-3 py-2.5 text-left text-[12px] flex items-center gap-2 hover:bg-red-500/10 text-red-400"
             >
               <Trash2 size={13} />
-              XÃ³a bÃ i viáº¿t
+              Xóa bài viết
             </button>
           )}
         </div>
@@ -669,10 +669,10 @@ function ReportModal({
     setSubmitting(true)
     try {
       await postApi.reportPost(postId, reasonType, reasonText)
-      toast.success('ÄÃ£ gá»­i bÃ¡o cÃ¡o. Cáº£m Æ¡n báº¡n!')
+      toast.success('Đã gửi báo cáo. Cảm ơn bạn!')
       onClose()
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || 'KhÃ´ng thá»ƒ gá»­i bÃ¡o cÃ¡o')
+      toast.error(e?.response?.data?.message || 'Không thể gửi báo cáo')
     } finally {
       setSubmitting(false)
     }
@@ -686,17 +686,17 @@ function ReportModal({
         style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
       >
         <h3 className="text-[15px] font-bold mb-4" style={{ color: 'var(--text)' }}>
-          BÃ¡o cÃ¡o bÃ i viáº¿t vi pháº¡m
+          Báo cáo bài viết vi phạm
         </h3>
 
         <div className="space-y-2.5 mb-4">
           {[
-            ['SAI_TAG', 'Sai tag mÃ´n há»c / category chÃ­nh'],
-            ['NOI_DUNG_KHONG_PHU_HOP', 'Ná»™i dung khÃ´ng phÃ¹ há»£p mÃ´i trÆ°á»ng há»c táº­p'],
-            ['SPAM', 'Spam / Quáº£ng cÃ¡o khÃ´ng mong muá»‘n'],
-            ['QUAY_ROI', 'Quáº¥y rá»‘i / XÃºc pháº¡m ngÆ°á»i khÃ¡c'],
-            ['VI_PHAM_TIEU_CHUAN', 'Vi pháº¡m tiÃªu chuáº©n cá»™ng Ä‘á»“ng'],
-            ['KHAC', 'LÃ½ do khÃ¡c'],
+            ['SAI_TAG', 'Sai tag môn học / category chính'],
+            ['NOI_DUNG_KHONG_PHU_HOP', 'Nội dung không phù hợp môi trường học tập'],
+            ['SPAM', 'Spam / Quảng cáo không mong muốn'],
+            ['QUAY_ROI', 'Quấy rối / Xúc phạm người khác'],
+            ['VI_PHAM_TIEU_CHUAN', 'Vi phạm tiêu chuẩn cộng đồng'],
+            ['KHAC', 'Lý do khác'],
           ].map(([val, label]) => (
             <label key={val} className="flex items-center gap-2.5 text-[12px] cursor-pointer" style={{ color: 'var(--text2)' }}>
               <input
@@ -716,7 +716,7 @@ function ReportModal({
           rows={3}
           value={reasonText}
           onChange={e => setReasonText(e.target.value)}
-          placeholder="MÃ´ táº£ chi tiáº¿t hÆ¡n (náº¿u cÃ³)..."
+          placeholder="Mô tả chi tiết hơn (nếu có)..."
           className="w-full p-2.5 rounded-xl border text-[12px] outline-none"
           style={{ background: 'var(--bg3)', borderColor: 'var(--border)', color: 'var(--text)' }}
         />
@@ -727,7 +727,7 @@ function ReportModal({
             className="px-4 py-2 rounded-xl text-[12px] border"
             style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
           >
-            Há»§y
+            Hủy
           </button>
           <button
             onClick={handleSubmit}
@@ -736,7 +736,7 @@ function ReportModal({
             style={{ background: '#534AB7' }}
           >
             {submitting && <Loader2 size={12} className="animate-spin" />}
-            Gá»­i bÃ¡o cÃ¡o
+            Gửi báo cáo
           </button>
         </div>
       </div>
@@ -791,9 +791,9 @@ function PostCard({
 
   // Card border dynamic
   let cardBorder = 'var(--border)'
-  if (isNeedsRevision) cardBorder = '#FAEEDA' // Cáº£nh bÃ¡o sai tag
+  if (isNeedsRevision) cardBorder = '#FAEEDA' // Cảnh báo sai tag
   if (isPendingReview) cardBorder = 'rgba(99,102,241,.3)'
-  if (isRejected) cardBorder = '#FCEBEB' // Vi pháº¡m
+  if (isRejected) cardBorder = '#FCEBEB' // Vi phạm
 
   const contentPreview = useMemo(() => {
     if (!post.content) return ''
@@ -815,7 +815,7 @@ function PostCard({
         <div className="px-4 py-2 flex items-center justify-between text-[11px] font-medium" style={{ background: '#FAEEDA', color: '#633806' }}>
           <div className="flex items-center gap-1.5">
             <AlertTriangle size={13} />
-            <span>AI cáº£nh bÃ¡o: {post.revisionMessage || 'MÃ´n há»c chÃ­nh hoáº·c tag cÃ³ thá»ƒ chÆ°a khá»›p vá»›i ná»™i dung bÃ i viáº¿t.'}</span>
+            <span>AI cảnh báo: {post.revisionMessage || 'Môn học chính hoặc tag có thể chưa khớp với nội dung bài viết.'}</span>
           </div>
           {mine && (
             <div className="flex gap-2">
@@ -823,13 +823,13 @@ function PostCard({
                 onClick={() => onEdit(post)}
                 className="px-2.5 py-0.5 rounded bg-[#633806]/10 hover:bg-[#633806]/20 transition-all font-semibold"
               >
-                Sá»­a bÃ i
+                Sửa bài
               </button>
               <button
                 onClick={() => onResubmit(postId)}
                 className="px-2.5 py-0.5 rounded bg-[#534AB7] text-white hover:opacity-90 transition-all font-semibold"
               >
-                Gá»­i láº¡i
+                Gửi lại
               </button>
             </div>
           )}
@@ -839,7 +839,7 @@ function PostCard({
       {showAuthorOnlyHint && (
         <div className="px-4 py-2 flex items-center gap-1.5 text-[11px] font-medium" style={{ background: 'rgba(99,102,241,.12)', color: 'var(--text)' }}>
           <Eye size={13} className="text-indigo-400" />
-          <span>Chá»‰ báº¡n tháº¥y bÃ i nÃ y. NgÆ°á»i khÃ¡c chÆ°a tháº¥y cho Ä‘áº¿n khi bÃ i Ä‘Æ°á»£c duyá»‡t cÃ´ng khai (APPROVED).</span>
+          <span>Chỉ bạn thấy bài này. Người khác chưa thấy cho đến khi bài được duyệt công khai (APPROVED).</span>
         </div>
       )}
 
@@ -851,8 +851,8 @@ function PostCard({
               ((imageUrls.length > 0 || !!post.videoUrl) &&
                 post.mediaSafetyStatus &&
                 post.mediaSafetyStatus !== 'SAFE'))
-              ? 'BÃ i viáº¿t cÃ³ media Ä‘ang chá» kiá»ƒm duyá»‡t. Chá»‰ báº¡n nhÃ¬n tháº¥y bÃ i Ä‘Äƒng nÃ y.'
-              : 'BÃ i Ä‘Äƒng Ä‘ang chá» phÃª duyá»‡t. Hiá»‡n táº¡i chá»‰ cÃ³ báº¡n nhÃ¬n tháº¥y bÃ i Ä‘Äƒng nÃ y.'}
+              ? 'Bài viết có media đang chờ kiểm duyệt. Chỉ bạn nhìn thấy bài đăng này.'
+              : 'Bài đăng đang chờ phê duyệt. Hiện tại chỉ có bạn nhìn thấy bài đăng này.'}
           </span>
         </div>
       )}
@@ -860,7 +860,7 @@ function PostCard({
       {isRejected && (
         <div className="px-4 py-2 flex items-center gap-1.5 text-[11px] font-medium" style={{ background: '#FCEBEB', color: '#791F1F' }}>
           <AlertCircle size={13} />
-          <span>BÃ i Ä‘Äƒng bá»‹ tá»« chá»‘i / gá»¡ bá» do vi pháº¡m tiÃªu chuáº©n cá»™ng Ä‘á»“ng: {post.moderationReason || 'Ná»™i dung khÃ´ng phÃ¹ há»£p.'}</span>
+          <span>Bài đăng bị từ chối / gỡ bỏ do vi phạm tiêu chuẩn cộng đồng: {post.moderationReason || 'Nội dung không phù hợp.'}</span>
         </div>
       )}
 
@@ -894,8 +894,8 @@ function PostCard({
 
             <div className="text-[10px] flex items-center gap-2 mt-0.5" style={{ color: 'var(--text3)' }}>
               <span>{post.createdAt ? ago(post.createdAt) : ''}</span>
-              <span>â€¢</span>
-              <span>{post.views ?? 0} lÆ°á»£t xem</span>
+              <span>•</span>
+              <span>{post.views ?? 0} lượt xem</span>
             </div>
           </div>
 
@@ -922,7 +922,7 @@ function PostCard({
               onClick={() => setExpanded(v => !v)}
               className="text-[#534AB7] ml-1.5 font-semibold hover:underline"
             >
-              {expanded ? 'Thu gá»n' : 'Xem thÃªm'}
+              {expanded ? 'Thu gọn' : 'Xem thêm'}
             </button>
           )}
         </div>
@@ -938,7 +938,7 @@ function PostCard({
           >
             <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-bold" style={{ color: 'var(--text)' }}>
               <Sparkles size={13} className="text-emerald-500" />
-              TÃ³m táº¯t bá»Ÿi AI
+              Tóm tắt bởi AI
             </div>
             <div className="text-[12px] leading-relaxed space-y-1 font-medium whitespace-pre-wrap" style={{ color: 'var(--text2)' }}>
               {post.aiSummary}
@@ -1043,8 +1043,8 @@ function PostCard({
 
       <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center justify-between text-[11px] mb-2" style={{ color: 'var(--text3)' }}>
-          <span>{likes} lÆ°á»£t thÃ­ch</span>
-          <span>{cmts} bÃ¬nh luáº­n</span>
+          <span>{likes} lượt thích</span>
+          <span>{cmts} bình luận</span>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -1057,7 +1057,7 @@ function PostCard({
             style={!isLiked ? { color: 'var(--text2)' } : {}}
           >
             <Heart size={14} fill={isLiked ? 'currentColor' : 'none'} />
-            ThÃ­ch
+            Thích
           </button>
 
           <button
@@ -1066,7 +1066,7 @@ function PostCard({
             style={{ color: 'var(--text2)' }}
           >
             <MessageCircle size={14} />
-            BÃ¬nh luáº­n
+            Bình luận
           </button>
 
           <button
@@ -1078,7 +1078,7 @@ function PostCard({
             style={!isSaved ? { color: 'var(--text2)' } : {}}
           >
             <Bookmark size={14} fill={isSaved ? 'currentColor' : 'none'} />
-            {isSaved ? 'ÄÃ£ lÆ°u' : 'LÆ°u'}
+            {isSaved ? 'Đã lưu' : 'Lưu'}
           </button>
         </div>
       </div>
@@ -1103,7 +1103,7 @@ function TrendingSidebar({
       <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
         <TrendingUp size={15} className="text-[#534AB7]" />
         <p className="text-[13px] font-bold" style={{ color: 'var(--text)' }}>
-          Äang thá»‹nh hÃ nh
+          Đang thịnh hành
         </p>
       </div>
 
@@ -1134,7 +1134,7 @@ function TrendingSidebar({
                   style={{ color: 'var(--text3)' }}
                 >
                   <span>{item.authorName}</span>
-                  <span>{item.likesCount ?? item.likedBy?.length ?? 0} thÃ­ch</span>
+                  <span>{item.likesCount ?? item.likedBy?.length ?? 0} thích</span>
                 </div>
               </div>
             </div>
@@ -1153,7 +1153,7 @@ export default function BlogPage() {
   const [trending, setTrending] = useState<Post[]>([])
 
   // Custom Filter State
-  const [activeTag, setActiveTag] = useState('Táº¥t cáº£')
+  const [activeTag, setActiveTag] = useState('Tất cả')
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'feed' | 'latest' | 'saved'>('feed')
@@ -1176,7 +1176,7 @@ export default function BlogPage() {
   const [composeExpanded, setComposeExpanded] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
-  const [newSubject, setNewSubject] = useState('KhÃ¡c')
+  const [newSubject, setNewSubject] = useState('Khác')
   const [tagInput, setTagInput] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [newVideoUrl, setNewVideoUrl] = useState('')
@@ -1209,11 +1209,11 @@ export default function BlogPage() {
 
     for (const file of allowed) {
       if (!file.type.startsWith('image/')) {
-        toast.error('Chá»‰ há»— trá»£ file áº£nh')
+        toast.error('Chỉ hỗ trợ file ảnh')
         continue
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast.error('Má»—i áº£nh tá»‘i Ä‘a 10MB')
+        toast.error('Mỗi ảnh tối đa 10MB')
         continue
       }
 
@@ -1230,7 +1230,7 @@ export default function BlogPage() {
       } catch (e: any) {
         URL.revokeObjectURL(previewUrl)
         setImages(prev => prev.filter(img => img.url !== tmpId))
-        toast.error(e?.response?.data?.message ?? 'Upload áº£nh tháº¥t báº¡i. Vui lÃ²ng thá»­ láº¡i.')
+        toast.error(e?.response?.data?.message ?? 'Upload ảnh thất bại. Vui lòng thử lại.')
       } finally {
         setUploadingImg(false)
       }
@@ -1296,7 +1296,7 @@ export default function BlogPage() {
       return
     }
     if (selectedTags.length >= 8) {
-      toast.error('ÄÃ£ Ä‘áº¡t giá»›i háº¡n 8 tag')
+      toast.error('Đã đạt giới hạn 8 tag')
       return
     }
 
@@ -1324,7 +1324,7 @@ export default function BlogPage() {
 
   const handleAiPrevalidate = async () => {
     if (!newContent.trim()) {
-      toast.error('Nháº­p ná»™i dung trÆ°á»›c khi kiá»ƒm tra')
+      toast.error('Nhập nội dung trước khi kiểm tra')
       return
     }
 
@@ -1335,11 +1335,11 @@ export default function BlogPage() {
     try {
       const subjectForCheck = inferSubjectFromTags(
         selectedTags,
-        activeTag !== 'Táº¥t cáº£' ? activeTag : newSubject || 'KhÃ¡c',
+        activeTag !== 'Tất cả' ? activeTag : newSubject || 'Khác',
       )
 
       const result = await postApi.aiCheck({
-        title: newTitle.trim() || 'KhÃ´ng cÃ³ tiÃªu Ä‘á»',
+        title: newTitle.trim() || 'Không có tiêu đề',
         content: newContent.trim(),
         subject: subjectForCheck,
         tags: selectedTags,
@@ -1352,10 +1352,10 @@ export default function BlogPage() {
       } else if (!result.tagMatch) {
         setAiWarningText(result.message)
       } else {
-        toast.success(result.message || 'Kiá»ƒm duyá»‡t AI: ná»™i dung phÃ¹ há»£p Ä‘á»ƒ Ä‘Äƒng.')
+        toast.success(result.message || 'Kiểm duyệt AI: nội dung phù hợp để đăng.')
       }
     } catch (e: any) {
-      const message = e?.message || 'AI Ä‘ang báº­n, báº¡n váº«n cÃ³ thá»ƒ Ä‘Äƒng bÃ i Ä‘á»ƒ há»‡ thá»‘ng kiá»ƒm duyá»‡t sau'
+      const message = e?.message || 'AI đang bận, bạn vẫn có thể đăng bài để hệ thống kiểm duyệt sau'
       setAiWarningText(message)
       toast.error(message)
     } finally {
@@ -1370,7 +1370,7 @@ export default function BlogPage() {
     try {
       let items: Post[] = []
       let totalPages = 1
-      const apiTag = tag !== 'Táº¥t cáº£' ? tag : undefined
+      const apiTag = tag !== 'Tất cả' ? tag : undefined
 
       if (activeTab === 'saved') {
         const res = await postApi.saved(p)
@@ -1388,8 +1388,8 @@ export default function BlogPage() {
         totalPages = res.totalPages ?? 1
       }
 
-      // Lá»c á»Ÿ frontend Ä‘á»ƒ báº¯t Ä‘Æ°á»£c cáº£ subject vÃ  tag, khÃ´ng bá»‹ lá»—i do backend chá»‰ filter exact tag.
-      if (tag !== 'Táº¥t cáº£') {
+      // Lọc ở frontend để bắt được cả subject và tag, không bị lỗi do backend chỉ filter exact tag.
+      if (tag !== 'Tất cả') {
         items = items.filter(post => postMatchesTag(post, tag))
       }
 
@@ -1478,7 +1478,7 @@ export default function BlogPage() {
       )
       loadTrending()
     } catch {
-      toast.error('Lá»—i khi thÃ­ch bÃ i viáº¿t')
+      toast.error('Lỗi khi thích bài viết')
     }
   }
 
@@ -1496,21 +1496,21 @@ export default function BlogPage() {
           }
         }),
       )
-      toast.success('ÄÃ£ cáº­p nháº­t lÆ°u bÃ i')
+      toast.success('Đã cập nhật lưu bài')
     } catch {
-      toast.error('Lá»—i khi lÆ°u bÃ i')
+      toast.error('Lỗi khi lưu bài')
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a bÃ i viáº¿t nÃ y khÃ´ng?')) return
+    if (!confirm('Bạn có chắc muốn xóa bài viết này không?')) return
     try {
       await postApi.delete(id)
       setPosts(prev => prev.filter(p => p.id !== id))
       setTrending(prev => prev.filter(p => p.id !== id))
-      toast.success('ÄÃ£ xÃ³a bÃ i viáº¿t')
+      toast.success('Đã xóa bài viết')
     } catch {
-      toast.error('KhÃ´ng thá»ƒ xÃ³a bÃ i viáº¿t')
+      toast.error('Không thể xóa bài viết')
     }
   }
 
@@ -1518,9 +1518,9 @@ export default function BlogPage() {
     try {
       await postApi.hide(id)
       setHiddenPostIds(prev => [...prev, id])
-      toast.success('ÄÃ£ áº©n bÃ i viáº¿t')
+      toast.success('Đã ẩn bài viết')
     } catch {
-      toast.error('KhÃ´ng thá»ƒ áº©n bÃ i viáº¿t')
+      toast.error('Không thể ẩn bài viết')
     }
   }
 
@@ -1529,7 +1529,7 @@ export default function BlogPage() {
     setEditingPostId(p.id)
     setNewTitle(p.title)
     setNewContent(p.content)
-    setNewSubject(p.subject || inferSubjectFromTags(p.tags || [], 'KhÃ¡c'))
+    setNewSubject(p.subject || inferSubjectFromTags(p.tags || [], 'Khác'))
     setSelectedTags(p.tags || [])
     setNewVideoUrl(p.videoUrl || '')
     if (p.imageUrls) {
@@ -1541,22 +1541,22 @@ export default function BlogPage() {
 
   const handleCreatePost = async () => {
     if (!newTitle.trim()) {
-      toast.error('Vui lÃ²ng nháº­p tiÃªu Ä‘á» bÃ i viáº¿t')
+      toast.error('Vui lòng nhập tiêu đề bài viết')
       return
     }
     if (!newContent.trim()) {
-      toast.error('Vui lÃ²ng nháº­p ná»™i dung bÃ i viáº¿t')
+      toast.error('Vui lòng nhập nội dung bài viết')
       return
     }
     if (uploadingImg) {
-      toast.error('Vui lÃ²ng chá» áº£nh upload xong')
+      toast.error('Vui lòng chờ ảnh upload xong')
       return
     }
 
     setSubmittingPost(true)
     try {
       const subjectForApi =
-        inferSubjectFromTags(selectedTags, activeTag !== 'Táº¥t cáº£' ? activeTag : newSubject || 'KhÃ¡c')
+        inferSubjectFromTags(selectedTags, activeTag !== 'Tất cả' ? activeTag : newSubject || 'Khác')
 
       const payload = {
         title: newTitle.trim(),
@@ -1575,30 +1575,30 @@ export default function BlogPage() {
       if (editingPostId) {
         const updated = await postApi.update(editingPostId, payload)
         if (updated.moderationStatus === 'PENDING_REVIEW' && hasMedia) {
-          toast.success('BÃ i viáº¿t cÃ³ media cáº§n Ä‘Æ°á»£c kiá»ƒm duyá»‡t trÆ°á»›c khi hiá»ƒn thá»‹.')
+          toast.success('Bài viết có media cần được kiểm duyệt trước khi hiển thị.')
         } else if (updated.moderationStatus === 'REJECTED' || updated.moderationStatus === 'REMOVED') {
-          toast.error(updated.moderationReason || 'BÃ i viáº¿t khÃ´ng Ä‘Æ°á»£c duyá»‡t.')
+          toast.error(updated.moderationReason || 'Bài viết không được duyệt.')
         } else {
-          toast.success('Cáº­p nháº­t bÃ i viáº¿t thÃ nh cÃ´ng!')
+          toast.success('Cập nhật bài viết thành công!')
         }
       } else {
         const created = await postApi.create(payload)
         if (created.moderationStatus === 'PENDING_REVIEW' && hasMedia) {
-          toast.success('BÃ i viáº¿t cÃ³ media cáº§n Ä‘Æ°á»£c kiá»ƒm duyá»‡t trÆ°á»›c khi hiá»ƒn thá»‹.')
+          toast.success('Bài viết có media cần được kiểm duyệt trước khi hiển thị.')
         } else if (created.moderationStatus === 'REJECTED' || created.moderationStatus === 'REMOVED') {
-          toast.error(created.moderationReason || 'BÃ i viáº¿t khÃ´ng Ä‘Æ°á»£c duyá»‡t.')
+          toast.error(created.moderationReason || 'Bài viết không được duyệt.')
         } else if (created.moderationStatus === 'APPROVED' && created.published) {
-          toast.success('ÄÄƒng bÃ i thÃ nh cÃ´ng!')
+          toast.success('Đăng bài thành công!')
         } else if (created.moderationStatus === 'PENDING_REVIEW') {
-          toast.success('BÃ i Ä‘Äƒng Ä‘ang chá» kiá»ƒm duyá»‡t. Hiá»‡n chá»‰ báº¡n nhÃ¬n tháº¥y bÃ i nÃ y.')
+          toast.success('Bài đăng đang chờ kiểm duyệt. Hiện chỉ bạn nhìn thấy bài này.')
         } else {
-          toast.success('ÄÄƒng bÃ i thÃ nh cÃ´ng!')
+          toast.success('Đăng bài thành công!')
         }
       }
 
       setNewTitle('')
       setNewContent('')
-      setNewSubject('KhÃ¡c')
+      setNewSubject('Khác')
       setSelectedTags([])
       setNewVideoUrl('')
       setImages([])
@@ -1608,7 +1608,7 @@ export default function BlogPage() {
       // reload feed
       load(0, activeTag, true)
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || 'CÃ³ lá»—i xáº£y ra khi lÆ°u bÃ i viáº¿t')
+      toast.error(e?.response?.data?.message || 'Có lỗi xảy ra khi lưu bài viết')
     } finally {
       setSubmittingPost(false)
     }
@@ -1617,7 +1617,7 @@ export default function BlogPage() {
   const handleCancelPost = () => {
     setNewTitle('')
     setNewContent('')
-    setNewSubject('KhÃ¡c')
+    setNewSubject('Khác')
     setSelectedTags([])
     setNewVideoUrl('')
     setImages([])
@@ -1629,7 +1629,7 @@ export default function BlogPage() {
 
   const handleCloseModal = () => {
     if (newTitle.trim() || newContent.trim()) {
-      if (!window.confirm('Báº¡n cÃ³ cháº¯c muá»‘n há»§y? CÃ¡c thay Ä‘á»•i sáº½ khÃ´ng Ä‘Æ°á»£c lÆ°u.')) {
+      if (!window.confirm('Bạn có chắc muốn hủy? Các thay đổi sẽ không được lưu.')) {
         return
       }
     }
@@ -1639,10 +1639,10 @@ export default function BlogPage() {
   const handleResubmit = async (id: string) => {
     try {
       await postApi.resubmitPost(id)
-      toast.success('ÄÃ£ gá»­i láº¡i bÃ i viáº¿t! AI Ä‘ang phÃ¢n tÃ­ch láº¡i tags...')
+      toast.success('Đã gửi lại bài viết! AI đang phân tích lại tags...')
       load(0, activeTag, true)
     } catch {
-      toast.error('Lá»—i khi gá»­i láº¡i bÃ i viáº¿t')
+      toast.error('Lỗi khi gửi lại bài viết')
     }
   }
 
@@ -1680,10 +1680,10 @@ export default function BlogPage() {
             <div>
               <h1 className="text-[20px] font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text)' }}>
                 <Sparkles size={20} className="text-[#534AB7]" />
-                BÃ i Ä‘Äƒng há»c táº­p
+                Bài đăng học tập
               </h1>
               <p className="text-[12px] mt-1" style={{ color: 'var(--text2)' }}>
-                Chia sáº» kiáº¿n thá»©c, tÃ i liá»‡u vÃ  kinh nghiá»‡m há»c táº­p cháº¥t lÆ°á»£ng cao cÃ¹ng StudyMate AI.
+                Chia sẻ kiến thức, tài liệu và kinh nghiệm học tập chất lượng cao cùng StudyMate AI.
               </p>
             </div>
 
@@ -1699,7 +1699,7 @@ export default function BlogPage() {
                   autoComplete="off"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="TÃ¬m bÃ i viáº¿t há»c táº­p..."
+                  placeholder="Tìm bài viết học tập..."
                   className="bg-transparent border-none outline-none text-[12px] w-full"
                   style={{ color: 'var(--text)' }}
                 />
@@ -1716,7 +1716,7 @@ export default function BlogPage() {
                 style={{ background: '#534AB7' }}
               >
                 <PenSquare size={14} />
-                Táº¡o bÃ i viáº¿t
+                Tạo bài viết
               </button>
             </div>
           </div>
@@ -1742,10 +1742,10 @@ export default function BlogPage() {
 
                   <div className="flex-1">
                     <h2 className="text-[16px] font-bold" style={{ color: 'var(--text)' }}>
-                      {editingPostId ? 'Sá»­a bÃ i viáº¿t há»c táº­p' : 'Táº¡o bÃ i viáº¿t'}
+                      {editingPostId ? 'Sửa bài viết học tập' : 'Tạo bài viết'}
                     </h2>
                     <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
-                      Chia sáº» kiáº¿n thá»©c, kinh nghiá»‡m há»c táº­p hoáº·c tÃ i liá»‡u há»¯u Ã­ch
+                      Chia sẻ kiến thức, kinh nghiệm học tập hoặc tài liệu hữu ích
                     </p>
                   </div>
 
@@ -1758,9 +1758,9 @@ export default function BlogPage() {
                     {submittingPost ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
                     {submittingPost
                       ? (images.length > 0 || newVideoUrl.trim()
-                          ? 'AI Ä‘ang quÃ©t media...'
-                          : 'Äang Ä‘Äƒng...')
-                      : (editingPostId ? 'Cáº­p nháº­t' : 'ÄÄƒng bÃ i')}
+                          ? 'AI đang quét media...'
+                          : 'Đang đăng...')
+                      : (editingPostId ? 'Cập nhật' : 'Đăng bài')}
                   </button>
                 </div>
 
@@ -1775,7 +1775,7 @@ export default function BlogPage() {
                         {user?.fullName}
                       </p>
                       <p className="text-[10px]" style={{ color: 'var(--text3)' }}>
-                        {wordCount} tá»« Â· ~{readTime} phÃºt Ä‘á»c
+                        {wordCount} từ · ~{readTime} phút đọc
                       </p>
                     </div>
                   </div>
@@ -1784,7 +1784,7 @@ export default function BlogPage() {
                   <input
                     value={newTitle}
                     onChange={e => setNewTitle(e.target.value)}
-                    placeholder="TiÃªu Ä‘á» bÃ i viáº¿t..."
+                    placeholder="Tiêu đề bài viết..."
                     className="w-full bg-transparent text-[22px] font-bold outline-none border-b py-2 focus:border-[#534AB7] transition-colors"
                     style={{ color: 'var(--text)', borderColor: 'var(--border)' }}
                   />
@@ -1794,7 +1794,7 @@ export default function BlogPage() {
                     rows={8}
                     value={newContent}
                     onChange={e => setNewContent(e.target.value.substring(0, 2000))}
-                    placeholder="Báº¡n muá»‘n chia sáº» Ä‘iá»u gÃ¬ hÃ´m nay?"
+                    placeholder="Bạn muốn chia sẻ điều gì hôm nay?"
                     className="w-full bg-transparent outline-none text-[14px] leading-relaxed resize-none"
                     style={{ color: 'var(--text2)' }}
                   />
@@ -1869,7 +1869,7 @@ export default function BlogPage() {
                   >
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="text-[12px] font-semibold" style={{ color: 'var(--text)' }}>
-                        ThÃªm vÃ o bÃ i viáº¿t cá»§a báº¡n
+                        Thêm vào bài viết của bạn
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap">
@@ -1883,7 +1883,7 @@ export default function BlogPage() {
                           style={{ color: 'var(--text2)' }}
                         >
                           <Image size={14} className="text-[#534AB7]" />
-                          áº¢nh
+                          Ảnh
                         </button>
 
                         <button
@@ -1903,12 +1903,12 @@ export default function BlogPage() {
                       {/* Video link input */}
                       <div>
                         <label className="block text-[11px] font-bold mb-1.5" style={{ color: 'var(--text2)' }}>
-                          DÃ¡n link video (YouTube / Drive / TikTok...)
+                          Dán link video (YouTube / Drive / TikTok...)
                         </label>
                         <input
                           value={newVideoUrl}
                           onChange={e => setNewVideoUrl(e.target.value)}
-                          placeholder="DÃ¡n link video táº¡i Ä‘Ã¢y..."
+                          placeholder="Dán link video tại đây..."
                           className="w-full h-10 px-3 rounded-xl border text-[12px] outline-none"
                           style={{ background: 'var(--bg2)', borderColor: 'var(--border)', color: 'var(--text)' }}
                         />
@@ -1917,7 +1917,7 @@ export default function BlogPage() {
                       {/* Tags input & chips */}
                       <div>
                         <label className="block text-[11px] font-bold mb-1.5" style={{ color: 'var(--text2)' }}>
-                          Tags phá»¥ ({selectedTags.length}/8)
+                          Tags phụ ({selectedTags.length}/8)
                         </label>
 
                         {selectedTags.length > 0 && (
@@ -1933,7 +1933,7 @@ export default function BlogPage() {
                                   onClick={() => handleRemoveTag(t)}
                                   className="hover:text-red-400 transition-colors font-bold"
                                 >
-                                  âœ•
+                                  ✕
                                 </button>
                               </span>
                             ))}
@@ -1945,7 +1945,7 @@ export default function BlogPage() {
                           value={tagInput}
                           onChange={e => setTagInput(e.target.value)}
                           onKeyDown={handleTagInputKeyDown}
-                          placeholder={selectedTags.length >= 8 ? 'ÄÃ£ Ä‘áº¡t giá»›i háº¡n. XoÃ¡ bá»›t Ä‘á»ƒ thÃªm má»›i' : 'Nháº­p tag phá»¥ rá»“i nháº¥n Enter...'}
+                          placeholder={selectedTags.length >= 8 ? 'Đã đạt giới hạn. Xoá bớt để thêm mới' : 'Nhập tag phụ rồi nhấn Enter...'}
                           className="w-full h-10 px-3 rounded-xl border text-[12px] outline-none disabled:opacity-40"
                           style={{ background: 'var(--bg2)', borderColor: 'var(--border)', color: 'var(--text)' }}
                         />
@@ -1953,8 +1953,8 @@ export default function BlogPage() {
                         {/* Tag Suggestions list */}
                         <div className="flex flex-wrap gap-1.5 mt-2.5">
                           {[
-                            'ToÃ¡n', 'Tiáº¿ng Anh', 'Láº­p trÃ¬nh', 'Váº­t lÃ½', 'HÃ³a há»c', 'Sinh há»c',
-                            'Ngá»¯ vÄƒn', 'IELTS', 'TOEIC', 'AI/ML', 'Python', 'Java'
+                            'Toán', 'Tiếng Anh', 'Lập trình', 'Vật lý', 'Hóa học', 'Sinh học',
+                            'Ngữ văn', 'IELTS', 'TOEIC', 'AI/ML', 'Python', 'Java'
                           ].filter(t => !selectedTags.some(st => normalizeText(st) === normalizeText(t)))
                             .map(t => (
                               <button
@@ -1991,11 +1991,11 @@ export default function BlogPage() {
                           <p>{aiWarningText || aiCheckResult?.message}</p>
                           {aiCheckResult && (
                             <p className="text-[11px]" style={{ color: 'var(--text2)' }}>
-                              MÃ´n AI phÃ¡t hiá»‡n: <strong>{aiCheckResult.detectedSubject || 'KhÃ¡c'}</strong>
-                              {' Â· '}
-                              Khá»›p tag: {aiCheckResult.tagMatch ? 'CÃ³' : 'KhÃ´ng'}
-                              {' Â· '}
-                              An toÃ n: {aiCheckResult.safetyStatus}
+                              Môn AI phát hiện: <strong>{aiCheckResult.detectedSubject || 'Khác'}</strong>
+                              {' · '}
+                              Khớp tag: {aiCheckResult.tagMatch ? 'Có' : 'Không'}
+                              {' · '}
+                              An toàn: {aiCheckResult.safetyStatus}
                             </p>
                           )}
                           {aiCheckResult?.suggestedTags?.length ? (
@@ -2026,12 +2026,12 @@ export default function BlogPage() {
                               }
                               handleAddTag(detected)
                               setAiWarningText(null)
-                              toast.success(`ÄÃ£ cáº­p nháº­t gá»£i Ã½ mÃ´n/tag: ${detected}`)
+                              toast.success(`Đã cập nhật gợi ý môn/tag: ${detected}`)
                             }}
                             className="px-3 py-1 rounded text-[10px] font-bold text-white"
                             style={{ background: '#534AB7' }}
                           >
-                            Ãp dá»¥ng gá»£i Ã½ AI
+                            Áp dụng gợi ý AI
                           </button>
                           <button
                             type="button"
@@ -2042,7 +2042,7 @@ export default function BlogPage() {
                             className="px-3 py-1 rounded text-[10px] font-bold border"
                             style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
                           >
-                            Giá»¯ nguyÃªn
+                            Giữ nguyên
                           </button>
                         </div>
                       )}
@@ -2060,7 +2060,7 @@ export default function BlogPage() {
                     style={{ color: 'var(--text2)' }}
                   >
                     {aiCheckLoading ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} className="text-emerald-500" />}
-                    AI kiá»ƒm duyá»‡t trÆ°á»›c
+                    AI kiểm duyệt trước
                   </button>
 
                   <div className="flex gap-2">
@@ -2070,7 +2070,7 @@ export default function BlogPage() {
                       className="px-4 py-2 border rounded-xl text-[12px] font-semibold"
                       style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
                     >
-                      Há»§y
+                      Hủy
                     </button>
                     <button
                       type="button"
@@ -2080,7 +2080,7 @@ export default function BlogPage() {
                       style={{ background: '#534AB7' }}
                     >
                       {submittingPost && <Loader2 size={13} className="animate-spin" />}
-                      {editingPostId ? 'Cáº­p nháº­t bÃ i viáº¿t' : 'ÄÄƒng bÃ i viáº¿t'}
+                      {editingPostId ? 'Cập nhật bài viết' : 'Đăng bài viết'}
                     </button>
                   </div>
                 </div>
@@ -2112,7 +2112,7 @@ export default function BlogPage() {
                 className="flex-1 h-11 px-4 rounded-xl flex items-center text-[12px] text-left transition-colors font-medium border"
                 style={{ background: 'var(--bg3)', borderColor: 'transparent', color: 'var(--text3)' }}
               >
-                Báº¡n Ä‘ang muá»‘n chia sáº» Ä‘iá»u gÃ¬?
+                Bạn đang muốn chia sẻ điều gì?
               </button>
 
               <button
@@ -2129,9 +2129,9 @@ export default function BlogPage() {
             {/* Filter Tabs */}
             <div className="flex gap-2 border-b pb-2" style={{ borderColor: "var(--border)" }}>
               {([
-                ['feed', 'DÃ nh cho báº¡n'],
-                ['latest', 'Má»›i nháº¥t'],
-                ['saved', 'ÄÃ£ lÆ°u'],
+                ['feed', 'Dành cho bạn'],
+                ['latest', 'Mới nhất'],
+                ['saved', 'Đã lưu'],
               ] as const).map(([id, label]) => (
                 <button
                   key={id}
@@ -2189,7 +2189,7 @@ export default function BlogPage() {
                 })}
               </div>
 
-              {/* Popover "Táº¥t cáº£ tag" Trigger */}
+              {/* Popover "Tất cả tag" Trigger */}
               <div className="relative flex-shrink-0 pl-2 pr-1" ref={explorerRef}>
                 <button
                   onClick={() => setShowTagExplorer(v => !v)}
@@ -2197,7 +2197,7 @@ export default function BlogPage() {
                   style={{ background: "var(--bg2)", borderColor: "var(--border)", color: "var(--text2)" }}
                 >
                   <Filter size={11} className="text-[#534AB7]" />
-                  Táº¥t cáº£ tag
+                  Tất cả tag
                   <ChevronDown size={11} className={clsx('transition-all', showTagExplorer && 'rotate-180')} />
                 </button>
 
@@ -2215,7 +2215,7 @@ export default function BlogPage() {
                         autoComplete="off"
                         value={tagSearchText}
                         onChange={e => setTagSearchText(e.target.value)}
-                        placeholder="TÃ¬m tag phá»¥ há»c táº­p..."
+                        placeholder="Tìm tag phụ học tập..."
                         className="bg-transparent border-none outline-none text-[11px] w-full"
                         style={{ color: 'var(--text)' }}
                       />
@@ -2225,23 +2225,23 @@ export default function BlogPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="text-[10px] font-bold tracking-wider uppercase" style={{ color: 'var(--text3)' }}>
-                          Gá»£i Ã½ / Phá»• biáº¿n
+                          Gợi ý / Phổ biến
                         </div>
-                        {activeTag !== 'Táº¥t cáº£' && (
+                        {activeTag !== 'Tất cả' && (
                           <button
                             type="button"
                             onClick={() => {
-                              setActiveTag('Táº¥t cáº£')
+                              setActiveTag('Tất cả')
                               setShowTagExplorer(false)
                             }}
                             className="text-[10px] font-semibold text-red-400 hover:text-red-300"
                           >
-                            XÃ³a bá»™ lá»c
+                            Xóa bộ lọc
                           </button>
                         )}
                       </div>
                       {filteredExplorerTags.length === 0 ? (
-                        <div className="text-[10px] py-1" style={{ color: 'var(--text3)' }}>KhÃ´ng tÃ¬m tháº¥y tag nÃ o</div>
+                        <div className="text-[10px] py-1" style={{ color: 'var(--text3)' }}>Không tìm thấy tag nào</div>
                       ) : (
                         <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
                           {filteredExplorerTags.map(tag => (
@@ -2284,17 +2284,17 @@ export default function BlogPage() {
             </div>
 
             {/* Clear Filters bar */}
-            {activeTag !== 'Táº¥t cáº£' && (
+            {activeTag !== 'Tất cả' && (
               <div className="flex items-center justify-between border rounded-xl px-3 py-1.5 text-[11px]" style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-1" style={{ color: 'var(--text3)' }}>
-                  Äang lá»c theo tag:
+                  Đang lọc theo tag:
                   <span className="font-bold text-indigo-400">#{activeTag}</span>
                 </div>
                 <button
-                  onClick={() => setActiveTag('Táº¥t cáº£')}
+                  onClick={() => setActiveTag('Tất cả')}
                   className="font-semibold text-red-400 hover:text-red-300"
                 >
-                  XÃ³a bá»™ lá»c
+                  Xóa bộ lọc
                 </button>
               </div>
             )}
@@ -2304,22 +2304,22 @@ export default function BlogPage() {
           {loading ? (
             <div className="flex flex-col items-center py-20">
               <Loader2 size={24} className="animate-spin text-[#534AB7] mb-3" />
-              <p className="text-[13px] text-zinc-400">Äang táº£i bÃ i viáº¿t...</p>
+              <p className="text-[13px] text-zinc-400">Đang tải bài viết...</p>
             </div>
           ) : visiblePosts.length === 0 ? (
             <div
               className="flex flex-col items-center py-20 border rounded-2xl"
               style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
             >
-              <p className="text-3xl mb-3">ðŸ“</p>
+              <p className="text-3xl mb-3">📝</p>
               <p className="text-[14px] font-semibold mb-1" style={{ color: "var(--text)" }}>
-                {activeTab === 'saved' ? 'Báº¡n chÆ°a lÆ°u bÃ i viáº¿t nÃ o' : 'ChÆ°a cÃ³ bÃ i viáº¿t nÃ o'}
+                {activeTab === 'saved' ? 'Bạn chưa lưu bài viết nào' : 'Chưa có bài viết nào'}
               </p>
               <button
                 onClick={() => setComposeExpanded(true)}
                 className="mt-2 px-4 py-2 bg-[#534AB7] hover:opacity-90 rounded-xl text-[12px] text-white font-bold transition-all"
               >
-                Viáº¿t bÃ i Ä‘áº§u tiÃªn
+                Viết bài đầu tiên
               </button>
             </div>
           ) : (
@@ -2349,7 +2349,7 @@ export default function BlogPage() {
                   style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
                 >
                   {loadMore ? <Loader2 size={13} className="animate-spin text-indigo-400" /> : <ChevronDown size={13} />}
-                  {loadMore ? 'Äang táº£i...' : 'Xem thÃªm'}
+                  {loadMore ? 'Đang tải...' : 'Xem thêm'}
                 </button>
               )}
             </>
@@ -2370,11 +2370,11 @@ export default function BlogPage() {
           >
             <div className="flex items-center gap-2 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
               <Sparkles size={14} className="text-[#534AB7]" />
-              <div className="text-[13px] font-bold" style={{ color: "var(--text)" }}>Tags hay dÃ¹ng nháº¥t</div>
+              <div className="text-[13px] font-bold" style={{ color: "var(--text)" }}>Tags hay dùng nhất</div>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {popularTags.length === 0 ? (
-                <div className="text-[11px]" style={{ color: "var(--text3)" }}>ChÆ°a cÃ³ tag phá»¥ nÃ o</div>
+                <div className="text-[11px]" style={{ color: "var(--text3)" }}>Chưa có tag phụ nào</div>
               ) : (
                 popularTags.map(tag => (
                   <button
