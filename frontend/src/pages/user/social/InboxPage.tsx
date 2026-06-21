@@ -79,6 +79,10 @@ function ini(n: string) {
     .toUpperCase() || 'ND'
 }
 
+function dmPartnerId(conv?: Conversation | null): string {
+  if (!conv) return ''
+  return rid((conv as any).userId ?? (conv as any).user?.id ?? (conv as any).user?._id)
+}
 function nameColor(name: string) {
   return COLORS[(name?.charCodeAt(0) ?? 0) % COLORS.length]
 }
@@ -410,15 +414,15 @@ export default function InboxPage() {
     if (activeTab === 'dm') {
       const targetDmId = paramUserId ?? dmTargetState?.userId
       if (targetDmId) {
-        const dm = dmThreads.find(c => rid(c.userId) === rid(targetDmId)) ?? null
+        const dm = dmThreads.find(c => dmPartnerId(c) === rid(targetDmId)) ?? null
         if (dm) {
           if (
             selectedThread?.threadType !== 'DM' ||
-            rid(selectedThread?.userId) !== rid(dm.userId)
+            dmPartnerId(selectedThread) !== dmPartnerId(dm)
           ) {
             setSelectedThread(dm)
           }
-        } else if (selectedThread?.threadType === 'DM' && rid(selectedThread?.userId) !== rid(targetDmId)) {
+        } else if (selectedThread?.threadType === 'DM' && dmPartnerId(selectedThread) !== rid(targetDmId)) {
           setSelectedThread(null)
         }
         return
@@ -426,24 +430,11 @@ export default function InboxPage() {
 
       const currentDmValid =
         selectedThread?.threadType === 'DM' &&
-        dmThreads.some(c => rid(c.userId) === rid(selectedThread?.userId))
+        dmThreads.some(c => dmPartnerId(c) === dmPartnerId(selectedThread))
 
-      if (!currentDmValid) {
-        if (dmThreads.length > 0) {
-          const first = dmThreads[0]
-          if (rid(activeId) !== rid(first.userId)) {
-            setActiveId(rid(first.userId))
-          }
-          if (
-            selectedThread?.threadType !== 'DM' ||
-            rid(selectedThread?.userId) !== rid(first.userId)
-          ) {
-            setSelectedThread(first)
-          }
-        } else if (selectedThread !== null || activeId) {
-          setSelectedThread(null)
-          setActiveId('')
-        }
+      if (!currentDmValid && selectedThread?.threadType === 'DM') {
+        setSelectedThread(null)
+        setActiveId('')
       }
       return
     }
@@ -470,9 +461,9 @@ export default function InboxPage() {
   }, [paramUserId, activeTab, activeId, dmThreads, groupThreads, selectedThread])
 
   const selectedDmThread = useMemo(() => {
-    if (selectedThread?.threadType === 'DM') return selectedThread
+    if (selectedThread?.threadType === 'DM' && dmPartnerId(selectedThread) === rid(activeId)) return selectedThread
 
-    const existingDm = dmThreads.find(c => rid(c.userId) === activeId) ?? null
+    const existingDm = dmThreads.find(c => dmPartnerId(c) === rid(activeId)) ?? null
     if (existingDm) return existingDm
 
     if (!activeId) return null
@@ -538,7 +529,7 @@ export default function InboxPage() {
 
   const { data: msgRaw, isLoading: loadMsgs, refetch: refetchMsgs } = useQuery({
     queryKey: ['dm-messages', activeId],
-    queryFn: () => dmApi.messages(activeId, 0),
+    queryFn: () => dmApi.messages(rid(activeId), 0),
     enabled: !!activeId && isSelectedDm,
     staleTime: 12_000,
     refetchInterval: 8_000,
@@ -546,7 +537,7 @@ export default function InboxPage() {
 
   const { data: pinnedRaw = [], refetch: refetchPinned } = useQuery({
     queryKey: ['dm-pinned', activeId],
-    queryFn: () => dmApi.pinned(activeId),
+    queryFn: () => dmApi.pinned(rid(activeId)),
     enabled: !!activeId && isSelectedDm,
     staleTime: 12_000,
     refetchInterval: 10_000,
@@ -632,7 +623,7 @@ export default function InboxPage() {
     qc.setQueryData(['dm-conversations'], (old: any) => {
       if (!Array.isArray(old)) return old
       return old.map((item: any) =>
-        rid(item?.userId) === rid(activeId)
+        dmPartnerId(item as Conversation) === rid(activeId)
           ? { ...item, unreadCount: 0 }
           : item
       )
@@ -692,9 +683,9 @@ export default function InboxPage() {
 
     if (dmThreads.length > 0) {
       const first = dmThreads[0]
-      if (rid(selectedThread?.userId) !== rid(first.userId)) setSelectedThread(first)
-      if (rid(activeId) !== rid(first.userId)) setActiveId(rid(first.userId))
-      navigate(`/inbox/${rid(first.userId)}`, { replace: true })
+      if (dmPartnerId(selectedThread) !== dmPartnerId(first)) setSelectedThread(first)
+      if (rid(activeId) !== dmPartnerId(first)) setActiveId(dmPartnerId(first))
+      navigate(`/inbox/${dmPartnerId(first)}`, { replace: true })
     } else {
       setSelectedThread(null)
       setActiveId('')
@@ -726,7 +717,7 @@ export default function InboxPage() {
         prev?.threadType === conv.threadType &&
         (
           (conv.threadType === 'GROUP' && rid(prev.groupId) === rid(conv.groupId)) ||
-          (conv.threadType === 'DM' && rid(prev.userId) === rid(conv.userId))
+          (conv.threadType === 'DM' && dmPartnerId(prev) === dmPartnerId(conv))
         )
       ) {
         return prev
@@ -753,7 +744,7 @@ export default function InboxPage() {
       setGroupSideOpen(false)
       navigate('/inbox', { replace: true })
     } else {
-      const uid = rid(conv.userId)
+      const uid = dmPartnerId(conv)
       setActiveTab('dm')
       setActiveId(uid)
       setGroupInput('')
@@ -1226,15 +1217,15 @@ export default function InboxPage() {
           ) : (
             visibleThreads.map((conv: Conversation, index: number) => {
               const isGroup = (conv as any).threadType === 'GROUP'
-              const key = isGroup ? `g-${(conv as any).groupId ?? index}` : `u-${(conv as any).userId ?? index}`
-              const uid = rid((conv as any).userId)
+              const key = isGroup ? `g-${(conv as any).groupId ?? index}` : `u-${dmPartnerId(conv) || index}`
+              const uid = dmPartnerId(conv)
               const title = (conv as any).title ?? (conv as any).user?.fullName ?? (conv as any).groupName ?? 'Cuộc trò chuyện'
               const color = (conv as any).groupColor || nameColor(title)
               const isAct =
                 (selectedThread as any)?.threadType === (conv as any).threadType &&
                 (
                   (isGroup && rid((selectedThread as any)?.groupId) === rid((conv as any).groupId)) ||
-                  (!isGroup && rid((selectedThread as any)?.userId) === uid)
+                  (!isGroup && dmPartnerId(selectedThread) === uid)
                 )
 
               const lm = (conv as any).lastMessage as any
