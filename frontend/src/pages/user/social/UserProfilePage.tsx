@@ -109,16 +109,16 @@ function Stars({ level }: { level: number }) {
 function StatCard({ icon: Icon, label, value, color }: any) {
   return (
     <div
-      className="rounded-xl p-4 text-center border"
+      className="rounded-xl border p-3 text-center sm:p-4"
       style={{ background: 'var(--bg3)', borderColor: 'var(--border)' }}
     >
       <div
-        className="w-8 h-8 rounded-xl flex items-center justify-center mx-auto mb-2"
+        className="mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-xl sm:mb-2"
         style={{ background: color + '18' }}
       >
         <Icon size={14} style={{ color }} />
       </div>
-      <div className="text-[20px] font-bold font-mono" style={{ color: 'var(--text)' }}>
+      <div className="font-mono text-[17px] font-bold sm:text-[20px]" style={{ color: 'var(--text)' }}>
         {value}
       </div>
       <div className="text-[10px] mt-0.5" style={{ color: 'var(--text3)' }}>
@@ -360,7 +360,7 @@ export default function UserProfilePage() {
         <AlertCircle size={40} className="mb-4" style={{ color: 'var(--bg4)' }} />
         <p className="text-[15px] font-semibold mb-2" style={{ color: 'var(--text)' }}>Không tìm thấy người dùng</p>
         <p className="text-[13px] mb-5" style={{ color: 'var(--text3)' }}>Tài khoản này không tồn tại hoặc đã bị xóa</p>
-        <button
+        <button type="button"
           onClick={() => navigate(-1)}
           className="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-[13px] text-white font-medium transition-colors"
         >
@@ -392,8 +392,8 @@ export default function UserProfilePage() {
           >
             <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
               <p className="text-[14px] font-semibold" style={{ color: 'var(--text)' }}>Chỉnh vị trí ảnh bìa</p>
-              <button
-                onClick={() => {
+              <button type="button"
+                aria-label="Đóng trình chỉnh ảnh bìa" onClick={() => {
                   URL.revokeObjectURL(coverModal.previewUrl)
                   setCoverModal(null)
                 }}
@@ -407,7 +407,7 @@ export default function UserProfilePage() {
             <div className="h-44 overflow-hidden relative">
               <img
                 src={coverModal.previewUrl}
-                alt="preview"
+                alt="Xem trước ảnh bìa"
                 className="w-full h-full object-cover transition-all"
                 style={{ objectPosition: `center ${coverPos}%` }}
               />
@@ -419,8 +419,7 @@ export default function UserProfilePage() {
                 <span className="text-indigo-400 font-medium">Kéo để chỉnh vị trí</span>
                 <span>Dưới</span>
               </div>
-              <input
-                type="range"
+              <input id="profile-cover-position" name="profileCoverPosition" aria-label="Vị trí ảnh bìa" type="range"
                 min="0"
                 max="100"
                 value={coverPos}
@@ -430,8 +429,8 @@ export default function UserProfilePage() {
             </div>
 
             <div className="px-5 pb-4 flex gap-2 justify-end">
-              <button
-                onClick={() => {
+              <button type="button"
+                aria-label="Hủy chỉnh ảnh bìa" onClick={() => {
                   URL.revokeObjectURL(coverModal.previewUrl)
                   setCoverModal(null)
                 }}
@@ -440,7 +439,7 @@ export default function UserProfilePage() {
               >
                 Hủy
               </button>
-              <button
+              <button type="button"
                 onClick={confirmCoverUpload}
                 disabled={uploadingCover}
                 className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-60 text-[12px] font-semibold text-white transition-colors"
@@ -473,8 +472,8 @@ export default function UserProfilePage() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setBadgeModal(null)}
+              <button type="button"
+                aria-label="Đóng chi tiết huy hiệu" onClick={() => setBadgeModal(null)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
                 style={{ color: 'var(--text3)' }}
               >
@@ -485,22 +484,22 @@ export default function UserProfilePage() {
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto space-y-5">
+      <div className="mx-auto w-full max-w-5xl space-y-4 overflow-x-hidden pb-24 sm:space-y-5 lg:pb-6">
         <div
-          className="border rounded-2xl overflow-hidden"
+          className="overflow-hidden rounded-2xl border"
           style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
         >
-          <div className="h-40 relative group">
+          <div className="group relative h-32 sm:h-40">
             {coverUrl ? (
               <img
                 src={coverUrl}
-                alt="cover"
-                className="w-full h-full object-cover"
+                alt={`Ảnh bìa của ${displayUser.fullName}`}
+                className="h-full w-full object-cover"
                 style={{ objectPosition: `center ${coverPos}%` }}
               />
             ) : (
               <div
-                className="w-full h-full"
+                className="h-full w-full"
                 style={{
                   background: `linear-gradient(135deg,${color}50,${COLORS[(COLORS.indexOf(color) + 3) % COLORS.length]}30,var(--bg3))`,
                 }}
@@ -508,26 +507,26 @@ export default function UserProfilePage() {
             )}
 
             {isMyProfile && (
-              <label className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm text-[11px] font-medium text-white cursor-pointer hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100">
+              <label className="absolute bottom-3 right-3 flex cursor-pointer items-center gap-1.5 rounded-lg bg-black/55 px-3 py-1.5 text-[11px] font-medium text-white opacity-100 backdrop-blur-sm transition-all hover:bg-black/70 sm:opacity-0 sm:group-hover:opacity-100">
                 <Camera size={12} /> Đổi ảnh bìa
-                <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
+                <input id="profile-cover-upload" name="profileCoverUpload" type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
               </label>
             )}
           </div>
 
-          <div className="px-6 pb-5">
-            <div className="flex items-center gap-4 -mt-8 mb-4">
-              <div className="relative flex-shrink-0 group/av">
+          <div className="px-4 pb-5 sm:px-6">
+            <div className="-mt-10 flex flex-col gap-3 sm:-mt-8 sm:flex-row sm:items-end sm:gap-4">
+              <div className="group/av relative w-fit flex-shrink-0">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
-                    alt={displayUser.fullName}
-                    className="w-16 h-16 rounded-2xl object-cover ring-4"
+                    alt={`Ảnh đại diện của ${displayUser.fullName}`}
+                    className="h-20 w-20 rounded-full object-cover sm:h-24 sm:w-24"
                     style={{ boxShadow: `0 0 0 4px var(--bg2)` }}
                   />
                 ) : (
                   <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-[20px] font-bold text-white ring-4"
+                    className="flex h-20 w-20 items-center justify-center rounded-full text-[22px] font-bold text-white sm:h-24 sm:w-24 sm:text-[26px]"
                     style={{
                       background: `linear-gradient(135deg,${color},${COLORS[(COLORS.indexOf(color) + 1) % COLORS.length]})`,
                       boxShadow: `0 0 0 4px var(--bg2)`,
@@ -537,146 +536,101 @@ export default function UserProfilePage() {
                   </div>
                 )}
 
-                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2" style={{ borderColor: 'var(--bg2)' }} />
+                <div className="absolute bottom-0 right-0 h-5 w-5 rounded-full border-2 bg-green-500" style={{ borderColor: 'var(--bg2)' }} />
 
                 {isMyProfile && (
-                  <label className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center cursor-pointer opacity-0 group-hover/av:opacity-100 transition-all">
-                    {uploadingAvatar ? (
-                      <Loader2 size={16} className="animate-spin text-white" />
-                    ) : (
-                      <Camera size={16} className="text-white" />
-                    )}
-                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                  <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-all group-hover/av:opacity-100">
+                    {uploadingAvatar ? <Loader2 size={18} className="animate-spin text-white" /> : <Camera size={18} className="text-white" />}
+                    <input id="profile-avatar-upload" name="profileAvatarUpload" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                   </label>
                 )}
               </div>
 
-              <div className="flex-1 min-w-0 flex items-center justify-between gap-3 mt-8">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-[19px] font-bold truncate" style={{ color: 'var(--text)' }}>{displayUser.fullName}</h1>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                      {formatUserType(displayUser.userType)}
-                    </span>
-                  </div>
-
-                  <p className="text-[12px] mt-1" style={{ color: 'var(--text2)' }}>
-                    {displayUser.bio || 'Thành viên StudyMate AI'}
-                  </p>
+              <div className="min-w-0 flex-1 sm:pb-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <h1 className="max-w-full break-words text-xl font-bold leading-tight sm:text-2xl" style={{ color: 'var(--text)' }}>
+                    {displayUser.fullName}
+                  </h1>
+                  <span className="flex-shrink-0 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-1 text-[10px] font-medium text-indigo-300">
+                    {formatUserType(displayUser.userType)}
+                  </span>
                 </div>
+                <p className="mt-2 line-clamp-3 max-w-2xl text-[13px] leading-5" style={{ color: 'var(--text2)' }}>
+                  {displayUser.bio || 'Thành viên StudyMate AI'}
+                </p>
+              </div>
 
-                <div className="flex gap-2 flex-shrink-0">
-                  {isMyProfile ? (
+              <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:flex-shrink-0 sm:pb-1">
+                {isMyProfile ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/profile/edit')}
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-4 text-[12px] font-semibold text-white transition-colors hover:bg-indigo-400 sm:h-10 sm:w-auto sm:rounded-xl"
+                  >
+                    <Edit2 size={14} /> Chỉnh sửa hồ sơ
+                  </button>
+                ) : (
+                  <>
                     <button
-                      onClick={() => navigate('/profile/edit')}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-[12px] font-medium text-white transition-colors"
+                      type="button"
+                      onClick={() => navigate(`/inbox/${userId}`, { state: { dmTarget: { userId: String(userId), fullName: displayUser.fullName, avatar: displayUser.avatar } } })}
+                      className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-500 px-4 text-[12px] font-semibold text-white transition-colors hover:bg-indigo-400 sm:flex-none"
                     >
-                      <Edit2 size={13} /> Chỉnh sửa hồ sơ
+                      <MessageCircle size={13} /> Nhắn tin
                     </button>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => navigate(`/inbox/${userId}`, { state: { dmTarget: { userId: String(userId), fullName: displayUser.fullName, avatar: displayUser.avatar } } })}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-[12px] font-semibold text-white transition-colors"
-                      >
-                        <MessageCircle size={13} /> Nhắn tin
-                      </button>
 
-                      {friendStatus === 'PENDING' && friendDirection === 'INCOMING' ? (
-                        <>
-                          <button
-                            onClick={handleAcceptFriend}
-                            disabled={friendActionLoading}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-medium bg-indigo-500 hover:bg-indigo-400 text-white transition-colors disabled:opacity-60"
-                          >
-                            {friendActionLoading ? <Loader2 size={13} className="animate-spin" /> : <UserCheck size={13} />}
-                            Chấp nhận
-                          </button>
-                          <button
-                            onClick={handleRejectFriend}
-                            disabled={friendActionLoading}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-medium border transition-colors disabled:opacity-60"
-                            style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
-                          >
-                            <X size={13} />
-                            Từ chối
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={
-                            friendStatus === 'NONE'
-                              ? handleAddFriend
-                              : friendStatus === 'PENDING' && friendDirection === 'OUTGOING'
-                                ? handleCancelFriendRequest
-                                : undefined
-                          }
-                          disabled={friendActionLoading}
-                          className={clsx(
-                            'flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-medium transition-colors border disabled:opacity-60',
-                            {
-                              'border-indigo-500/40 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20':
-                                friendStatus === 'NONE',
-                              'hover:border-red-500/40 hover:text-red-400':
-                                friendStatus === 'PENDING' && friendDirection === 'OUTGOING',
-                              'border-green-500/30 text-green-400 cursor-default':
-                                friendStatus === 'ACCEPTED',
-                            },
-                          )}
-                          style={friendStatus === 'PENDING' ? { borderColor: 'var(--border)', color: 'var(--text2)' } : {}}
-                        >
-                          {friendStatus === 'NONE' && (
-                            <>
-                              {friendActionLoading ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />}
-                              Kết bạn
-                            </>
-                          )}
-                          {friendStatus === 'PENDING' && (
-                            <>
-                              {friendActionLoading ? <Loader2 size={13} className="animate-spin" /> : <Clock size={13} />}
-                              Hủy lời mời
-                            </>
-                          )}
-                          {friendStatus === 'ACCEPTED' && (
-                            <>
-                              <UserCheck size={13} />
-                              Bạn bè
-                            </>
-                          )}
+                    {friendStatus === 'PENDING' && friendDirection === 'INCOMING' ? (
+                      <>
+                        <button type="button" onClick={handleAcceptFriend} disabled={friendActionLoading} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-500 px-4 text-[12px] font-medium text-white transition-colors hover:bg-indigo-400 disabled:opacity-60 sm:flex-none">
+                          {friendActionLoading ? <Loader2 size={13} className="animate-spin" /> : <UserCheck size={13} />} Chấp nhận
                         </button>
-                      )}
-                    </>
-                  )}
-                </div>
+                        <button type="button" onClick={handleRejectFriend} disabled={friendActionLoading} className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 text-[12px] font-medium transition-colors disabled:opacity-60 sm:flex-none" style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}>
+                          <X size={13} /> Từ chối
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={friendStatus === 'NONE' ? handleAddFriend : friendStatus === 'PENDING' && friendDirection === 'OUTGOING' ? handleCancelFriendRequest : undefined}
+                        disabled={friendActionLoading}
+                        className={clsx('flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border px-4 text-[12px] font-medium transition-colors disabled:opacity-60 sm:flex-none', {
+                          'border-indigo-500/40 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20': friendStatus === 'NONE',
+                          'hover:border-red-500/40 hover:text-red-400': friendStatus === 'PENDING' && friendDirection === 'OUTGOING',
+                          'cursor-default border-green-500/30 text-green-400': friendStatus === 'ACCEPTED',
+                        })}
+                        style={friendStatus === 'PENDING' ? { borderColor: 'var(--border)', color: 'var(--text2)' } : {}}
+                      >
+                        {friendStatus === 'NONE' && <>{friendActionLoading ? <Loader2 size={13} className="animate-spin" /> : <UserPlus size={13} />} Kết bạn</>}
+                        {friendStatus === 'PENDING' && <>{friendActionLoading ? <Loader2 size={13} className="animate-spin" /> : <Clock size={13} />} Hủy lời mời</>}
+                        {friendStatus === 'ACCEPTED' && <><UserCheck size={13} /> Bạn bè</>}
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 text-[12px]" style={{ color: 'var(--text2)' }}>
-              <span className="flex items-center gap-1.5">
-                <MapPin size={12} className="text-indigo-400" />
-                {displayUser.location || displayUser.school || 'Chưa cập nhật'}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Calendar size={12} className="text-indigo-400" />
-                Tham gia {joinDate}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <BookOpen size={12} className="text-indigo-400" />
-                {posts.length} bài viết
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Zap size={12} className="text-amber-400" />
-                {(displayUser.xp ?? 0).toLocaleString()} XP
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Flame size={12} className="text-orange-400" />
-                {displayUser.streak ?? 0} ngày streak
-              </span>
+            <div className="mt-5 grid grid-cols-2 gap-2.5 text-[12px] sm:flex sm:flex-wrap sm:gap-3" style={{ color: 'var(--text2)' }}>
+              <div className="flex min-w-0 items-center gap-2 rounded-xl border p-2.5 sm:border-0 sm:p-0" style={{ borderColor: 'var(--border)' }}>
+                <MapPin size={13} className="flex-shrink-0 text-indigo-400" /><span className="min-w-0 truncate">{displayUser.location || displayUser.school || 'Chưa cập nhật'}</span>
+              </div>
+              <div className="col-span-2 flex min-w-0 items-center gap-2 rounded-xl border p-2.5 sm:col-span-1 sm:border-0 sm:p-0" style={{ borderColor: 'var(--border)' }}>
+                <Calendar size={13} className="flex-shrink-0 text-indigo-400" /><span>Tham gia {joinDate}</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border p-2.5 sm:border-0 sm:p-0" style={{ borderColor: 'var(--border)' }}>
+                <BookOpen size={13} className="text-indigo-400" /><span>{posts.length} bài viết</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border p-2.5 sm:border-0 sm:p-0" style={{ borderColor: 'var(--border)' }}>
+                <Zap size={13} className="text-amber-400" /><span>{(displayUser.xp ?? 0).toLocaleString()} XP</span>
+              </div>
+              <div className="flex items-center gap-2 rounded-xl border p-2.5 sm:border-0 sm:p-0" style={{ borderColor: 'var(--border)' }}>
+                <Flame size={13} className="text-orange-400" /><span>{displayUser.streak ?? 0} ngày streak</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
           <div className="space-y-4">
             <div
               className="border rounded-xl p-4"
@@ -801,7 +755,7 @@ export default function UserProfilePage() {
               )}
 
               {isMyProfile && (
-                <button
+                <button type="button"
                   onClick={() => navigate('/profile/edit')}
                   className="mt-3 w-full py-2 rounded-lg border text-[11px] transition-colors"
                   style={{ borderColor: 'var(--border)', color: 'var(--text2)' }}
@@ -818,16 +772,16 @@ export default function UserProfilePage() {
               >
                 <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--text)' }}>🏅 Huy hiệu</p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                   {achievements.map((a, i) => (
-                    <button
+                    <button type="button"
                       key={i}
                       onClick={() => setBadgeModal(a)}
-                      className="flex flex-col items-center gap-1 p-2 rounded-xl hover:scale-[1.03] transition-all"
+                      className="flex min-h-[92px] flex-col items-center justify-center gap-1.5 rounded-xl p-2.5 transition-all hover:scale-[1.03]"
                       style={{ background: a.color + '10', border: `0.5px solid ${a.color}25` }}
                     >
-                      <span className="text-[18px]">{a.icon}</span>
-                      <span className="text-[9px] font-medium text-center leading-tight" style={{ color: a.color }}>
+                      <span className="text-[22px]">{a.icon}</span>
+                      <span className="line-clamp-1 text-center text-[10px] font-medium leading-tight" style={{ color: a.color }}>
                         {a.label}
                       </span>
                     </button>
@@ -844,7 +798,7 @@ export default function UserProfilePage() {
                 <p className="text-[12px] font-semibold mb-3" style={{ color: 'var(--text)' }}>👥 Nhóm tham gia</p>
                 <div className="space-y-2">
                   {groups.slice(0, 4).map((g: any) => (
-                    <button
+                    <button type="button"
                       key={g.id ?? g._id}
                       onClick={() => navigate(`/groups/${g.id ?? g._id}`)}
                       className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/[.04] transition-colors text-left"
@@ -869,7 +823,7 @@ export default function UserProfilePage() {
             )}
           </div>
 
-          <div className="col-span-2 space-y-4">
+          <div className="space-y-4 lg:col-span-2">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatCard icon={BookOpen} label="Bài viết" value={posts.length} color="#6366f1" />
               <StatCard
@@ -892,7 +846,7 @@ export default function UserProfilePage() {
                   ['groups', 'Nhóm học', Users],
                   ['stats', 'Thống kê', BarChart2],
                 ] as const).map(([t, l, I]) => (
-                  <button
+                  <button type="button"
                     key={t}
                     onClick={() => setActiveTab(t)}
                     className={clsx(
@@ -919,7 +873,7 @@ export default function UserProfilePage() {
                           {isMyProfile ? 'Bạn chưa viết bài nào' : `${displayUser.fullName} chưa có bài viết nào`}
                         </p>
                         {isMyProfile && (
-                          <button
+                          <button type="button"
                             onClick={() => navigate('/blog/create')}
                             className="mt-3 px-4 py-2 bg-indigo-500 hover:bg-indigo-400 rounded-lg text-[12px] text-white transition-colors"
                           >
@@ -935,7 +889,7 @@ export default function UserProfilePage() {
                         const shouldCollapse = contentText.length > 180 || contentText.includes('\n')
 
                         return (
-                          <button
+                          <button type="button"
                             key={postId}
                             onClick={() => navigate(`/blog/${postId}`)}
                             className="w-full p-4 rounded-xl border hover:bg-white/[.03] transition-all text-left"
@@ -971,7 +925,7 @@ export default function UserProfilePage() {
                             </div>
 
                             {shouldCollapse && (
-                              <button
+                              <button type="button"
                                 onClick={(e) => togglePostExpand(postId, e)}
                                 className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
                               >
@@ -1020,7 +974,7 @@ export default function UserProfilePage() {
                           {isMyProfile ? 'Chưa tham gia nhóm nào' : 'Không xem được nhóm của người khác'}
                         </p>
                         {isMyProfile && (
-                          <button
+                          <button type="button"
                             onClick={() => navigate('/groups')}
                             className="mt-3 px-4 py-2 bg-indigo-500 hover:bg-indigo-400 rounded-lg text-[12px] text-white transition-colors"
                           >
@@ -1030,7 +984,7 @@ export default function UserProfilePage() {
                       </div>
                     ) : (
                       groups.map((g: any) => (
-                        <button
+                        <button type="button"
                           key={g.id ?? g._id}
                           onClick={() => navigate(`/groups/${g.id ?? g._id}`)}
                           className="p-4 rounded-xl border text-left transition-all hover:-translate-y-0.5"
