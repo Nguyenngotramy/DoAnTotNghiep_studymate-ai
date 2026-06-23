@@ -166,6 +166,10 @@ export const onRequest = async (context: {
   )
   const backendOrigin = context.env.BACKEND_ORIGIN?.replace(/\/+$/, '')
 
+  if (path === 'chat' && isVagueFlashcardChat(requestBody)) {
+    return vagueFlashcardResponse(accountId)
+  }
+
   if (action) {
     if (!backendOrigin?.startsWith('https://')) {
       return jsonError(503, 'AI_WALLET_UNAVAILABLE', 'Chưa kết nối được ví AI. Vui lòng thử lại sau.')
