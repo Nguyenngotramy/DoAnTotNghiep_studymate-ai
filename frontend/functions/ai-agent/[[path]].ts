@@ -73,6 +73,39 @@ const verifyAccessToken = async (
   }
 }
 
+
+const normalizeVietnamese = (value: string): string => value
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/đ/g, 'd')
+  .replace(/\s+/g, ' ')
+  .trim()
+
+const isVagueFlashcardChat = (body: Record<string, unknown>): boolean => {
+  const text = typeof body.text === 'string' ? normalizeVietnamese(body.text) : ''
+  if (!text || !/\b(flashcards?|flash cards?|the ghi nho|the hoc|on tu)\b/.test(text)) return false
+  if (/\b(toan|vat ly|hoa hoc|sinh hoc|ngu van|lich su|dia ly|tieng anh|tieng han|tieng nhat|tieng trung|lap trinh|python|java|javascript|sql|dao ham|tich phan|ham so|phuong trinh|hinh hoc|xac suat|kinh te|marketing|phap luat|triet hoc|tam ly hoc|mang may tinh|co so du lieu|ai|machine learning)\b/.test(text)) return false
+  const meaningful = text
+    .replace(/\b(toi|minh|em|anh|chi|muon|can|hay|giup|tao|lam|cho|xin|flashcards?|flash|cards?|the|ghi|nho|hoc|on|tap|tong|hop|kien|thuc|noi|dung|chu|de|ve|cac|nhung|mot|vai|bo|bai|mon)\b/g, ' ')
+    .replace(/\b\d{1,2}\b/g, ' ')
+    .trim()
+  return meaningful.split(/\s+/).filter(token => token.length > 1).length === 0
+}
+
+const vagueFlashcardResponse = (accountId: string): Response => Response.json({
+  session_id: crypto.randomUUID(),
+  response: 'Nếu bạn không nhập số lượng, mình sẽ mặc định tạo 5 flashcard. Nhưng mình cần thêm chủ đề/môn học để tạo đúng nội dung, ví dụ: Tạo flashcard tổng hợp kiến thức về đạo hàm, lịch sử Việt Nam, hoặc từ vựng tiếng Anh A2.',
+  agent: 'FlashcardAgent',
+  route: 'flashcard',
+  structured: null,
+  sources: [],
+  classification: null,
+  error: null,
+  scope_blocked: false,
+  ai_config: { mode: 'not_used' },
+  account_id: accountId,
+})
 const readJsonBody = async (request: Request): Promise<Record<string, unknown>> => {
   if (request.method === 'GET' || request.method === 'HEAD') return {}
   const contentType = request.headers.get('content-type') || ''
@@ -137,13 +170,18 @@ export const onRequest = async (context: {
     if (!backendOrigin?.startsWith('https://')) {
       return jsonError(503, 'AI_WALLET_UNAVAILABLE', 'Chưa kết nối được ví AI. Vui lòng thử lại sau.')
     }
-    const creditCheck = await callCreditEndpoint(
-      backendOrigin,
-      'check',
-      authorization,
-      action,
-      personalApiKey,
-    )
+    let creditCheck: Response
+    try {
+      creditCheck = await callCreditEndpoint(
+        backendOrigin,
+        'check',
+        authorization,
+        action,
+        personalApiKey,
+      )
+    } catch {
+      return jsonError(503, 'AI_WALLET_UNAVAILABLE', 'Ví AI tạm thời không phản hồi. Vui lòng thử lại sau.')
+    }
     if (!creditCheck.ok) {
       return new Response(creditCheck.body, {
         status: creditCheck.status,
@@ -172,20 +210,33 @@ export const onRequest = async (context: {
     })
   }
 
-  const aiResponse = await fetch(targetUrl, forwardedRequest)
+  let aiResponse: Response
+  try {
+    aiResponse = await fetch(targetUrl, forwardedRequest)
+  } catch {
+    return jsonError(502, 'AI_AGENT_UNAVAILABLE', 'AI service tạm thời không phản hồi. Vui lòng thử lại sau.')
+  }
 
   if (action && aiResponse.ok) {
     const responsePayload = await aiResponse.clone().json().catch(() => null) as {
       error?: unknown
     } | null
-    if (!responsePayload?.error) {
-      const consumed = await callCreditEndpoint(
-        backendOrigin,
-        'consume',
-        authorization,
-        action,
-        personalApiKey,
-      )
+    const shouldConsume = !responsePayload?.error
+      && !responsePayload?.scope_blocked
+      && responsePayload?.ai_config?.mode !== 'not_used'
+    if (shouldConsume) {
+      let consumed: Response
+      try {
+        consumed = await callCreditEndpoint(
+          backendOrigin,
+          'consume',
+          authorization,
+          action,
+          personalApiKey,
+        )
+      } catch {
+        return jsonError(503, 'AI_WALLET_UNAVAILABLE', 'AI đã phản hồi nhưng ví AI tạm thời không ghi nhận được token. Vui lòng thử lại sau.')
+      }
       if (!consumed.ok) {
         return jsonError(
           409,
