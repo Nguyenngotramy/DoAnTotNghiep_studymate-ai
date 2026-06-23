@@ -1122,7 +1122,7 @@ function ChatDocModal({
   onChangeInput: (v: string) => void
   onSend: () => void
   onClose: () => void
-  onSaveStructured: (msg: DocChatMessage) => void
+  onSaveStructured: (msg: DocChatMessage) => Promise<void> | void
 }) {
   return (
     <div className="fixed inset-0 bg-black/65 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -1181,7 +1181,7 @@ function ChatDocModal({
               </div>
               {m.structured && !m.autoSaved && (
                 <button
-                  onClick={() => onSaveStructured(m)}
+                  onClick={() => { void onSaveStructured(m) }}
                   className="block mt-1.5 text-[11px] px-2 py-1 rounded-lg"
                   style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}
                 >
@@ -1626,25 +1626,12 @@ export default function DocsPage() {
     try {
       const data = await backendChat(chatDoc, question, groupSubject, docTopic, chatSessionId)
       if (data.session_id) setChatSessionId(data.session_id)
-      let autoSaved = false
-      if (data.structured) {
-        try {
-          autoSaved = await saveChatStructured({
-            role: 'assistant',
-            text: data.response,
-            agent: data.agent,
-            structured: data.structured,
-          })
-        } catch {
-          autoSaved = false
-        }
-      }
       setChatMessages(prev => [...prev, {
         role: 'assistant',
         text: data.response,
         agent: data.agent,
         structured: data.structured,
-        autoSaved,
+        autoSaved: false,
       }])
     } catch (e: unknown) {
       toast.error(parseApiError(e))
@@ -1655,6 +1642,7 @@ export default function DocsPage() {
 
   const saveChatStructured = async (msg: DocChatMessage): Promise<boolean> => {
     if (!chatDoc || !msg.structured) return false
+    const baseName = chatDoc.topicLabel?.trim() || chatDoc.name
     if (msg.structured.type === 'quiz') {
       const questions = msg.structured.items.map((item: Record<string, unknown>) => ({
         question: String(item.question ?? ''),
@@ -1662,9 +1650,12 @@ export default function DocsPage() {
         correctIndex: Number(item.correct_index ?? item.correctIndex ?? 0),
         explanation: String(item.explanation ?? ''),
       }))
+      const suggestedTitle = `Quiz - ${baseName} (${questions.length} cau)`
+      const title = window.prompt('Nhap ten bo quiz', suggestedTitle)?.trim()
+      if (!title) return false
       await saveQuizMut.mutateAsync({
         docId: chatDoc.id,
-        title: `Quiz chat - ${chatDoc.name}`,
+        title,
         questions,
       })
     } else if (msg.structured.type === 'flashcard') {
@@ -1672,13 +1663,22 @@ export default function DocsPage() {
         question: String(item.front ?? item.question ?? ''),
         answer: String(item.back ?? item.answer ?? ''),
       }))
+      const suggestedTitle = `Flashcard - ${baseName} (${cards.length} the)`
+      const title = window.prompt('Nhap ten bo flashcard', suggestedTitle)?.trim()
+      if (!title) return false
       await saveFlashcardMut.mutateAsync({
         docId: chatDoc.id,
-        title: `Flashcard chat - ${chatDoc.name}`,
+        title,
         cards,
       })
     }
     return true
+  }
+
+  const handleSaveChatStructured = async (msg: DocChatMessage) => {
+    const saved = await saveChatStructured(msg)
+    if (!saved) return
+    setChatMessages(prev => prev.map(item => item === msg ? { ...item, autoSaved: true } : item))
   }
 
   // ── Render ───────────────────────────────────────────────────
@@ -1882,7 +1882,7 @@ export default function DocsPage() {
           onChangeInput={setChatInput}
           onSend={sendChatQuestion}
           onClose={() => { setChatDoc(null); setChatMessages([]); setChatInput('') }}
-          onSaveStructured={saveChatStructured}
+          onSaveStructured={handleSaveChatStructured}
         />
       )}
 
