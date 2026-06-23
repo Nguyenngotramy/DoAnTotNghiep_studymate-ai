@@ -457,14 +457,7 @@ export default function FloatingAgent() {
         localStorage.setItem(sessionStorageKey(user?.id), data.session_id);
       }
 
-      let savedResource = null;
-      if (data.structured?.type === "quiz" || data.structured?.type === "flashcard") {
-        try {
-          savedResource = await persistStructured(data.structured, msg);
-        } catch (error) {
-          toast.error(error?.response?.data?.message ?? "Không thể tự động lưu. Hãy đăng nhập và thử lại.");
-        }
-      }
+      const savedResource = null;
 
       setMessages((prev) => [
         ...prev,
@@ -544,26 +537,39 @@ export default function FloatingAgent() {
           correctIndex: item.correct_index ?? item.correctIndex ?? 0,
           explanation: item.explanation ?? "",
         }));
+        const suggestedTitle = `Quiz AI (${questions.length} cau)`;
+        const title = window.prompt("Nhap ten bo quiz", suggestedTitle)?.trim();
+        if (!title) return;
         await quizApi.createPersonalQuizSet({
-          title: `Quiz chat ${new Date().toLocaleDateString("vi")}`,
+          title,
           questions,
         });
-        toast.success("Đã lưu quiz — xem tại mục Quiz");
+        setMessages((prev) => prev.map((item) => item.id === msg.id
+          ? { ...item, autoSaved: true, savedResource: { type: "quiz" } }
+          : item));
+        toast.success("Da luu quiz - xem tai muc Quiz");
       } else if (msg.structured.type === "flashcard") {
         const cards = msg.structured.items.map((item) => ({
           question: item.front ?? item.question ?? "",
           answer: item.back ?? item.answer ?? "",
         }));
+        const suggestedTitle = `Flashcard AI (${cards.length} the)`;
+        const title = window.prompt("Nhap ten bo flashcard", suggestedTitle)?.trim();
+        if (!title) return;
         await flashcardApi.createPersonalDeck({
-          title: `Flashcard chat ${new Date().toLocaleDateString("vi")}`,
+          title,
           cards,
         });
-        toast.success("Đã lưu flashcard");
+        setMessages((prev) => prev.map((item) => item.id === msg.id
+          ? { ...item, autoSaved: true, savedResource: { type: "flashcard" } }
+          : item));
+        toast.success("Da luu flashcard");
       }
     } catch (e) {
-      toast.error(e?.response?.data?.message ?? "Không thể lưu — cần đăng nhập");
+      toast.error(e?.response?.data?.message ?? "Khong the luu - can dang nhap");
     }
   };
+
 
   const startNewChat = () => {
     localStorage.removeItem(sessionStorageKey(user?.id));
