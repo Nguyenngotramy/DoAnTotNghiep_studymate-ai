@@ -29,3 +29,9 @@ ai_agent/studymind_db/
 data/tuyensinh247/
 .venv-scrapegraph/
 backend/.env.example
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example

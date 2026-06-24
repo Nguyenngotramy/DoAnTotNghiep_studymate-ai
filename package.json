@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "seed.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "keywords": [],
   "author": "",
@@ -12,5 +14,8 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "mongodb": "^7.2.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.103.0"
   }
 }
