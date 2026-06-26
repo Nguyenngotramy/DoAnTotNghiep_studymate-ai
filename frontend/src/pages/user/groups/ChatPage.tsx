@@ -329,6 +329,22 @@ export default function ChatPage() {
     navigate(`/groups/${groupId}/kanban/${normalizeId(taskId)}`)
   }, [navigate, groupId])
 
+  const openProposalBoard = useCallback((msg: ChatMessage) => {
+    const createdIds = (msg as any)?.taskProposal?.createdTaskIds ?? []
+    const firstCreatedId = normalizeId(createdIds[0])
+    const createdTask = firstCreatedId
+      ? (tasks as Task[]).find((task: any) => normalizeId(task.id) === firstCreatedId)
+      : null
+    const taskProjectId = normalizeId((createdTask as any)?.projectId)
+
+    if (taskProjectId) {
+      navigate(`/groups/${groupId}/projects/${taskProjectId}/kanban`)
+      return
+    }
+
+    openTaskBoard()
+  }, [groupId, navigate, openTaskBoard, tasks])
+
   const loadMembers = useCallback(async () => {
     try {
       const memberList = await groupApi.getMembers(groupId)
@@ -1192,13 +1208,7 @@ export default function ChatPage() {
                                     {msg.taskProposal.status === 'APPROVED' && (
                                       <button type="button"
                                         aria-label="Mở bảng công việc nhóm"
-                                        onClick={() => {
-                                          if (activeProjectData?.id) {
-                                            navigate(`/groups/${groupId}/projects/${activeProjectData.id}/kanban`)
-                                          } else {
-                                            openTaskBoard()
-                                          }
-                                        }}
+                                        onClick={() => openProposalBoard(msg)}
                                         className="mt-3 w-full h-9 rounded-xl border text-[12px] font-medium"
                                         style={{ color: '#a5b4fc', borderColor: 'rgba(99,102,241,.35)' }}
                                       >

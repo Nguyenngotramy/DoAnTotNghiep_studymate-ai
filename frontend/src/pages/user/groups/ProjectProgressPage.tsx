@@ -10,12 +10,17 @@ import MemberProgressRow from '@/components/MemberProgressRow'
 import UrgentTasksPanel from '@/components/UrgentTasksPanel'
 import MemberProgressTable from '@/components/MemberProgressTable'
 
+function unwrapProgress(response: any) {
+  if (!response) return null
+  return response.data ?? (response.project ? response : null)
+}
+
 export default function ProjectProgressPage() {
   const { groupId = '', projectId = '' } = useParams<{ groupId: string; projectId: string }>()
   const navigate = useNavigate()
 
   const { data: progress, isLoading, refetch } = useQuery({
-    queryKey: ['project-progress', projectId],
+    queryKey: ['project-progress', groupId, projectId],
     queryFn: () => projectApi.getProjectProgress(groupId, projectId),
     enabled: !!projectId,
   })
@@ -28,7 +33,9 @@ export default function ProjectProgressPage() {
     )
   }
 
-  if (!progress?.data) {
+  const progressData = unwrapProgress(progress)
+
+  if (!progressData) {
     return (
       <div className="min-h-screen p-3 sm:p-6 flex items-center justify-center" style={{ background: 'var(--bg1)' }}>
         <div style={{ color: 'var(--text2)' }}>Không tìm thấy dữ liệu tiến độ</div>
@@ -36,7 +43,7 @@ export default function ProjectProgressPage() {
     )
   }
 
-  const { project, summary, timeline, members, urgentTasks, timeSeries } = progress.data
+  const { project, summary, timeline, members, urgentTasks, timeSeries } = progressData
 
   const handleExport = async () => {
     try {

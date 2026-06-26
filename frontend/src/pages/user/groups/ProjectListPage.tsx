@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { projectApi } from '@/api/services'
+import { groupApi, projectApi, taskApi } from '@/api/services'
 import { ArrowLeft, Plus, Calendar, BarChart3, FolderOpen, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -44,6 +44,15 @@ function unwrapProgress(response: any): ProjectProgress | null {
   return response?.data ?? response ?? null
 }
 
+function groupTaskSummary(tasks: any[]) {
+  const totalTasks = tasks.length
+  const doneTasks = tasks.filter(t => t.status === 'DONE').length
+  const inProgressTasks = tasks.filter(t => t.status === 'IN_PROGRESS').length
+  const todoTasks = tasks.filter(t => t.status === 'TODO').length
+  const completionPercent = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0
+  return { totalTasks, doneTasks, inProgressTasks, todoTasks, completionPercent }
+}
+
 export default function ProjectListPage() {
   const { groupId = '' } = useParams<{ groupId: string }>()
   const navigate = useNavigate()
@@ -54,6 +63,22 @@ export default function ProjectListPage() {
   const [projectDescription, setProjectDescription] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+
+  const { data: group } = useQuery({
+    queryKey: ['group', groupId],
+    queryFn: () => groupApi.get(groupId as any),
+    enabled: !!groupId,
+  })
+
+  const { data: groupTasks = [], isLoading: groupTasksLoading } = useQuery({
+    queryKey: ['group-board-summary', groupId],
+    queryFn: () => taskApi.list(groupId as any),
+    enabled: !!groupId,
+  })
+
+  const groupSummary = groupTaskSummary(Array.isArray(groupTasks) ? groupTasks : [])
+  const hasGroupBoard = groupSummary.totalTasks > 0
+  const groupBoardName = (group as any)?.name || 'Board task nhóm'
 
   const { data: projectsWithProgress = [], isLoading } = useQuery({
     queryKey: ['group-projects-with-progress', groupId],
@@ -112,6 +137,7 @@ export default function ProjectListPage() {
 
       qc.invalidateQueries({ queryKey: ['group-projects', groupId] })
       qc.invalidateQueries({ queryKey: ['group-projects-with-progress', groupId] })
+      qc.invalidateQueries({ queryKey: ['group-board-summary', groupId] })
     } catch (error: any) {
       toast.error(error?.response?.data?.message ?? 'Tạo dự án thất bại')
     }
@@ -119,6 +145,10 @@ export default function ProjectListPage() {
 
   const openProjectBoard = (projectId: string) => {
     navigate(`/groups/${groupId}/projects/${projectId}/kanban`)
+  }
+
+  const openGroupBoard = () => {
+    navigate(`/groups/${groupId}/kanban`)
   }
 
   const getCountdownText = (timeline: any, status: string) => {
@@ -194,12 +224,88 @@ export default function ProjectListPage() {
           </button>
         </div>
 
-        {isLoading ? (
+        {isLoading || groupTasksLoading ? (
           <div className="text-center py-12" style={{ color: 'var(--text2)' }}>
             Đang tải dự án...
           </div>
-        ) : projectsWithProgress.length > 0 ? (
+        ) : projectsWithProgress.length > 0 || hasGroupBoard ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {hasGroupBoard && (
+              <div
+                className="p-5 rounded-2xl border cursor-pointer hover:border-indigo-500/50 transition-all"
+                style={{ background: 'var(--bg2)', borderColor: 'var(--border)' }}
+                onClick={openGroupBoard}
+              >
+                <div className="flex items-start justify-between mb-3 gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold mb-1 truncate" style={{ color: 'var(--text)' }}>
+                      {groupBoardName}
+                    </h3>
+                    <p className="text-sm line-clamp-2" style={{ color: 'var(--text2)' }}>
+                      Board task nhóm đang có dữ liệu, mở để tiếp tục quản lý công việc.
+                    </p>
+                  </div>
+
+                  <div
+                    className="px-2 py-1 rounded-lg text-xs font-medium shrink-0"
+                    style={{ background: 'rgba(99,102,241,.14)', color: '#a5b4fc' }}
+                  >
+                    Kanban nhóm
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2 text-xs" style={{ color: 'var(--text2)' }}>
+                    <span>Tiến độ</span>
+                    <span className="font-medium" style={{ color: 'var(--text)' }}>
+                      {groupSummary.completionPercent}%
+                    </span>
+                  </div>
+
+                  <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg3)' }}>
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: String(Math.min(groupSummary.completionPercent, 100)) + '%',
+                        background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+                      }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 mt-3 text-xs" style={{ color: 'var(--text3)' }}>
+                    <span>{groupSummary.todoTasks} chờ làm</span>
+                    <span>{groupSummary.inProgressTasks} đang làm</span>
+                    <span>{groupSummary.doneTasks}/{groupSummary.totalTasks} xong</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openGroupBoard()
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-colors"
+                    style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
+                  >
+                    <FolderOpen size={14} />
+                    Mở Kanban
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openGroupBoard()
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-colors"
+                    style={{ background: 'var(--bg3)', color: 'var(--text2)' }}
+                  >
+                    <BarChart3 size={14} />
+                    Xem tiến độ
+                  </button>
+                </div>
+              </div>
+            )}
             {projectsWithProgress.map(({ project, progress }) => (
               <div
                 key={project.id}
