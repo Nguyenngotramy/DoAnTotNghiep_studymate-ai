@@ -51,6 +51,15 @@ public class ProjectController {
         }
     }
 
+
+    @GetMapping("/active")
+    public ResponseEntity<?> getActiveProject(@PathVariable String groupId) {
+        Project project = projectService.getActiveProject(groupId);
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("success", true);
+        response.put("project", project);
+        return ResponseEntity.ok(response);
+    }
     @GetMapping("/{projectId}")
     public ResponseEntity<?> getProject(
             @PathVariable String groupId,

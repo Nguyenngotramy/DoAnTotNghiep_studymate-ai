@@ -278,10 +278,7 @@ public class TaskService {
                 throw new RuntimeException("Thiếu groupId khi lọc task theo nhóm");
             }
 
-            List<Task> assigned = taskRepo.findByGroupIdAndAssigneeIdOrderByCreatedAtDesc(groupId, userId);
-            List<Task> created = taskRepo.findByGroupIdAndCreatedByIdOrderByCreatedAtDesc(groupId, userId);
-
-            return mergeAndSortTasks(assigned, created);
+            return taskRepo.findByGroupIdAndAssigneeIdOrderByCreatedAtDesc(groupId, userId);
         }
 
         List<Group> groups = groupService.getMyGroups(userId);
@@ -291,13 +288,9 @@ public class TaskService {
                 ? new ArrayList<>()
                 : taskRepo.findByGroupIdInAndAssigneeIdOrderByCreatedAtDesc(groupIds, userId);
 
-        List<Task> createdGroupTasks = groupIds.isEmpty()
-                ? new ArrayList<>()
-                : taskRepo.findByGroupIdInAndCreatedByIdOrderByCreatedAtDesc(groupIds, userId);
-
         List<Task> personalTasks = taskRepo.findByPersonalTrueAndCreatedByIdOrderByCreatedAtDesc(userId);
 
-        return mergeAndSortTasks(assignedGroupTasks, createdGroupTasks, personalTasks);
+        return mergeAndSortTasks(assignedGroupTasks, personalTasks);
     }
 
     public Map<String, Object> getMyTaskProgress(String userId) {
@@ -308,13 +301,9 @@ public class TaskService {
                 ? new ArrayList<>()
                 : taskRepo.findByGroupIdInAndAssigneeIdOrderByCreatedAtDesc(groupIds, userId);
 
-        List<Task> createdGroupTasks = groupIds.isEmpty()
-                ? new ArrayList<>()
-                : taskRepo.findByGroupIdInAndCreatedByIdOrderByCreatedAtDesc(groupIds, userId);
-
         List<Task> personalTasks = taskRepo.findByPersonalTrueAndCreatedByIdOrderByCreatedAtDesc(userId);
 
-        List<Task> all = mergeAndSortTasks(assignedGroupTasks, createdGroupTasks, personalTasks);
+        List<Task> all = mergeAndSortTasks(assignedGroupTasks, personalTasks);
 
         long todo = all.stream().filter(t -> t.getStatus() == Task.Status.TODO).count();
         long inProgress = all.stream().filter(t -> t.getStatus() == Task.Status.IN_PROGRESS).count();

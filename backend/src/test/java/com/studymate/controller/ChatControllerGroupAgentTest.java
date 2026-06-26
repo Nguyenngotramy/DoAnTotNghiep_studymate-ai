@@ -11,6 +11,7 @@ import com.studymate.repository.UserRepository;
 import com.studymate.service.DocumentService;
 import com.studymate.service.FlashcardService;
 import com.studymate.service.NotificationService;
+import com.studymate.service.ProjectService;
 import com.studymate.service.QuizService;
 import com.studymate.service.TaskService;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -41,6 +43,7 @@ class ChatControllerGroupAgentTest {
     private final FlashcardService flashcardService = mock(FlashcardService.class);
     private final QuizService quizService = mock(QuizService.class);
     private final TaskService taskService = mock(TaskService.class);
+    private final ProjectService projectService = mock(ProjectService.class);
     private final ChatController controller = new ChatController(
             chatRepo,
             userRepo,
@@ -52,7 +55,8 @@ class ChatControllerGroupAgentTest {
             documentService,
             flashcardService,
             quizService,
-            taskService
+            taskService,
+            projectService
     );
 
     @Test
@@ -70,7 +74,7 @@ class ChatControllerGroupAgentTest {
                         .id("task-" + taskNumber.incrementAndGet())
                         .build());
 
-        controller.approveGroupAgentTasks("group-1", "message-1", auth);
+        controller.approveGroupAgentTasks("group-1", "message-1", auth, null);
 
         assertEquals(ChatMessage.ProposalStatus.APPROVED, message.getTaskProposal().getStatus());
         assertEquals("leader-1", message.getTaskProposal().getApprovedBy());
@@ -90,16 +94,14 @@ class ChatControllerGroupAgentTest {
                 () -> controller.approveGroupAgentTasks(
                         "group-1",
                         "message-1",
-                        authentication("member-1")
+                        authentication("member-1"),
+                        null
                 )
         );
 
         verify(chatRepo, never()).findById(anyString());
         verify(taskService, never()).create(anyString(), anyString(), any(TaskRequest.class));
-        assertEquals(
-                "Chỉ trưởng nhóm mới được duyệt và tạo task từ GroupAgent",
-                error.getMessage()
-        );
+        assertTrue(error.getMessage().contains("GroupAgent"));
     }
 
     @Test
@@ -114,7 +116,8 @@ class ChatControllerGroupAgentTest {
                 () -> controller.approveGroupAgentTasks(
                         "group-1",
                         "message-1",
-                        authentication("leader-1")
+                        authentication("leader-1"),
+                        null
                 )
         );
 

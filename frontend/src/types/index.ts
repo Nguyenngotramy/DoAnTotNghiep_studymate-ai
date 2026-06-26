@@ -241,6 +241,7 @@ export interface Conversation {
   threadType: 'DM' | 'GROUP'
   routePath: string
   groupId?: string
+  projectId?: string
   groupName?: string
   groupColor?: string
   groupDescription?: string
@@ -309,6 +310,7 @@ export interface TaskSubmission {
 export interface Task {
   id: string
   groupId?: string
+  projectId?: string
   personal?: boolean
   title: string
   description?: string
@@ -498,6 +500,7 @@ export interface Notification {
   actorName?: string
   actorAvatar?: string
   groupId?: string
+  projectId?: string
   sourceId?: string
   sourceType?: string
   read: boolean

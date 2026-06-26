@@ -31,7 +31,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
-import { chatApi, groupApi, taskApi, membershipApi } from '@/api/services'
+import { chatApi, groupApi, taskApi, membershipApi, projectApi } from '@/api/services'
 import { useAuthStore } from '@/store/authStore'
 import { useWebSocket } from '@/hooks/useWebSocket'
 import { resolveUserAvatar } from '@/utils/avatar'
@@ -277,6 +277,17 @@ export default function ChatPage() {
     refetchInterval: 15_000,
   })
 
+  const { data: activeProject } = useQuery({
+    queryKey: ['active-project', groupId],
+    queryFn: () => projectApi.getActive(groupId as any),
+    enabled: !!groupId,
+    staleTime: 30_000,
+  })
+
+  const activeProjectData = useMemo(() => {
+    const raw: any = activeProject
+    return raw?.project ?? raw?.data?.project ?? raw?.data ?? raw
+  }, [activeProject])
   const safeMembers = useMemo<GroupMember[]>(
     () => (Array.isArray(members) ? members : []),
     [members]
@@ -618,21 +629,25 @@ export default function ChatPage() {
 
   const approveGroupAgentTasks = async (messageId: string) => {
     if (!isLeader || approvingProposalId) return
-    if (!window.confirm('Duyệt đề xuất và tạo toàn bộ task này trên Kanban?')) return
+    const projectName = activeProjectData?.name ? ' vao du an "' + activeProjectData.name + '"' : ''
+    if (!window.confirm('Duyet de xuat va tao toan bo task nay' + projectName + '?')) return
 
     setApprovingProposalId(messageId)
     try {
-      const updated = await chatApi.approveGroupAgentTasks(groupId, messageId)
+      const updated = await chatApi.approveGroupAgentTasks(groupId, messageId, activeProjectData?.id)
       appendIncomingMessage(updated)
       await queryClient.invalidateQueries({ queryKey: ['tasks', groupId] })
-      toast.success('Đã tạo task trên Kanban')
+      if (activeProjectData?.id) {
+        await queryClient.invalidateQueries({ queryKey: ['project-tasks', groupId, activeProjectData.id] })
+        await queryClient.invalidateQueries({ queryKey: ['project-progress', activeProjectData.id] })
+      }
+      toast.success(activeProjectData?.id ? 'Da tao task trong du an' : 'Da tao task tren Kanban')
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'Không thể duyệt đề xuất task')
+      toast.error(e?.response?.data?.message ?? 'Khong the duyet de xuat task')
     } finally {
       setApprovingProposalId(null)
     }
   }
-
   const handlePin = async (messageId: string, pinnedNow: boolean) => {
     try {
       if (pinnedNow) {
@@ -1176,7 +1191,14 @@ export default function ChatPage() {
 
                                     {msg.taskProposal.status === 'APPROVED' && (
                                       <button type="button"
-                                        aria-label="Mở bảng công việc nhóm" onClick={openTaskBoard}
+                                        aria-label="Mở bảng công việc nhóm"
+                                        onClick={() => {
+                                          if (activeProjectData?.id) {
+                                            navigate(`/groups/${groupId}/projects/${activeProjectData.id}/kanban`)
+                                          } else {
+                                            openTaskBoard()
+                                          }
+                                        }}
                                         className="mt-3 w-full h-9 rounded-xl border text-[12px] font-medium"
                                         style={{ color: '#a5b4fc', borderColor: 'rgba(99,102,241,.35)' }}
                                       >

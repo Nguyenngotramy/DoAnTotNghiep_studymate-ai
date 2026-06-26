@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 @Service
@@ -136,6 +137,24 @@ public class ProjectService {
         return projectRepository.findByGroupId(groupId);
     }
 
+    public Project getActiveProject(String groupId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Nhom khong ton tai"));
+
+        if (group.getActiveProjectId() != null && !group.getActiveProjectId().isBlank()) {
+            return getProjectByIdAndGroupId(group.getActiveProjectId(), groupId);
+        }
+
+        return projectRepository.findByGroupId(groupId).stream()
+                .filter(project -> project.getStatus() == Project.ProjectStatus.ACTIVE
+                        || project.getStatus() == Project.ProjectStatus.IN_PROGRESS
+                        || project.getStatus() == Project.ProjectStatus.PLANNING)
+                .max(Comparator.comparing(
+                        Project::getCreatedAt,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                ))
+                .orElse(null);
+    }
     public Map<String, Object> getProjectProgress(String projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Dự án không tồn tại"));

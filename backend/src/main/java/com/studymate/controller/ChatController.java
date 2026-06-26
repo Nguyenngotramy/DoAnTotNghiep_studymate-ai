@@ -16,6 +16,7 @@ import com.studymate.repository.UserRepository;
 import com.studymate.service.DocumentService;
 import com.studymate.service.FlashcardService;
 import com.studymate.service.NotificationService;
+import com.studymate.service.ProjectService;
 import com.studymate.service.QuizService;
 import com.studymate.service.TaskService;
 import lombok.AllArgsConstructor;
@@ -59,6 +60,7 @@ public class ChatController {
     private final FlashcardService flashcardService;
     private final QuizService quizService;
     private final TaskService taskService;
+    private final ProjectService projectService;
 
     @Value("${app.ai-agent.url}")
     private String aiAgentUrl;
@@ -471,7 +473,8 @@ public class ChatController {
     public ResponseEntity<?> approveGroupAgentTasks(
             @PathVariable String groupId,
             @PathVariable String messageId,
-            Authentication auth
+            Authentication auth,
+            @RequestBody(required = false) ApproveGroupAgentTasksRequest body
     ) {
         Group group = validateLeader(groupId, auth.getName());
         ChatMessage message = chatRepo.findById(messageId)
@@ -496,6 +499,13 @@ public class ChatController {
         }
 
         List<String> createdTaskIds = new ArrayList<>();
+        String projectId = body == null ? "" : safeString(body.getProjectId());
+        if (projectId.isBlank()) {
+            projectId = null;
+        } else {
+            projectService.getProjectByIdAndGroupId(projectId, groupId);
+        }
+
         for (ChatMessage.ProposedTask item : proposal.getTasks()) {
             TaskRequest request = new TaskRequest();
             request.setTitle(item.getTitle());
@@ -506,7 +516,10 @@ public class ChatController {
             request.setDeadline(item.getDeadline());
             request.setLabel("GroupAgent");
             request.setLabelColor("#8b5cf6");
-            createdTaskIds.add(taskService.create(groupId, auth.getName(), request).getId());
+            Task created = projectId == null
+                    ? taskService.create(groupId, auth.getName(), request)
+                    : taskService.createProjectTask(groupId, projectId, auth.getName(), request);
+            createdTaskIds.add(created.getId());
         }
 
         proposal.setStatus(ChatMessage.ProposalStatus.APPROVED);
@@ -1038,5 +1051,11 @@ public class ChatController {
     @AllArgsConstructor
     public static class ReactRequest {
         private String emoji;
+    }
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ApproveGroupAgentTasksRequest {
+        private String projectId;
     }
 }

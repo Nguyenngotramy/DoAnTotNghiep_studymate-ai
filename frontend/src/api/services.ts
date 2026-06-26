@@ -660,8 +660,10 @@ export const chatApi = {
   askGroupAgent: (groupId: string, question: string) =>
     api.post(`/groups/${groupId}/chat/group-agent`, withAiConfig({ question })).then(r => d<ChatMessage>(r)),
 
-  approveGroupAgentTasks: (groupId: string, messageId: string) =>
-    api.post(`/groups/${groupId}/chat/${messageId}/approve-tasks`).then(r => d<ChatMessage>(r)),
+  approveGroupAgentTasks: (groupId: string, messageId: string, projectId?: string) =>
+    api.post(`/groups/${groupId}/chat/${messageId}/approve-tasks`, {
+      projectId: projectId || undefined,
+    }).then(r => d<ChatMessage>(r)),
 
   uploadImage: (file: File) => {
     const fd = new FormData()
@@ -837,7 +839,8 @@ export const adminMembershipApi = {
   approveAiToken: (id: string, adminNote?: string) =>
     api.post(`/admin/membership/ai-token-orders/${id}/approve`, { adminNote }).then(r => d<any>(r)),
   rejectAiToken: (id: string, adminNote?: string) =>
-    api.post(`/admin/membership/ai-token-orders/${id}/reject`, { adminNote }).then(r => d<any>(r)),}
+api.post(`/admin/membership/ai-token-orders/${id}/reject`, { adminNote }).then(r => d<any>(r)),
+}
 
 export const adminApi = {
   getDashboard: () => api.get('/admin/dashboard').then(r => d(r)),
